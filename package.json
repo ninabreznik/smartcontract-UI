@@ -1,0 +1,19 @@
+{
+  "name": "contract-ui",
+  "version": "0.0.0",
+  "description": "contract ui for solidity contracts",
+  "main": "src/contract-ui.js",
+  "scripts": {
+    "start": "budo src/contract-ui.js:bundle.js --dir ./src --live --open",
+    "build": "browserify src/index.js > bundle.js"
+  },
+  "author": "@ninabreznik",
+  "license": "MIT",
+  "devDependencies": {
+    "budo": "^11.3.2"
+  },
+  "dependencies": {
+    "bel": "^6.0.0",
+    "csjs-inject": "^1.0.1"
+  }
+}
