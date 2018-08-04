@@ -104,6 +104,11 @@ var css = csjs`
     width: 80px;
     text-align: center;
   }
+  .arrayContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 `;
 
 function inputStyle() {
