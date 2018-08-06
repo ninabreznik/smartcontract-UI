@@ -15,7 +15,8 @@ document.head.appendChild(overpassMono)
 
 var colors = {
   white: "#ffffff", // borders, font on input background
-  whiteSmoke: "#f1f4f9", // background
+  dark: "#454545", //background dark
+  whiteSmoke: "#f1f4f9", // background light
   lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
   violetRed: "#e76685",
@@ -26,26 +27,37 @@ var colors = {
 var css = csjs`
   body {
     font-family: 'Overpass Mono', monospace;
-    background-color: ${colors.whiteSmoke};
+    background-color: ${colors.dark};
     font-size: 16px;
+  }
+  .function {
+    color: ${colors.violetRed};
+    padding: 2%;
+    margin: 2%;
+    border: 3px solid ${colors.white};
   }
   .inputContainer {
     font-family: 'Overpass Mono', monospace;
-    margin: 2%;
+    margin-top: 5%;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
     font-size: 1em;
     color: ${colors.slateGrey};
+    flex-direction: column;
+  }
+  .inputParam {
+    margin-bottom: 2%;
+    font-size: 1.5em;
+    font-weight: bold;
+    display: flex;
+    justify-content: center
   }
   .inputFields {
-    margin-left: 5%;
     display: flex;
-    flex-direction: row;
+    justify-content: center
   }
-  .inputTitle {
-    font-size: 1.2em;
-    font-weight: bold;
+  .inputType {
+    display: flex;
+    justify-content: center;
   }
   .inputField {
     ${inputStyle()}
@@ -53,55 +65,82 @@ var css = csjs`
     color: ${colors.slateGrey};
     text-align: center;
     display: flex;
-    align-items: stretch;
+    width: 100%;
   }
   .inputField::placeholder {
-    color: ${colors.white};
+    color: ${colors.slateGrey};
     text-align: center;
+    opacity: 0.5;
   }
   .icon {
     color: ${colors.white};
   }
+  .integerValue {
+    ${inputStyle()}
+    font-size: 1em;
+    color: ${colors.slateGrey};
+    display: flex;
+    text-align: center;
+    width: 25%;
+  }
+  .integerValue::placeholder {
+    color: ${colors.slateGrey};
+    text-align: center;
+    opacity: 0.5;
+  }
+  .integerSlider {
+    width: 75%;
+  }
   .integerField {
     display: flex;
+    width: 300px;
   }
   .booleanField {
     display: flex;
+    width: 300px;
+    justify-content: center;
+  }
+  .stringField {
+    display: flex;
+    width: 300px;
+    justify-content: center;
+  }
+  .addressField {
+    display: flex;
+    width: 300px;
+    justify-content: center;
   }
   .minus {
     ${inputStyle()}
     border-right: none;
     background-color: ${colors.violetRed};
     text-align: center;
-    width: 30px;
+    width: 25px;
   }
   .plus {
     ${inputStyle()}
     border-left: none;
     background-color: ${colors.aquaMarine};
     text-align: center;
-    width: 30px;
+    width: 25px;
   }
   .keyField {
     ${inputStyle()}
     border-right: none;
     background-color: ${colors.aquaMarine}
   }
-  .addressField {
-    display: flex;
-  }
   .false {
     ${inputStyle()}
     border-right: none;
     background-color: ${colors.violetRed};
     color: ${colors.white};
-    width: 80px;
+    width: 50%;
     text-align: center;
   }
   .true {
     ${inputStyle()}
     color: ${colors.slateGrey};
-    width: 80px;
+    width: 50%;
     text-align: center;
   }
   .arrayContainer {
@@ -109,12 +148,21 @@ var css = csjs`
     flex-direction: column;
     align-items: center;
   }
+  .arrayPlusMinus {
+    margin: 2%;
+  }
+  .arrayPlus {
+    cursor: pointer;
+  }
+  .arrayMinus {
+    cursor: pointer;
+  }
 `;
 
 function inputStyle() {
   return `
     border: 3px solid ${colors.white};
-    background-color: ${colors.lavenderGrey};
+    background-color: ${colors.dark};
     padding: 5px 10px;
   `
 }
@@ -290,7 +338,7 @@ function displayContractUI() {
   function displayFunctions() {
     return metadata.functions.map(fn => {
       if (fn.type === "function") {
-        return bel`<div>
+        return bel`<div class=${css.function}>
         <h2>${fn.name} (${fn.stateMutability})</h2>
         <ul>${fn.inputs}</ul>
       </div>`
