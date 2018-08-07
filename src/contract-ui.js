@@ -1,6 +1,6 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
-var inputUI = require('input-ui')
+var checkInputType = require('check-input-type')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -15,7 +15,7 @@ document.head.appendChild(overpassMono)
 
 var colors = {
   white: "#ffffff", // borders, font on input background
-  dark: "#454545", //background dark
+  dark: "#202020", //background dark
   whiteSmoke: "#f1f4f9", // background light
   lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
@@ -94,21 +94,25 @@ var css = csjs`
   .integerField {
     display: flex;
     width: 300px;
+    margin-bottom: 2%;
   }
   .booleanField {
     display: flex;
     width: 300px;
     justify-content: center;
+    margin-bottom: 2%;
   }
   .stringField {
     display: flex;
     width: 300px;
     justify-content: center;
+    margin-bottom: 2%;
   }
   .addressField {
     display: flex;
     width: 300px;
     justify-content: center;
+    margin-bottom: 2%;
   }
   .minus {
     ${inputStyle()}
@@ -318,7 +322,7 @@ function contractUI(field) {
   var theme = { classes: css, colors}
   var name = field.name
   var type = field.type
-  return inputUI({name, theme, type})
+  return checkInputType({name, theme, type})
 }
 
 /*--------------------
