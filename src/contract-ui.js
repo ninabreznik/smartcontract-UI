@@ -152,6 +152,16 @@ var css = csjs`
     flex-direction: column;
     align-items: center;
   }
+  .arrayInner {
+    border: 1px solid red;
+    padding: 1px;
+    margin: 20px 2px 2px 20px;
+  }
+  .arrayInput {
+    border: 1px solid blue;
+    padding: 1px;
+    margin: 20px 2px 2px 20px;
+  }
   .arrayPlusMinus {
     margin: 2%;
   }
@@ -171,100 +181,7 @@ function inputStyle() {
   `
 }
 
-var solcMetadata = {
-  compiler: { version: "0.4.24+commit.e67f0147" },
-  language: "Solidity",
-  output: {
-    abi: [
-      {
-        constant: false,
-        inputs: [{ name: "data", type: "bytes" }],
-        name: "byteArrays",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [],
-        name: "clear",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [{ name: "size", type: "uint256" }],
-        name: "createMemoryArray",
-        outputs: [{ name: "", type: "bytes" }],
-        payable: false,
-        stateMutability: "pure",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [
-          { name: "index", type: "uint256" },
-          { name: "flagA", type: "bool" },
-          { name: "flagB", type: "bool" }
-        ],
-        name: "setFlagPair",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "flag", type: "bool[2]" }],
-        name: "addFlag",
-        outputs: [{ name: "", type: "uint256" }],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newPairs", type: "bool[2][]" }],
-        name: "setAllFlagPairs",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newSize", type: "uint256" }],
-        name: "changeFlagArraySize",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ],
-    devdoc: { methods: {} },
-    userdoc: { methods: {} }
-  },
-  settings: {
-    compilationTarget: { "browser/Untitled.sol": "ArrayContract" },
-    evmVersion: "byzantium",
-    libraries: {},
-    optimizer: { enabled: false, runs: 200 },
-    remappings: []
-  },
-  sources: {
-    "browser/Untitled.sol": {
-      keccak256:
-        "0x16d1586ab97ab12aa92899517fa9c5f3fa5f459e86b6251ea9c5fa5a3b9c91aa",
-      urls: [
-        "bzzr://8bc07a7f3f0c8ddc4ca4daef71fd74eea482ad1b0ce4c25b82c50754fe0cb993"
-      ]
-    }
-  },
-  version: 1
-}
+var solcMetadata = {"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256[2][3][]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"x","type":"uint256[2][3][]"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}],"devdoc":{"methods":{}},"userdoc":{"methods":{}}},"settings":{"compilationTarget":{"browser/foo.sol":"SimpleStorage"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/foo.sol":{"keccak256":"0xf03c24e2f7c372841d58f6f808e7bb2a5b73907437f03e0436e9d1b5d23206d9","urls":["bzzr://067d447ff937496a7487f9790e3e6ee3d7ba2d7e23220ac26a1c16ff049525df"]}},"version":1}
 
 function getConstructorName() {
   var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
