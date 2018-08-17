@@ -31,10 +31,10 @@ var css = csjs`
     font-size: 16px;
   }
   .function {
-    color: ${colors.violetRed};
+    color: ${colors.slateGrey};
     padding: 2%;
     margin: 2%;
-    border: 3px solid ${colors.white};
+    border: 3px solid ${colors.slateGrey};
   }
   .inputContainer {
     font-family: 'Overpass Mono', monospace;
@@ -73,7 +73,7 @@ var css = csjs`
     opacity: 0.5;
   }
   .icon {
-    color: ${colors.white};
+    color: ${colors.slateGrey};
   }
   .integerValue {
     ${inputStyle()}
@@ -114,20 +114,6 @@ var css = csjs`
     justify-content: center;
     margin-bottom: 2%;
   }
-  .minus {
-    ${inputStyle()}
-    border-right: none;
-    background-color: ${colors.violetRed};
-    text-align: center;
-    width: 25px;
-  }
-  .plus {
-    ${inputStyle()}
-    border-left: none;
-    background-color: ${colors.aquaMarine};
-    text-align: center;
-    width: 25px;
-  }
   .keyField {
     ${inputStyle()}
     border-right: none;
@@ -146,20 +132,22 @@ var css = csjs`
     color: ${colors.slateGrey};
     width: 50%;
     text-align: center;
+    cursor: pointer;
   }
   .arrayContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
+    cursor: pointer;
   }
   .arrayInner {
-    border-left: 1px solid ${colors.white};
+    border-left: 3px solid ${colors.slateGrey};
     padding: 1px;
-    margin: 40px;
+    margin: 40px 10px 10px 10px;
   }
   .arrayInput {
     padding: 1px;
-    margin: 20px 2px 2px 20px;
+    margin: 20px;
   }
   .arrayPlusMinus {
     margin: 2%;
