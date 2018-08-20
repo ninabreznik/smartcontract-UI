@@ -7,9 +7,7 @@ var fonts = [
   'https://fonts.googleapis.com/css?family=Overpass+Mono" rel="stylesheet'
 ]
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
-var overpassMono = bel`<link href=${
-  fonts[1]
-} rel='stylesheet' type='text/css'>`
+var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
 
@@ -28,7 +26,7 @@ var css = csjs`
   body {
     font-family: 'Overpass Mono', monospace;
     background-color: ${colors.dark};
-    font-size: 16px;
+    font-size: 12px;
   }
   .function {
     color: ${colors.slateGrey};
@@ -100,7 +98,7 @@ var css = csjs`
     display: flex;
     width: 300px;
     justify-content: center;
-    margin-bottom: 2%;
+    margin: 10px 20px;
   }
   .stringField {
     display: flex;
@@ -135,22 +133,19 @@ var css = csjs`
     cursor: pointer;
   }
   .arrayContainer {
+    border: 3px solid ${colors.slateGrey};
     display: flex;
     flex-direction: column;
     align-items: center;
-    cursor: pointer;
-  }
-  .arrayInner {
-    border-left: 3px solid ${colors.slateGrey};
     padding: 1px;
-    margin: 40px 10px 10px 10px;
+    margin: 10px 20px;
   }
   .arrayInput {
     padding: 1px;
     margin: 20px;
   }
   .arrayPlusMinus {
-    margin: 2%;
+    margin: 10px;
   }
   .arrayPlus {
     cursor: pointer;
