@@ -27,27 +27,34 @@ var css = csjs`
     font-family: 'Overpass Mono', monospace;
     background-color: ${colors.dark};
     font-size: 12px;
+    color: ${colors.slateGrey};
+  }
+  h2 {
+    margin: 10px 0 40px 10px;
   }
   .function {
     color: ${colors.slateGrey};
-    padding: 2%;
-    margin: 2%;
+    margin: 10px;
+    padding: 10px;
     border: 3px solid ${colors.slateGrey};
   }
   .inputContainer {
     font-family: 'Overpass Mono', monospace;
-    margin-top: 5%;
+    margin-top: 10px;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     font-size: 1em;
     color: ${colors.slateGrey};
-    flex-direction: column;
   }
   .inputParam {
-    margin-bottom: 2%;
     font-size: 1.5em;
     font-weight: bold;
     display: flex;
-    justify-content: center
+    justify-content: center;
+    min-width: 230px;
+    padding: 10px;
   }
   .inputFields {
     display: flex;
@@ -92,25 +99,21 @@ var css = csjs`
   .integerField {
     display: flex;
     width: 300px;
-    margin-bottom: 2%;
   }
   .booleanField {
     display: flex;
     width: 300px;
     justify-content: center;
-    margin: 10px 20px;
   }
   .stringField {
     display: flex;
     width: 300px;
     justify-content: center;
-    margin-bottom: 2%;
   }
   .addressField {
     display: flex;
     width: 300px;
     justify-content: center;
-    margin-bottom: 2%;
   }
   .keyField {
     ${inputStyle()}
@@ -137,8 +140,8 @@ var css = csjs`
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1px;
-    margin: 10px 20px;
+    padding: 5px;
+    margin-top: 10px;
   }
   .arrayInput {
     padding: 1px;
