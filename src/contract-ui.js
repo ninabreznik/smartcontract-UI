@@ -1,6 +1,7 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
 var checkInputType = require('check-input-type')
+var metadata = require('metadata.json')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -166,100 +167,7 @@ function inputStyle() {
   `
 }
 
-var solcMetadata = {
-  compiler: { version: "0.4.24+commit.e67f0147" },
-  language: "Solidity",
-  output: {
-    abi: [
-      {
-        constant: false,
-        inputs: [{ name: "data", type: "bytes" }],
-        name: "byteArrays",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [],
-        name: "clear",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [{ name: "size", type: "uint256" }],
-        name: "createMemoryArray",
-        outputs: [{ name: "", type: "bytes" }],
-        payable: false,
-        stateMutability: "pure",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [
-          { name: "index", type: "uint256" },
-          { name: "flagA", type: "bool" },
-          { name: "flagB", type: "bool" }
-        ],
-        name: "setFlagPair",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "flag", type: "bool[2]" }],
-        name: "addFlag",
-        outputs: [{ name: "", type: "uint256" }],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newPairs", type: "bool[2][]" }],
-        name: "setAllFlagPairs",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newSize", type: "uint256" }],
-        name: "changeFlagArraySize",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ],
-    devdoc: { methods: {} },
-    userdoc: { methods: {} }
-  },
-  settings: {
-    compilationTarget: { "browser/Untitled.sol": "ArrayContract" },
-    evmVersion: "byzantium",
-    libraries: {},
-    optimizer: { enabled: false, runs: 200 },
-    remappings: []
-  },
-  sources: {
-    "browser/Untitled.sol": {
-      keccak256:
-        "0x16d1586ab97ab12aa92899517fa9c5f3fa5f459e86b6251ea9c5fa5a3b9c91aa",
-      urls: [
-        "bzzr://8bc07a7f3f0c8ddc4ca4daef71fd74eea482ad1b0ce4c25b82c50754fe0cb993"
-      ]
-    }
-  },
-  version: 1
-}
+var solcMetadata = metadata
 
 function getConstructorName() {
   var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
