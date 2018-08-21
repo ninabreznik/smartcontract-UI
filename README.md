@@ -6,4 +6,4 @@ Turn Solidity code into a simple contract UI.
 2. run `npm install`
 3. Open the browser and run `npm start`
 
-[Imgur](https://i.imgur.com/2zuwpvM.png)
+![Imgur](https://i.imgur.com/2zuwpvM.png)
