@@ -27,7 +27,8 @@ var colors = {
 }
 
 var css = csjs`
-  body {
+  .preview {
+    min-width: 350px;
     font-family: 'Overpass Mono', monospace;
     background-color: ${colors.dark};
     font-size: 12px;
@@ -70,9 +71,6 @@ var css = csjs`
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  .preview {
-    min-width: 350px;
   }
   .constructorFn {
     padding-top: 18px;
