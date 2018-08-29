@@ -15,12 +15,15 @@ document.head.appendChild(overpassMono)
 var colors = {
   white: "#ffffff", // borders, font on input background
   dark: "#202020", //background dark
-  whiteSmoke: "#f1f4f9", // background light
+  darkSmoke: '#363636',  // separators
+  whiteSmoke: "#D5C5C8", // background light
   lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
-  violetRed: "#e76685",
-  aquaMarine: "#59c4bc",
-  turquoise: "#14b9d5"
+  violetRed: "#b25068",  // used as red in types (bool etc.)
+  aquaMarine: "#4b9f98",  // used as green in types (bool etc.)
+  turquoise: "#14b9d5",
+  yellow: "#F2CD5D",
+  androidGreen: "#9BC53D"
 }
 
 var css = csjs`
@@ -28,32 +31,90 @@ var css = csjs`
     font-family: 'Overpass Mono', monospace;
     background-color: ${colors.dark};
     font-size: 12px;
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
   }
-  h2 {
+  .ulVisible {
+    visibility: visible;
+    height: 100%;
+    padding: 0;
+    transition-delay: 0.25s;
+  }
+  .ulHidden {
+    visibility: hidden;
+    height: 0;
+    transition-delay: 0.25s;
+  }
+  .contractName {
+    font-size: 20px;
+    font-weight: bold;
+    color: ${colors.whiteSmoke};
     margin: 10px 0 40px 10px;
+    min-width: 200px;
+    width: 30%;
+  }
+  .fnName {
+    font-size: 16px;
+    display: flex;
+    color: ${colors.whiteSmoke};
+    margin: 10px 5px 20px 10px;
+    text-decoration: none;
+  }
+  .stateMutability {
+    margin-left: 5px;
+    color: ${colors.whiteSmoke};
+    border-radius: 20px;
+    border: 1px solid;
+    padding: 1px;
+    font-size: 9px;
+    width: 65px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .preview {
+    min-width: 350px;
+  }
+  .constructorFn {
+    padding-top: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid ${colors.darkSmoke};
+  }
+  .title {
+    display: flex;
+    align-items: baseline;
+    width: 300px;
   }
   .function {
-    color: ${colors.slateGrey};
-    margin: 10px;
-    padding: 10px;
-    border: 3px solid ${colors.slateGrey};
+    display: flex;
+    flex-direction: column;
+    color: ${colors.whiteSmoke};
+    padding-top: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid ${colors.darkSmoke};
+  }
+  .toggleIcon {
+    margin-left: 5px;
+    font-size: 16px;
+  }
+  .title:hover {
+    opacity: 0.7;
+    cursor: pointer;
   }
   .inputContainer {
     font-family: 'Overpass Mono', monospace;
     margin-top: 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
     flex-wrap: wrap;
     font-size: 1em;
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
   }
   .inputParam {
-    font-size: 1.5em;
+    color: ${colors.whiteSmoke};
+    font-size: 1em;
     font-weight: bold;
     display: flex;
-    justify-content: center;
     min-width: 230px;
     padding: 10px;
   }
@@ -68,38 +129,50 @@ var css = csjs`
   .inputField {
     ${inputStyle()}
     font-size: 1em;
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
     text-align: center;
     display: flex;
     width: 100%;
   }
   .inputField::placeholder {
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
     text-align: center;
     opacity: 0.5;
   }
   .icon {
-    color: ${colors.slateGrey};
+    color: ${colors.dark};
   }
   .integerValue {
     ${inputStyle()}
     font-size: 1em;
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
     display: flex;
     text-align: center;
     width: 25%;
   }
   .integerValue::placeholder {
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
     text-align: center;
     opacity: 0.5;
   }
   .integerSlider {
     width: 75%;
+    border: 1px solid ${colors.darkSmoke};
+    -webkit-appearance: none;
+    height: 0.2px;
+  }
+  .integerSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: 1px solid ${colors.darkSmoke};
+    height: 22px;
+    width: 10px;
+    background: ${colors.slateGrey};
+    cursor: pointer;
   }
   .integerField {
     display: flex;
     width: 300px;
+    align-items: center;
   }
   .booleanField {
     display: flex;
@@ -125,19 +198,19 @@ var css = csjs`
     ${inputStyle()}
     border-right: none;
     background-color: ${colors.violetRed};
-    color: ${colors.white};
+    color: ${colors.dark};
     width: 50%;
     text-align: center;
   }
   .true {
     ${inputStyle()}
-    color: ${colors.slateGrey};
+    color: ${colors.whiteSmoke};
     width: 50%;
     text-align: center;
     cursor: pointer;
   }
   .arrayContainer {
-    border: 3px solid ${colors.slateGrey};
+    border: 1px solid ${colors.darkSmoke};
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -161,13 +234,14 @@ var css = csjs`
 
 function inputStyle() {
   return `
-    border: 3px solid ${colors.white};
+    border: 1px solid ${colors.darkSmoke};
     background-color: ${colors.dark};
     padding: 5px 10px;
   `
 }
 
-var solcMetadata = metadata
+
+var solcMetadata = metadata[5]  // 4 and 5 are AwardToken and Ballot
 
 function getConstructorName() {
   var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
@@ -234,10 +308,11 @@ function contractUI(field) {
 
 function displayContractUI() {
   var html = bel`
-    <div>
-      <h1>${metadata.constructorName}</h1>
-      ${metadata.constructorInput}
-      <hr>
+    <div class=${css.preview}>
+      <div class=${css.constructorFn}>
+        <div class=${css.contractName}>${metadata.constructorName}</div>
+        ${metadata.constructorInput}
+      </div>
       <p>${displayFunctions()}</p>
     </div>
   `
@@ -245,13 +320,45 @@ function displayContractUI() {
   function displayFunctions() {
     return metadata.functions.map(fn => {
       if (fn.type === "function") {
-        return bel`<div class=${css.function}>
-        <h2>${fn.name} (${fn.stateMutability})</h2>
-        <ul>${fn.inputs}</ul>
+        return bel`
+        <div class=${css.function}>
+          ${displayFn(fn)}
+          <ul class=${css.ulVisible}>${fn.inputs}</ul>
       </div>`
       }
     })
   }
+
+  function displayFn (fn) {
+    var label = fn.stateMutability
+    var fnName = bel`<a title="${label}" class=${css.fnName}>${fn.name}</a>`
+    var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-chevron-circle-up"></i></div>`
+    var col
+    if (label === 'pure') { col = colors.yellow }
+    else if (label === 'view') {col = colors.androidGreen }
+    else if (label === 'nonpayable') {col = colors.turquoise }
+    else if (label === 'payable') {col = colors.violetRed }
+    fnName.style.color = col
+    toggleIcon.style.color = col
+    return bel`<div class=${css.title} onclick=${e=>toggle(e)}> ${fnName}  ${toggleIcon} </div>`
+  }
+
+  function toggle (e) {
+    var params = e.currentTarget.parentNode.children[1]
+      var toggleContainer = e.currentTarget.children[1]
+      var icon = toggleContainer.children[0]
+      toggleContainer.removeChild(icon)
+      if (params.className === css.ulVisible.toString()) {
+        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-down">`)
+        params.classList.remove(css.ulVisible)
+        params.classList.add(css.ulHidden)
+      } else {
+        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-up">`)
+        params.classList.remove(css.ulHidden)
+        params.classList.add(css.ulVisible)
+      }
+  }
+
   document.body.appendChild(html)
 }
 
