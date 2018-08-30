@@ -1,7 +1,6 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
 var checkInputType = require('check-input-type')
-var metadata = require('metadata.json')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -237,74 +236,73 @@ function inputStyle() {
     padding: 5px 10px;
   `
 }
-
-
-var solcMetadata = metadata[5]  // 4 and 5 are AwardToken and Ballot
-
-function getConstructorName() {
-  var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
-  return solcMetadata.settings.compilationTarget[file]
-}
-
-function getConstructorInput() {
-  return solcMetadata.output.abi.map(fn => {
-    if (fn.type === "constructor") {
-      return treeForm(fn.inputs)
-    }
-  })
-}
-
-function getContractFunctions() {
-  return solcMetadata.output.abi.map(x => {
-    var obj = {}
-    obj.name = x.name
-    obj.type = x.type
-    obj.inputs = getAllInputs(x)
-    obj.stateMutability = x.stateMutability
-    return obj
-  })
-}
-
-function getAllInputs(fn) {
-  var inputs = []
-  if (fn.inputs) {
-    return treeForm(fn.inputs)
-  }
-}
-
-function treeForm(data) {
-  return data.map(x => {
-    if (x.components) {
-      return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(
-        x.components
-      )}</ul></li>`
-    }
-    if (!x.components) {
-      return contractUI(x)
-    }
-  })
-}
-
-var metadata = {
-  compiler: solcMetadata.compiler.version,
-  compilationTarget: solcMetadata.settings.compilationTarget,
-  constructorName: getConstructorName(),
-  constructorInput: getConstructorInput(),
-  functions: getContractFunctions()
-}
-
-function contractUI(field) {
-  var theme = { classes: css, colors}
-  var name = field.name
-  var type = field.type
-  return checkInputType({name, theme, type})
-}
-
 /*--------------------
       PAGE
 --------------------*/
+module.exports = displayContractUI
 
-function displayContractUI() {
+function displayContractUI(opts) {
+  var solcMetadata = opts.metadata
+
+  function getConstructorName() {
+    var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+    return solcMetadata.settings.compilationTarget[file]
+  }
+
+  function getConstructorInput() {
+    return solcMetadata.output.abi.map(fn => {
+      if (fn.type === "constructor") {
+        return treeForm(fn.inputs)
+      }
+    })
+  }
+
+  function getContractFunctions() {
+    return solcMetadata.output.abi.map(x => {
+      var obj = {}
+      obj.name = x.name
+      obj.type = x.type
+      obj.inputs = getAllInputs(x)
+      obj.stateMutability = x.stateMutability
+      return obj
+    })
+  }
+
+  function getAllInputs(fn) {
+    var inputs = []
+    if (fn.inputs) {
+      return treeForm(fn.inputs)
+    }
+  }
+
+  function treeForm(data) {
+    return data.map(x => {
+      if (x.components) {
+        return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(
+          x.components
+        )}</ul></li>`
+      }
+      if (!x.components) {
+        return contractUI(x)
+      }
+    })
+  }
+
+  var metadata = {
+    compiler: solcMetadata.compiler.version,
+    compilationTarget: solcMetadata.settings.compilationTarget,
+    constructorName: getConstructorName(),
+    constructorInput: getConstructorInput(),
+    functions: getContractFunctions()
+  }
+
+  function contractUI(field) {
+    var theme = { classes: css, colors}
+    var name = field.name
+    var type = field.type
+    return checkInputType({name, theme, type})
+  }
+
   var html = bel`
     <div class=${css.preview}>
       <div class=${css.constructorFn}>
@@ -357,7 +355,5 @@ function displayContractUI() {
       }
   }
 
-  document.body.appendChild(html)
+  return html
 }
-
-displayContractUI()
