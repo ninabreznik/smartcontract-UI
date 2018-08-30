@@ -4,7 +4,7 @@ var checkInputType = require('check-input-type')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-  'https://fonts.googleapis.com/css?family=Overpass+Mono" rel="stylesheet'
+  'https://fonts.googleapis.com/css?family=Overpass+Mono'
 ]
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
