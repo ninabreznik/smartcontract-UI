@@ -1,6 +1,7 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
 var checkInputType = require('check-input-type')
+var glossary = require('glossary')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -13,13 +14,13 @@ document.head.appendChild(overpassMono)
 
 var colors = {
   white: "#ffffff", // borders, font on input background
-  dark: "#202020", //background dark
-  darkSmoke: '#363636',  // separators
-  whiteSmoke: "#D5C5C8", // background light
+  dark: "#2c323c", //background dark
+  darkSmoke: '#21252b',  // separators
+  whiteSmoke: "#f5f5f5", // background light
   lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
   violetRed: "#b25068",  // used as red in types (bool etc.)
-  aquaMarine: "#4b9f98",  // used as green in types (bool etc.)
+  aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
   turquoise: "#14b9d5",
   yellow: "#F2CD5D",
   androidGreen: "#9BC53D"
@@ -28,7 +29,11 @@ var colors = {
 var css = csjs`
   .preview {
     min-width: 350px;
+    height: 100%;
     font-family: 'Overpass Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background-color: ${colors.dark};
     font-size: 12px;
     color: ${colors.whiteSmoke};
@@ -55,8 +60,7 @@ var css = csjs`
   .fnName {
     font-size: 16px;
     display: flex;
-    color: ${colors.whiteSmoke};
-    margin: 10px 5px 20px 10px;
+    margin: 10px 5px 20px 0px;
     text-decoration: none;
   }
   .stateMutability {
@@ -74,43 +78,59 @@ var css = csjs`
   .constructorFn {
     padding-top: 18px;
     padding-bottom: 10px;
-    border-bottom: 1px solid ${colors.darkSmoke};
+    width: 515px;
   }
   .title {
     display: flex;
     align-items: baseline;
-    width: 300px;
+    position: absolute;
+    top: -20px;
+    left: 20px;
+    background-color: ${colors.dark};
+    padding: 0 5px 0 5px;
+  }
+  .title:hover {
+    cursor: pointer;
   }
   .function {
     display: flex;
     flex-direction: column;
     color: ${colors.whiteSmoke};
-    padding-top: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid ${colors.darkSmoke};
+    margin: 4em 2em;
+    padding: 1em;
+    border: 1px solid ${colors.whiteSmoke};
+    position: relative;
+    width: 515px;
+  }
+  .pure {
+    color: ${colors.yellow};
+  }
+  .view {
+    color: ${colors.androidGreen};
+  }
+  .nonpayable {
+    color: ${colors.turquoise};
+  }
+  .payable {
+    color: ${colors.violetRed};
   }
   .toggleIcon {
     margin-left: 5px;
     font-size: 16px;
   }
-  .title:hover {
-    opacity: 0.7;
-    cursor: pointer;
-  }
   .inputContainer {
     font-family: 'Overpass Mono', monospace;
     margin-top: 10px;
     display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    flex-wrap: wrap;
+    flex-direction: column;
     font-size: 1em;
     color: ${colors.whiteSmoke};
   }
   .inputParam {
     color: ${colors.whiteSmoke};
-    font-size: 1em;
-    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    font-size: 1.1em;
     display: flex;
     min-width: 230px;
     padding: 10px;
@@ -127,6 +147,8 @@ var css = csjs`
     ${inputStyle()}
     font-size: 1em;
     color: ${colors.whiteSmoke};
+    border-color: ${colors.whiteSmoke};
+    background-color: ${colors.darkSmoke};
     text-align: center;
     display: flex;
     width: 100%;
@@ -143,6 +165,7 @@ var css = csjs`
     ${inputStyle()}
     font-size: 1em;
     color: ${colors.whiteSmoke};
+    background-color: ${colors.darkSmoke};
     display: flex;
     text-align: center;
     width: 25%;
@@ -154,16 +177,16 @@ var css = csjs`
   }
   .integerSlider {
     width: 75%;
-    border: 1px solid ${colors.darkSmoke};
+    border: 1px solid ${colors.whiteSmoke};
     -webkit-appearance: none;
     height: 0.2px;
   }
   .integerSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    border: 1px solid ${colors.darkSmoke};
+    border: 1px solid ${colors.whiteSmoke};
     height: 22px;
     width: 10px;
-    background: ${colors.slateGrey};
+    background: ${colors.darkSmoke};
     cursor: pointer;
   }
   .integerField {
@@ -189,7 +212,8 @@ var css = csjs`
   .keyField {
     ${inputStyle()}
     border-right: none;
-    background-color: ${colors.aquaMarine}
+    background-color: ${colors.aquaMarine};
+    border-color: ${colors.whiteSmoke};
   }
   .false {
     ${inputStyle()}
@@ -198,16 +222,18 @@ var css = csjs`
     color: ${colors.dark};
     width: 50%;
     text-align: center;
+    border-color: ${colors.whiteSmoke};
   }
   .true {
     ${inputStyle()}
     color: ${colors.whiteSmoke};
+    border-color: ${colors.whiteSmoke};
     width: 50%;
     text-align: center;
     cursor: pointer;
   }
   .arrayContainer {
-    border: 1px solid ${colors.darkSmoke};
+    border: 1px solid ${colors.whiteSmoke};
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -231,9 +257,9 @@ var css = csjs`
 
 function inputStyle() {
   return `
-    border: 1px solid ${colors.darkSmoke};
+    border: 1px solid ${colors.whiteSmoke};
     background-color: ${colors.dark};
-    padding: 5px 10px;
+    padding: 5px;
   `
 }
 /*--------------------
@@ -278,9 +304,7 @@ function displayContractUI(opts) {
   function treeForm(data) {
     return data.map(x => {
       if (x.components) {
-        return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(
-          x.components
-        )}</ul></li>`
+        return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
       }
       if (!x.components) {
         return contractUI(x)
@@ -306,37 +330,21 @@ function displayContractUI(opts) {
   var html = bel`
     <div class=${css.preview}>
       <div class=${css.constructorFn}>
-        <div class=${css.contractName}>${metadata.constructorName}</div>
-        ${metadata.constructorInput}
+        <div class=${css.contractName}>${metadata.constructorName}</div> ${metadata.constructorInput}
       </div>
-      <p>${displayFunctions()}</p>
+      <div>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
     </div>
   `
 
-  function displayFunctions() {
-    return metadata.functions.map(fn => {
-      if (fn.type === "function") {
-        return bel`
-        <div class=${css.function}>
-          ${displayFn(fn)}
-          <ul class=${css.ulVisible}>${fn.inputs}</ul>
-      </div>`
-      }
-    })
-  }
-
-  function displayFn (fn) {
+  function functions (fn) {
     var label = fn.stateMutability
-    var fnName = bel`<a title="${label}" class=${css.fnName}>${fn.name}</a>`
-    var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-chevron-circle-up"></i></div>`
-    var col
-    if (label === 'pure') { col = colors.yellow }
-    else if (label === 'view') {col = colors.androidGreen }
-    else if (label === 'nonpayable') {col = colors.turquoise }
-    else if (label === 'payable') {col = colors.violetRed }
-    fnName.style.color = col
-    toggleIcon.style.color = col
-    return bel`<div class=${css.title} onclick=${e=>toggle(e)}> ${fnName}  ${toggleIcon} </div>`
+    var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
+    var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-minus-circle"></i></div>`
+    var functionClass = css[label]
+    return bel` <div class="${functionClass} ${css.function}">
+      <div class=${css.title} onclick=${e=>toggle(e)}>${fnName}  ${toggleIcon}</div>
+      <ul class=${css.ulVisible}>${fn.inputs}</ul>
+    </div>`
   }
 
   function toggle (e) {
@@ -345,11 +353,11 @@ function displayContractUI(opts) {
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
       if (params.className === css.ulVisible.toString()) {
-        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-down">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
       } else {
-        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-up">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
       }
