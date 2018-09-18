@@ -27,233 +27,246 @@ var colors = {
 }
 
 var css = csjs`
-  .preview {
-    min-width: 350px;
-    height: 100%;
-    font-family: 'Overpass Mono', monospace;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: ${colors.dark};
-    font-size: 12px;
-    color: ${colors.whiteSmoke};
+  @media only screen and (max-width: 3000px) {
+    .preview {
+      min-width: 350px;
+      height: 100%;
+      font-family: 'Overpass Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: ${colors.dark};
+      color: ${colors.whiteSmoke};
+    }
+    .ulVisible {
+      visibility: visible;
+      height: 100%;
+      padding: 0;
+    }
+    .ulHidden {
+      visibility: hidden;
+      height: 0;
+    }
+    .contractName {
+      font-size: 2rem;
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+      margin: 10px 0 40px 10px;
+      min-width: 200px;
+      width: 30%;
+    }
+    .fnName {
+      display: flex;
+      margin: 10px 5px 20px 0px;
+      text-decoration: none;
+    }
+    .stateMutability {
+      margin-left: 5px;
+      color: ${colors.whiteSmoke};
+      border-radius: 20px;
+      border: 1px solid;
+      padding: 1px;
+      font-size: 1rem;
+      width: 65px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .constructorFn {
+      padding-top: 18px;
+      padding-bottom: 4em;
+      width: 650px;
+    }
+    .functions {
+      font-size: 1.3rem;
+      width: 650px;
+    }
+    .title {
+      display: flex;
+      align-items: baseline;
+      position: absolute;
+      top: -25px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+    }
+    .title:hover {
+      cursor: pointer;
+    }
+    .function {
+      display: flex;
+      flex-direction: column;
+      color: ${colors.whiteSmoke};
+      margin-bottom: 2em;
+      padding: 1em;
+      border: 1px solid ${colors.whiteSmoke};
+      position: relative;
+    }
+    .pure {
+      color: ${colors.yellow};
+    }
+    .view {
+      color: ${colors.androidGreen};
+    }
+    .nonpayable {
+      color: ${colors.turquoise};
+    }
+    .payable {
+      color: ${colors.violetRed};
+    }
+    .toggleIcon {
+      margin-left: 5px;
+      font-size: 1.3rem;
+    }
+    .inputContainer {
+      font-family: 'Overpass Mono', monospace;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      font-size: 1rem;
+      color: ${colors.whiteSmoke};
+    }
+    .inputParam {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      justify-content: center;
+      font-size: 1.1rem;
+      display: flex;
+      min-width: 230px;
+      padding: 10px;
+    }
+    .inputFields {
+      display: flex;
+      justify-content: center
+    }
+    .inputType {
+      display: flex;
+      justify-content: center;
+    }
+    .inputField {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      text-align: center;
+      display: flex;
+      width: 100%;
+    }
+    .inputField::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .icon {
+      color: ${colors.dark};
+    }
+    .integerValue {
+      ${inputStyle()}
+      font-size: 1rem;
+      color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      display: flex;
+      text-align: center;
+      width: 25%;
+    }
+    .integerValue::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerSlider {
+      width: 75%;
+      border: 1px solid ${colors.whiteSmoke};
+      -webkit-appearance: none;
+      height: 0.2px;
+    }
+    .integerSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      border: 1px solid ${colors.whiteSmoke};
+      height: 22px;
+      width: 10px;
+      background: ${colors.darkSmoke};
+      cursor: pointer;
+    }
+    .integerField {
+      display: flex;
+      width: 300px;
+      align-items: center;
+    }
+    .booleanField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .stringField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .addressField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .keyField {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.aquaMarine};
+      border-color: ${colors.whiteSmoke};
+    }
+    .false {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.violetRed};
+      color: ${colors.dark};
+      width: 50%;
+      text-align: center;
+      border-color: ${colors.whiteSmoke};
+    }
+    .true {
+      ${inputStyle()}
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      cursor: pointer;
+    }
+    .arrayContainer {
+      border: 1px solid ${colors.whiteSmoke};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 5px;
+      margin-top: 10px;
+    }
+    .arrayInput {
+      padding: 1px;
+      margin: 20px;
+    }
+    .arrayPlusMinus {
+      margin: 10px;
+    }
+    .arrayPlus {
+      cursor: pointer;
+    }
+    .arrayMinus {
+      cursor: pointer;
+    }
   }
-  .ulVisible {
-    visibility: visible;
-    height: 100%;
-    padding: 0;
-    transition-delay: 0.25s;
+  @media only screen and (max-device-width: 480px) {
+    html {
+      font-size: 30px;
+    }
+    .constructorFn, .functions {
+      width: 80%;
+    }
+    .title {
+      top: -30px;
+    }
   }
-  .ulHidden {
-    visibility: hidden;
-    height: 0;
-    transition-delay: 0.25s;
-  }
-  .contractName {
-    font-size: 20px;
-    font-weight: bold;
-    color: ${colors.whiteSmoke};
-    margin: 10px 0 40px 10px;
-    min-width: 200px;
-    width: 30%;
-  }
-  .fnName {
-    font-size: 16px;
-    display: flex;
-    margin: 10px 5px 20px 0px;
-    text-decoration: none;
-  }
-  .stateMutability {
-    margin-left: 5px;
-    color: ${colors.whiteSmoke};
-    border-radius: 20px;
-    border: 1px solid;
-    padding: 1px;
-    font-size: 9px;
-    width: 65px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .constructorFn {
-    padding-top: 18px;
-    padding-bottom: 10px;
-    width: 515px;
-  }
-  .title {
-    display: flex;
-    align-items: baseline;
-    position: absolute;
-    top: -20px;
-    left: 20px;
-    background-color: ${colors.dark};
-    padding: 0 5px 0 5px;
-  }
-  .title:hover {
-    cursor: pointer;
-  }
-  .function {
-    display: flex;
-    flex-direction: column;
-    color: ${colors.whiteSmoke};
-    margin: 4em 2em;
-    padding: 1em;
-    border: 1px solid ${colors.whiteSmoke};
-    position: relative;
-    width: 515px;
-  }
-  .pure {
-    color: ${colors.yellow};
-  }
-  .view {
-    color: ${colors.androidGreen};
-  }
-  .nonpayable {
-    color: ${colors.turquoise};
-  }
-  .payable {
-    color: ${colors.violetRed};
-  }
-  .toggleIcon {
-    margin-left: 5px;
-    font-size: 16px;
-  }
-  .inputContainer {
-    font-family: 'Overpass Mono', monospace;
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-  }
-  .inputParam {
-    color: ${colors.whiteSmoke};
-    display: flex;
-    justify-content: center;
-    font-size: 1.1em;
-    display: flex;
-    min-width: 230px;
-    padding: 10px;
-  }
-  .inputFields {
-    display: flex;
-    justify-content: center
-  }
-  .inputType {
-    display: flex;
-    justify-content: center;
-  }
-  .inputField {
-    ${inputStyle()}
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-    border-color: ${colors.whiteSmoke};
-    background-color: ${colors.darkSmoke};
-    text-align: center;
-    display: flex;
-    width: 100%;
-  }
-  .inputField::placeholder {
-    color: ${colors.whiteSmoke};
-    text-align: center;
-    opacity: 0.5;
-  }
-  .icon {
-    color: ${colors.dark};
-  }
-  .integerValue {
-    ${inputStyle()}
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-    background-color: ${colors.darkSmoke};
-    display: flex;
-    text-align: center;
-    width: 25%;
-  }
-  .integerValue::placeholder {
-    color: ${colors.whiteSmoke};
-    text-align: center;
-    opacity: 0.5;
-  }
-  .integerSlider {
-    width: 75%;
-    border: 1px solid ${colors.whiteSmoke};
-    -webkit-appearance: none;
-    height: 0.2px;
-  }
-  .integerSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: 1px solid ${colors.whiteSmoke};
-    height: 22px;
-    width: 10px;
-    background: ${colors.darkSmoke};
-    cursor: pointer;
-  }
-  .integerField {
-    display: flex;
-    width: 300px;
-    align-items: center;
-  }
-  .booleanField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .stringField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .addressField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .keyField {
-    ${inputStyle()}
-    border-right: none;
-    background-color: ${colors.aquaMarine};
-    border-color: ${colors.whiteSmoke};
-  }
-  .false {
-    ${inputStyle()}
-    border-right: none;
-    background-color: ${colors.violetRed};
-    color: ${colors.dark};
-    width: 50%;
-    text-align: center;
-    border-color: ${colors.whiteSmoke};
-  }
-  .true {
-    ${inputStyle()}
-    color: ${colors.whiteSmoke};
-    border-color: ${colors.whiteSmoke};
-    width: 50%;
-    text-align: center;
-    cursor: pointer;
-  }
-  .arrayContainer {
-    border: 1px solid ${colors.whiteSmoke};
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 5px;
-    margin-top: 10px;
-  }
-  .arrayInput {
-    padding: 1px;
-    margin: 20px;
-  }
-  .arrayPlusMinus {
-    margin: 10px;
-  }
-  .arrayPlus {
-    cursor: pointer;
-  }
-  .arrayMinus {
-    cursor: pointer;
-  }
-`;
+`
+
 
 function inputStyle() {
   return `
@@ -332,7 +345,7 @@ function displayContractUI(opts) {
       <div class=${css.constructorFn}>
         <div class=${css.contractName}>${metadata.constructorName}</div> ${metadata.constructorInput}
       </div>
-      <div>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
+      <div class=${css.functions}>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
     </div>
   `
 
@@ -348,19 +361,27 @@ function displayContractUI(opts) {
   }
 
   function toggle (e) {
-    var params = e.currentTarget.parentNode.children[1]
-      var toggleContainer = e.currentTarget.children[1]
-      var icon = toggleContainer.children[0]
-      toggleContainer.removeChild(icon)
-      if (params.className === css.ulVisible.toString()) {
-        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
-        params.classList.remove(css.ulVisible)
-        params.classList.add(css.ulHidden)
-      } else {
-        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
-        params.classList.remove(css.ulHidden)
-        params.classList.add(css.ulVisible)
-      }
+    var fn = e.currentTarget.parentNode
+    var params = fn.children[1]
+    var toggleContainer = e.currentTarget.children[1]
+    var icon = toggleContainer.children[0]
+    toggleContainer.removeChild(icon)
+    if (params.className === css.ulVisible.toString()) {
+      toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
+      params.classList.remove(css.ulVisible)
+      params.classList.add(css.ulHidden)
+      // remove border and margin-bottom: 0;
+      fn.style.border = 'none'
+      fn.style.marginBottom = 0
+    } else {
+      toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
+      params.classList.remove(css.ulHidden)
+      params.classList.add(css.ulVisible)
+      // add border and margin-bottom: 4em;
+      console.log(fn)
+      fn.style.border = `1px solid ${colors.whiteSmoke}`
+      fn.style.marginBottom = '4em'
+    }
   }
 
   return html
