@@ -38,6 +38,9 @@ var css = csjs`
       background-color: ${colors.dark};
       color: ${colors.whiteSmoke};
     }
+    .error {
+      border: 1px solid ${colors.violetRed};
+    }
     .ulVisible {
       visibility: visible;
       height: 100%;
@@ -281,107 +284,117 @@ function inputStyle() {
 module.exports = displayContractUI
 
 function displayContractUI(opts) {
-  var solcMetadata = opts.metadata
+  if (!Array.isArray(opts.metadata)) {
+    var solcMetadata = opts.metadata
 
-  function getConstructorName() {
-    var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
-    return solcMetadata.settings.compilationTarget[file]
-  }
+    function getConstructorName() {
+      var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+      return solcMetadata.settings.compilationTarget[file]
+    }
 
-  function getConstructorInput() {
-    return solcMetadata.output.abi.map(fn => {
-      if (fn.type === "constructor") {
+    function getConstructorInput() {
+      return solcMetadata.output.abi.map(fn => {
+        if (fn.type === "constructor") {
+          return treeForm(fn.inputs)
+        }
+      })
+    }
+
+    function getContractFunctions() {
+      return solcMetadata.output.abi.map(x => {
+        var obj = {}
+        obj.name = x.name
+        obj.type = x.type
+        obj.inputs = getAllInputs(x)
+        obj.stateMutability = x.stateMutability
+        return obj
+      })
+    }
+
+    function getAllInputs(fn) {
+      var inputs = []
+      if (fn.inputs) {
         return treeForm(fn.inputs)
       }
-    })
-  }
-
-  function getContractFunctions() {
-    return solcMetadata.output.abi.map(x => {
-      var obj = {}
-      obj.name = x.name
-      obj.type = x.type
-      obj.inputs = getAllInputs(x)
-      obj.stateMutability = x.stateMutability
-      return obj
-    })
-  }
-
-  function getAllInputs(fn) {
-    var inputs = []
-    if (fn.inputs) {
-      return treeForm(fn.inputs)
     }
-  }
 
-  function treeForm(data) {
-    return data.map(x => {
-      if (x.components) {
-        return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
-      }
-      if (!x.components) {
-        return contractUI(x)
-      }
-    })
-  }
+    function treeForm(data) {
+      return data.map(x => {
+        if (x.components) {
+          return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
+        }
+        if (!x.components) {
+          return contractUI(x)
+        }
+      })
+    }
 
-  var metadata = {
-    compiler: solcMetadata.compiler.version,
-    compilationTarget: solcMetadata.settings.compilationTarget,
-    constructorName: getConstructorName(),
-    constructorInput: getConstructorInput(),
-    functions: getContractFunctions()
-  }
+    var metadata = {
+      compiler: solcMetadata.compiler.version,
+      compilationTarget: solcMetadata.settings.compilationTarget,
+      constructorName: getConstructorName(),
+      constructorInput: getConstructorInput(),
+      functions: getContractFunctions()
+    }
 
-  function contractUI(field) {
-    var theme = { classes: css, colors}
-    var name = field.name
-    var type = field.type
-    return checkInputType({name, theme, type})
-  }
+    function contractUI(field) {
+      var theme = { classes: css, colors}
+      var name = field.name
+      var type = field.type
+      return checkInputType({name, theme, type})
+    }
 
-  var html = bel`
+    var html = bel`
     <div class=${css.preview}>
-      <div class=${css.constructorFn}>
-        <div class=${css.contractName}>${metadata.constructorName}</div> ${metadata.constructorInput}
-      </div>
-      <div class=${css.functions}>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
+    <div class=${css.constructorFn}>
+    <div class=${css.contractName}>${metadata.constructorName}</div> ${metadata.constructorInput}
     </div>
-  `
+    <div class=${css.functions}>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
+    </div>
+    `
 
-  function functions (fn) {
-    var label = fn.stateMutability
-    var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
-    var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-minus-circle"></i></div>`
-    var functionClass = css[label]
-    return bel` <div class="${functionClass} ${css.function}">
+    function functions (fn) {
+      var label = fn.stateMutability
+      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
+      var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-minus-circle"></i></div>`
+      var functionClass = css[label]
+      return bel` <div class="${functionClass} ${css.function}">
       <div class=${css.title} onclick=${e=>toggle(e)}>${fnName}  ${toggleIcon}</div>
       <ul class=${css.ulVisible}>${fn.inputs}</ul>
-    </div>`
-  }
-
-  function toggle (e) {
-    var fn = e.currentTarget.parentNode
-    var params = fn.children[1]
-    var toggleContainer = e.currentTarget.children[1]
-    var icon = toggleContainer.children[0]
-    toggleContainer.removeChild(icon)
-    if (params.className === css.ulVisible.toString()) {
-      toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
-      params.classList.remove(css.ulVisible)
-      params.classList.add(css.ulHidden)
-      // remove border and margin-bottom: 0;
-      fn.style.border = 'none'
-      fn.style.marginBottom = 0
-    } else {
-      toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
-      params.classList.remove(css.ulHidden)
-      params.classList.add(css.ulVisible)
-      // add border and margin-bottom: 4em;
-      console.log(fn)
-      fn.style.border = `1px solid ${colors.whiteSmoke}`
-      fn.style.marginBottom = '4em'
+      </div>`
     }
+
+    function toggle (e) {
+      var fn = e.currentTarget.parentNode
+      var params = fn.children[1]
+      var toggleContainer = e.currentTarget.children[1]
+      var icon = toggleContainer.children[0]
+      toggleContainer.removeChild(icon)
+      if (params.className === css.ulVisible.toString()) {
+        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
+        params.classList.remove(css.ulVisible)
+        params.classList.add(css.ulHidden)
+        // remove border and margin-bottom: 0;
+        fn.style.border = 'none'
+        fn.style.marginBottom = 0
+      } else {
+        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
+        params.classList.remove(css.ulHidden)
+        params.classList.add(css.ulVisible)
+        // add border and margin-bottom: 4em;
+        console.log(fn)
+        fn.style.border = `1px solid ${colors.whiteSmoke}`
+        fn.style.marginBottom = '4em'
+      }
+    }
+  } else {
+    var html = bel`
+    <div class=${css.preview}>
+      <div class=${css.error}>
+        ${opts.metadata}
+      </div>
+    </div>
+    `
   }
 
   return html
