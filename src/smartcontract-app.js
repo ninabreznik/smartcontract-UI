@@ -349,21 +349,15 @@ function displayContractUI(opts) {
       functions: getContractFunctions()
     }
 
-    var pureFns = []
-    var viewFns = []
-    var nonpayableFns = []
-    var payableFns = []
-    var allFns = []
-    function filterFns () {
-      metadata.functions.map(fn => {
-        if (fn.type === 'function') {
-          if (fn.stateMutability === 'view') { viewFns.push(fn) }
-          else if (fn.stateMutability === 'nonpayable') { nonpayableFns.push(fn)}
-          else if (fn.stateMutability === 'pure') { pureFns.push(fn) }
-          else if (fn.stateMutability === 'payable') { payableFns.push(fn) }
-        }
-      })
-      return allFns.concat(viewFns).concat(nonpayableFns).concat(pureFns).concat(payableFns)
+    var sorted = sort(metadata.functions)
+    function sort (functions) {
+      return functions.filter(x => x.type === 'function').sort((a, b) => type2num(a) - type2num(b))
+      function type2num ({ stateMutability: sm }) {
+        if (sm === 'view') return 1
+        if (sm === 'nonpayable') return 2
+        if (sm === 'pure') return 3
+        if (sm === 'payable') return 4
+      }
     }
 
     function contractUI(field) {
@@ -381,7 +375,7 @@ function displayContractUI(opts) {
         ${metadata.constructorInput}
       </div>
     </div>
-    <div class=${css.functions}>${filterFns().map(fn => { return functions(fn)})}</div>
+    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
     </div>
     `
 
