@@ -29,6 +29,7 @@ var colors = {
 var css = csjs`
   @media only screen and (max-width: 3000px) {
     .preview {
+      padding: 5%;
       min-width: 350px;
       height: 100%;
       font-family: 'Overpass Mono', monospace;
@@ -40,6 +41,20 @@ var css = csjs`
     }
     .error {
       border: 1px solid ${colors.violetRed};
+      position: relative;
+      padding: 1em;
+    }
+    .errorTitle {
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+      font-size: 1.3rem;
+      color: ${colors.violetRed};
+    }
+    .errorIcon {
+      font-size: 1.3rem;
     }
     .ulVisible {
       visibility: visible;
@@ -54,7 +69,7 @@ var css = csjs`
       font-size: 2rem;
       font-weight: bold;
       color: ${colors.whiteSmoke};
-      margin: 10px 0 40px 10px;
+      margin: 10px 0 0px 10px;
       min-width: 200px;
       width: 30%;
     }
@@ -77,7 +92,7 @@ var css = csjs`
     }
     .constructorFn {
       padding-top: 18px;
-      padding-bottom: 4em;
+      padding-bottom: 3em;
       width: 650px;
     }
     .functions {
@@ -100,10 +115,8 @@ var css = csjs`
       display: flex;
       flex-direction: column;
       color: ${colors.whiteSmoke};
-      margin-bottom: 2em;
-      padding: 1em;
-      border: 1px solid ${colors.whiteSmoke};
       position: relative;
+      margin-left: 20px;
     }
     .pure {
       color: ${colors.yellow};
@@ -125,7 +138,6 @@ var css = csjs`
       font-family: 'Overpass Mono', monospace;
       margin-top: 10px;
       display: flex;
-      flex-direction: column;
       font-size: 1rem;
       color: ${colors.whiteSmoke};
     }
@@ -337,6 +349,23 @@ function displayContractUI(opts) {
       functions: getContractFunctions()
     }
 
+    var pureFns = []
+    var viewFns = []
+    var nonpayableFns = []
+    var payableFns = []
+    var allFns = []
+    function filterFns () {
+      metadata.functions.map(fn => {
+        if (fn.type === 'function') {
+          if (fn.stateMutability === 'view') { viewFns.push(fn) }
+          else if (fn.stateMutability === 'nonpayable') { nonpayableFns.push(fn)}
+          else if (fn.stateMutability === 'pure') { pureFns.push(fn) }
+          else if (fn.stateMutability === 'payable') { payableFns.push(fn) }
+        }
+      })
+      return allFns.concat(viewFns).concat(nonpayableFns).concat(pureFns).concat(payableFns)
+    }
+
     function contractUI(field) {
       var theme = { classes: css, colors}
       var name = field.name
@@ -347,20 +376,23 @@ function displayContractUI(opts) {
     var html = bel`
     <div class=${css.preview}>
     <div class=${css.constructorFn}>
-    <div class=${css.contractName}>${metadata.constructorName}</div> ${metadata.constructorInput}
+      <div class=${css.contractName}>${metadata.constructorName}</div>
+      <div class=${css.function}>
+        ${metadata.constructorInput}
+      </div>
     </div>
-    <div class=${css.functions}>${metadata.functions.map(fn => { if (fn.type === "function") return functions(fn)})}</div>
+    <div class=${css.functions}>${filterFns().map(fn => { return functions(fn)})}</div>
     </div>
     `
 
     function functions (fn) {
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
-      var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-minus-circle"></i></div>`
+      var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></div>`
       var functionClass = css[label]
       return bel` <div class="${functionClass} ${css.function}">
-      <div class=${css.title} onclick=${e=>toggle(e)}>${fnName}  ${toggleIcon}</div>
-      <ul class=${css.ulVisible}>${fn.inputs}</ul>
+      <div class=${css.title} onclick=${e=>toggle(e)}>${fnName} ${toggleIcon}</div>
+      <ul class=${css.ulHidden}>${fn.inputs}</ul>
       </div>`
     }
 
@@ -374,23 +406,21 @@ function displayContractUI(opts) {
         toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
-        // remove border and margin-bottom: 0;
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
         toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
-        // add border and margin-bottom: 4em;
-        console.log(fn)
         fn.style.border = `1px solid ${colors.whiteSmoke}`
-        fn.style.marginBottom = '4em'
+        fn.style.marginBottom = '2em'
       }
     }
   } else {
     var html = bel`
     <div class=${css.preview}>
       <div class=${css.error}>
+        <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
         ${opts.metadata}
       </div>
     </div>
