@@ -1,4 +1,123 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+var smartcontractapp = require('./')
+var metadata = require('./metadata.json')
+
+var opts = {
+  metadata: metadata[5]
+}
+
+
+document.body.appendChild(smartcontractapp(opts))
+
+},{"./":36,"./metadata.json":2}],2:[function(require,module,exports){
+module.exports=[{
+  compiler: { version: "0.4.24+commit.e67f0147" },
+  language: "Solidity",
+  output: {
+    abi: [
+      {
+        constant: false,
+        inputs: [{ name: "data", type: "bytes" }],
+        name: "byteArrays",
+        outputs: [],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        constant: false,
+        inputs: [],
+        name: "clear",
+        outputs: [],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        constant: true,
+        inputs: [{ name: "size", type: "uint256" }],
+        name: "createMemoryArray",
+        outputs: [{ name: "", type: "bytes" }],
+        payable: false,
+        stateMutability: "pure",
+        type: "function"
+      },
+      {
+        constant: false,
+        inputs: [
+          { name: "index", type: "uint256" },
+          { name: "flagA", type: "bool" },
+          { name: "flagB", type: "bool" }
+        ],
+        name: "setFlagPair",
+        outputs: [],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        constant: false,
+        inputs: [{ name: "flag", type: "bool[2]" }],
+        name: "addFlag",
+        outputs: [{ name: "", type: "uint256" }],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        constant: false,
+        inputs: [{ name: "newPairs", type: "bool[2][]" }],
+        name: "setAllFlagPairs",
+        outputs: [],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        constant: false,
+        inputs: [{ name: "newSize", type: "uint256" }],
+        name: "changeFlagArraySize",
+        outputs: [],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+      }
+    ],
+    devdoc: { methods: {} },
+    userdoc: { methods: {} }
+  },
+  settings: {
+    compilationTarget: { "browser/Untitled.sol": "ArrayContract" },
+    evmVersion: "byzantium",
+    libraries: {},
+    optimizer: { enabled: false, runs: 200 },
+    remappings: []
+  },
+  sources: {
+    "browser/Untitled.sol": {
+      keccak256:
+        "0x16d1586ab97ab12aa92899517fa9c5f3fa5f459e86b6251ea9c5fa5a3b9c91aa",
+      urls: [
+        "bzzr://8bc07a7f3f0c8ddc4ca4daef71fd74eea482ad1b0ce4c25b82c50754fe0cb993"
+      ]
+    }
+  },
+  version: 1
+},
+{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[],"name":"topBidder","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"bid","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[],"name":"auctionClose","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"withdraw","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"topBid","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"beneficiaryAddress","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_biddingTime","type":"uint256"},{"name":"_beneficiary","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"bidder","type":"address"},{"indexed":false,"name":"bidAmount","type":"uint256"}],"name":"topBidIncreased","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"winner","type":"address"},{"indexed":false,"name":"bidAmount","type":"uint256"}],"name":"auctionResult","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"auctionClose()":{"notice":"Auction ends and highest bid is sent to the beneficiary."},"bid()":{"notice":"You may bid on the auction with the value sent along with this transaction. The value may only be refunded if the auction was not won."},"withdraw()":{"notice":"Withdraw a bid that was overbid."}}}},"settings":{"compilationTarget":{"browser/new.sol":"SimpleAuction"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/new.sol":{"keccak256":"0xce815b13911e2b0466a1a45b9a0464d341f789ff31f2cb0574d91814b42868fc","urls":["bzzr://924b3a45537858a5b74790fa87507c90f348fdd339a4096772778322b48176d6"]}},"version":1},
+
+{"compiler":{"version":"0.4.12-nightly.2017.5.4+commit.025b32d9"},"language":"Solidity","output":{"abi":[{"constant":false,"inputs":[],"name":"purchaseConfirm","outputs":[],"payable":true,"type":"function"},{"constant":true,"inputs":[],"name":"sellerAddress","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"buyerAddress","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"abortPurchase","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"purchaseValue","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"receivedConfirm","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"purchasestate","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"inputs":[],"payable":true,"type":"constructor"},{"anonymous":false,"inputs":[],"name":"abortedPurchase","type":"event"},{"anonymous":false,"inputs":[],"name":"confirmedPurchase","type":"event"},{"anonymous":false,"inputs":[],"name":"receivedItem","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"abortPurchase()":{"notice":"Purchase is aborted and ether is reclaimed. May only be called by the seller before locking the contract."},"purchaseConfirm()":{"notice":"The purchase confirmed as a buyer. Transaction includes <code data-enlighter-language=\"generic\" class=\"EnlighterJSRAW\">2 * purchaseValue</code> ether. The ether is locked until receivedConfirm is called."},"receivedConfirm()":{"notice":"Confirm that you (the buyerAddress) received the item. This will release the locked ether."}}}},"settings":{"compilationTarget":{"browser/new.sol":"Purchase"},"libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/new.sol":{"keccak256":"0xd9fe3eb2b4db9728dc6e7930f5aaf9435df43e3bb18eb172da7d77fca9c9428a","urls":["bzzr://309481eb13f97d3428215812f8f2e300e3d6eae15fbb61cc369ec9dfebcc48d0"]}},"version":1},
+
+{"compiler":{"version":"0.4.25-nightly.2018.8.16+commit.a9e7ae29"},"language":"Solidity","output":{"abi":[{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"}],"devdoc":{"details":"The Ownable contract has an owner address, and provides basic authorization control functions, this simplifies the implementation of \"user permissions\".","methods":{"constructor":{"details":"The Ownable constructor sets the original `owner` of the contract to the sender account."},"renounceOwnership()":{"details":"Allows the current owner to relinquish control of the contract."},"transferOwnership(address)":{"details":"Allows the current owner to transfer control of the contract to a newOwner.","params":{"_newOwner":"The address to transfer ownership to."}}},"title":"Ownable"},"userdoc":{"methods":{"renounceOwnership()":{"notice":"Renouncing to ownership will leave the contract without an owner. It will not be possible to call the functions with the `onlyOwner` modifier anymore."}}}},"settings":{"compilationTarget":{"browser/Ownable.sol":"Ownable"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":true,"runs":200},"remappings":[]},"sources":{"browser/Ownable.sol":{"keccak256":"0x73b445fc1bbb2a288d9a44d162ec6ea228cc02707de2148722f730cf572f5237","urls":["bzzr://82bc986fbb29e8788dc2968dccc8e6ea6762f50961ea0b7f0d0de1568d58ce7f"]}},"version":1},
+
+{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[],"name":"mintingFinished","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"currBallot","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getPreviousWinners","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"startRound","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_subtractedValue","type":"uint256"}],"name":"decreaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"finishMinting","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"prevWinners","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"closeRoundEarly","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"}],"name":"increaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"closeRound","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_msg","type":"string"}],"name":"log","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_win","type":"address"}],"name":"winLog","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_addr","type":"address"}],"name":"newBallot","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"Mint","type":"event"},{"anonymous":false,"inputs":[],"name":"MintFinished","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"}],"devdoc":{"methods":{"allowance(address,address)":{"details":"Function to check the amount of tokens that an owner allowed to a spender.","params":{"_owner":"address The address which owns the funds.","_spender":"address The address which will spend the funds."},"return":"A uint256 specifying the amount of tokens still available for the spender."},"balanceOf(address)":{"details":"Gets the balance of the specified address.","params":{"_owner":"The address to query the the balance of."},"return":"An uint256 representing the amount owned by the passed address."},"finishMinting()":{"details":"Function to stop minting new tokens.","return":"True if the operation was successful."},"mint(address,uint256)":{"details":"Function to mint tokens","params":{"_amount":"The amount of tokens to mint.","_to":"The address that will receive the minted tokens."},"return":"A boolean that indicates if the operation was successful."},"renounceOwnership()":{"details":"Allows the current owner to relinquish control of the contract."},"totalSupply()":{"details":"Total number of tokens in existence"},"transferOwnership(address)":{"details":"Allows the current owner to transfer control of the contract to a newOwner.","params":{"_newOwner":"The address to transfer ownership to."}}}},"userdoc":{"methods":{"renounceOwnership()":{"notice":"Renouncing to ownership will leave the contract without an owner. It will not be possible to call the functions with the `onlyOwner` modifier anymore."}}}},"settings":{"compilationTarget":{"gist/AwardToken.sol":"AwardToken"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"gist/AwardToken.sol":{"keccak256":"0x73a3854a8e477290b8b69a5261bdf21487941c4374b4a83267fb38ba6e1b6d10","urls":["bzzr://e3e01005c97336bf20e994d52520014e8fc821715ec3cf10db3829f9f518bfee"]},"gist/Ballot.sol":{"keccak256":"0x61e0c249dd89ceccb617a6baa6cc13e8c70f56b935c052602a74b04b4d5c48f0","urls":["bzzr://c05e1b9a14ddce2a27cef8366812c7f1609bddbbac59b804d3d31552721d119c"]},"github/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol":{"keccak256":"0x8c5e37342d3f9636554735b684cb26921801c87c4d953c9caf5d667d4c9b9c3b","urls":["bzzr://7d388351ebfdf6c0f83e84a9a380703b164e416f3b8546b699a4c8336e753ac5"]},"github/OpenZeppelin/zeppelin-solidity/contracts/ownership/Ownable.sol":{"keccak256":"0x84c7090c27cf3657b73d9e26b6b316975fa0bd233b8169f254de0c3b3acfaefc","urls":["bzzr://b983355647976c1daa5de581a1b6a41be9c5adc17cce257b8679649db78f8a11"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/ERC20.sol":{"keccak256":"0x673f572af0517ad91ec96c4799c2d4c3289e7d292b597bdfa1f066c7f5917189","urls":["bzzr://6404b8cb70abbf843f545f40adb716dfab6e2e5c3a63817c83f1f8bc0d122209"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/MintableToken.sol":{"keccak256":"0x93291d648d30d9f17ee9cd40bea4db40997e5974d0b2ecf8d4d73a643ae68b9a","urls":["bzzr://1759f5d9b9215b3f8fb454f6e296411d2d904bc18ae50ad3c354279d417fd7e0"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/StandardToken.sol":{"keccak256":"0x0782167ec5031df141d1efb63ed7159d0d380cdabdcd3deb1731ab88ad6090fb","urls":["bzzr://3f18b04d56e053c85baf197dfaf83d8f90eb7b02f131a9948568f66b81281cde"]}},"version":1},
+
+{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"proposals","outputs":[{"name":"description","type":"string"},{"name":"title","type":"string"},{"name":"voteCount","type":"uint256"},{"name":"targetAddress","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"desc","type":"string"},{"name":"title","type":"string"},{"name":"targetAddr","type":"address"}],"name":"addProposal","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"winningProposal","outputs":[{"name":"currLeader","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"timeOut","outputs":[{"name":"timeOver","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getProposals","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposal","type":"address"}],"name":"vote","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposalsSender","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"finish","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"duration","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_msg","type":"string"}],"name":"log","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"vote(address)":{"notice":"Give a single vote to proposal $(toProposal)."}}}},"settings":{"compilationTarget":{"gist/Ballot.sol":"Ballot"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"gist/Ballot.sol":{"keccak256":"0x61e0c249dd89ceccb617a6baa6cc13e8c70f56b935c052602a74b04b4d5c48f0","urls":["bzzr://c05e1b9a14ddce2a27cef8366812c7f1609bddbbac59b804d3d31552721d119c"]}},"version":1}
+
+
+]
+
+},{}],3:[function(require,module,exports){
 var trailingNewlineRegex = /\n[\s]+$/
 var leadingNewlineRegex = /^\n[\s]+/
 var trailingSpaceRegex = /[\s]+$/
@@ -131,7 +250,7 @@ module.exports = function appendChild (el, childs) {
   }
 }
 
-},{}],2:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var hyperx = require('hyperx')
 var appendChild = require('./appendChild')
 
@@ -232,7 +351,7 @@ module.exports = hyperx(belCreateElement, {comments: true})
 module.exports.default = module.exports
 module.exports.createElement = belCreateElement
 
-},{"./appendChild":1,"hyperx":23}],3:[function(require,module,exports){
+},{"./appendChild":3,"hyperx":25}],5:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -251,12 +370,12 @@ function csjsInserter() {
 module.exports = csjsInserter;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"csjs":8,"insert-css":24}],4:[function(require,module,exports){
+},{"csjs":10,"insert-css":32}],6:[function(require,module,exports){
 'use strict';
 
 module.exports = require('csjs/get-css');
 
-},{"csjs/get-css":7}],5:[function(require,module,exports){
+},{"csjs/get-css":9}],7:[function(require,module,exports){
 'use strict';
 
 var csjs = require('./csjs');
@@ -265,17 +384,17 @@ module.exports = csjs;
 module.exports.csjs = csjs;
 module.exports.getCss = require('./get-css');
 
-},{"./csjs":3,"./get-css":4}],6:[function(require,module,exports){
+},{"./csjs":5,"./get-css":6}],8:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./lib/csjs');
 
-},{"./lib/csjs":12}],7:[function(require,module,exports){
+},{"./lib/csjs":14}],9:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./lib/get-css');
 
-},{"./lib/get-css":16}],8:[function(require,module,exports){
+},{"./lib/get-css":18}],10:[function(require,module,exports){
 'use strict';
 
 var csjs = require('./csjs');
@@ -285,7 +404,7 @@ module.exports.csjs = csjs;
 module.exports.noScope = csjs({ noscope: true });
 module.exports.getCss = require('./get-css');
 
-},{"./csjs":6,"./get-css":7}],9:[function(require,module,exports){
+},{"./csjs":8,"./get-css":9}],11:[function(require,module,exports){
 'use strict';
 
 /**
@@ -307,7 +426,7 @@ module.exports = function encode(integer) {
   return str;
 };
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
 var makeComposition = require('./composition').makeComposition;
@@ -351,7 +470,7 @@ function getClassChain(obj) {
   return acc;
 }
 
-},{"./composition":11}],11:[function(require,module,exports){
+},{"./composition":13}],13:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -431,7 +550,7 @@ function ignoreComposition(values) {
  */
 function Composition() {}
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 'use strict';
 
 var extractExtends = require('./css-extract-extends');
@@ -509,7 +628,7 @@ function without(obj, unwanted) {
   }, {});
 }
 
-},{"./build-exports":10,"./composition":11,"./css-extract-extends":13,"./css-key":14,"./extract-exports":15,"./scopeify":21}],13:[function(require,module,exports){
+},{"./build-exports":12,"./composition":13,"./css-extract-extends":15,"./css-key":16,"./extract-exports":17,"./scopeify":23}],15:[function(require,module,exports){
 'use strict';
 
 var makeComposition = require('./composition').makeComposition;
@@ -562,7 +681,7 @@ function getClassName(str) {
   return trimmed[0] === '.' ? trimmed.substr(1) : trimmed;
 }
 
-},{"./composition":11}],14:[function(require,module,exports){
+},{"./composition":13}],16:[function(require,module,exports){
 'use strict';
 
 /**
@@ -572,7 +691,7 @@ function getClassName(str) {
 
 module.exports = ' css ';
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 var regex = require('./regex');
@@ -599,7 +718,7 @@ function getExport(css, regex) {
   return prop;
 }
 
-},{"./regex":18}],16:[function(require,module,exports){
+},{"./regex":20}],18:[function(require,module,exports){
 'use strict';
 
 var cssKey = require('./css-key');
@@ -608,7 +727,7 @@ module.exports = function getCss(csjs) {
   return csjs[cssKey];
 };
 
-},{"./css-key":14}],17:[function(require,module,exports){
+},{"./css-key":16}],19:[function(require,module,exports){
 'use strict';
 
 /**
@@ -626,7 +745,7 @@ module.exports = function hashStr(str) {
   return hash >>> 0;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 var findClasses = /(\.)(?!\d)([^\s\.,{\[>+~#:)]*)(?![^{]*})/.source;
@@ -642,7 +761,7 @@ module.exports = {
   ignoreComments: ignoreComments,
 };
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var ignoreComments = require('./regex').ignoreComments;
 
 module.exports = replaceAnimations;
@@ -673,7 +792,7 @@ function replaceAnimations(result) {
   return result;
 }
 
-},{"./regex":18}],20:[function(require,module,exports){
+},{"./regex":20}],22:[function(require,module,exports){
 'use strict';
 
 var encode = require('./base62-encode');
@@ -687,7 +806,7 @@ module.exports = function fileScoper(fileSrc) {
   }
 };
 
-},{"./base62-encode":9,"./hash-string":17}],21:[function(require,module,exports){
+},{"./base62-encode":11,"./hash-string":19}],23:[function(require,module,exports){
 'use strict';
 
 var fileScoper = require('./scoped-name');
@@ -728,7 +847,7 @@ function scopify(css, ignores) {
   return replaceAnimations(result);
 }
 
-},{"./regex":18,"./replace-animations":19,"./scoped-name":20}],22:[function(require,module,exports){
+},{"./regex":20,"./replace-animations":21,"./scoped-name":22}],24:[function(require,module,exports){
 module.exports = attributeToProperty
 
 var transform = {
@@ -749,7 +868,7 @@ function attributeToProperty (h) {
   }
 }
 
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var attrToProp = require('hyperscript-attribute-to-property')
 
 var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
@@ -1045,31 +1164,7 @@ var closeRE = RegExp('^(' + [
 ].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
 function selfClosing (tag) { return closeRE.test(tag) }
 
-},{"hyperscript-attribute-to-property":22}],24:[function(require,module,exports){
-var inserted = {};
-
-module.exports = function (css, options) {
-    if (inserted[css]) return;
-    inserted[css] = true;
-    
-    var elem = document.createElement('style');
-    elem.setAttribute('type', 'text/css');
-
-    if ('textContent' in elem) {
-      elem.textContent = css;
-    } else {
-      elem.styleSheet.cssText = css;
-    }
-    
-    var head = document.getElementsByTagName('head')[0];
-    if (options && options.prepend) {
-        head.insertBefore(elem, head.childNodes[0]);
-    } else {
-        head.appendChild(elem);
-    }
-};
-
-},{}],25:[function(require,module,exports){
+},{"hyperscript-attribute-to-property":24}],26:[function(require,module,exports){
 var bel = require('bel')
 var csjs = require('csjs-inject')
 
@@ -1078,106 +1173,11 @@ module.exports = displayAddressInput
 function displayAddressInput({theme: {classes: css}, type}) {
   return bel`
       <div class=${css.addressField}>
-        <div class=${css.keyField}><i class="${css.icon} fa fa-key"></i></div>
         <input class=${css.inputField} placeholder='0x6e2...'>
       </div>`
 }
 
-},{"bel":2,"csjs-inject":5}],26:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],27:[function(require,module,exports){
-arguments[4][2][0].apply(exports,arguments)
-},{"./appendChild":26,"dup":2,"hyperx":48}],28:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"csjs":33,"dup":3,"insert-css":51}],29:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"csjs/get-css":32,"dup":4}],30:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"./csjs":28,"./get-css":29,"dup":5}],31:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"./lib/csjs":37,"dup":6}],32:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"./lib/get-css":41,"dup":7}],33:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./csjs":31,"./get-css":32,"dup":8}],34:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],35:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"./composition":36,"dup":10}],36:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],37:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./build-exports":35,"./composition":36,"./css-extract-extends":38,"./css-key":39,"./extract-exports":40,"./scopeify":46,"dup":12}],38:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"./composition":36,"dup":13}],39:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],40:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./regex":43,"dup":15}],41:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./css-key":39,"dup":16}],42:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],43:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],44:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./regex":43,"dup":19}],45:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./base62-encode":34,"./hash-string":42,"dup":20}],46:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./regex":43,"./replace-animations":44,"./scoped-name":45,"dup":21}],47:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],48:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"dup":23,"hyperscript-attribute-to-property":47}],49:[function(require,module,exports){
-var bel = require('bel')
-var csjs = require('csjs-inject')
-
-module.exports = displayBooleanInput
-
-function displayBooleanInput({theme: {classes: css, colors}, type}) {
-  var boolFalse = bel `<div class=${css.false} onclick=${e=>toggle(e)}>false</div>`
-  var boolTrue = bel `<div class=${css.true} onclick=${e=>toggle(e)}>true</div>`
-
-  return bel`
-    <div class=${css.booleanField}>
-      ${boolFalse}
-      ${boolTrue}
-    </div>
-  `
-
-  function toggle (e) {
-    if (e.target.innerHTML === 'true') {
-      boolFalse.style.color = colors.slateGrey
-      boolFalse.style.backgroundColor = colors.dark
-      boolTrue.style.color = colors.dark
-      boolTrue.style.backgroundColor = colors.aquaMarine
-
-    } else if (e.target.innerHTML === 'false') {
-      boolTrue.style.color = colors.slateGrey
-      boolTrue.style.backgroundColor = colors.dark
-      boolFalse.style.color = colors.dark
-      boolFalse.style.backgroundColor = colors.violetRed
-    }
-  }
-}
-
-},{"bel":27,"csjs-inject":30}],50:[function(require,module,exports){
-var bel = require('bel')
-var csjs = require('csjs-inject')
-
-module.exports = displayStringInput
-
-function displayStringInput({theme: {classes: css}, type}) {
-  return bel`
-    <div class=${css.stringField}>
-      <input class=${css.inputField} placeholder='abc'>
-    </div>`
-}
-
-},{"bel":27,"csjs-inject":30}],51:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],52:[function(require,module,exports){
+},{"bel":4,"csjs-inject":7}],27:[function(require,module,exports){
 var bel = require('bel')
 var csjs = require('csjs-inject')
 var inputAddress = require("input-address")
@@ -1265,105 +1265,40 @@ function getParsedArray (type) {
   return arr
 }
 
-},{"bel":27,"csjs-inject":30,"input-address":25,"input-boolean":49,"input-integer":102,"input-string":50}],53:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],54:[function(require,module,exports){
-arguments[4][2][0].apply(exports,arguments)
-},{"./appendChild":53,"dup":2,"hyperx":75}],55:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"csjs":60,"dup":3,"insert-css":76}],56:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"csjs/get-css":59,"dup":4}],57:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"./csjs":55,"./get-css":56,"dup":5}],58:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"./lib/csjs":64,"dup":6}],59:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"./lib/get-css":68,"dup":7}],60:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./csjs":58,"./get-css":59,"dup":8}],61:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],62:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"./composition":63,"dup":10}],63:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],64:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./build-exports":62,"./composition":63,"./css-extract-extends":65,"./css-key":66,"./extract-exports":67,"./scopeify":73,"dup":12}],65:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"./composition":63,"dup":13}],66:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],67:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./regex":70,"dup":15}],68:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./css-key":66,"dup":16}],69:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],70:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],71:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./regex":70,"dup":19}],72:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./base62-encode":61,"./hash-string":69,"dup":20}],73:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./regex":70,"./replace-animations":71,"./scoped-name":72,"dup":21}],74:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],75:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"dup":23,"hyperscript-attribute-to-property":74}],76:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],77:[function(require,module,exports){
-arguments[4][49][0].apply(exports,arguments)
-},{"bel":54,"csjs-inject":57,"dup":49}],78:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],79:[function(require,module,exports){
-arguments[4][2][0].apply(exports,arguments)
-},{"./appendChild":78,"dup":2,"hyperx":100}],80:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"csjs":85,"dup":3,"insert-css":101}],81:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"csjs/get-css":84,"dup":4}],82:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"./csjs":80,"./get-css":81,"dup":5}],83:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"./lib/csjs":89,"dup":6}],84:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"./lib/get-css":93,"dup":7}],85:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./csjs":83,"./get-css":84,"dup":8}],86:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],87:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"./composition":88,"dup":10}],88:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],89:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./build-exports":87,"./composition":88,"./css-extract-extends":90,"./css-key":91,"./extract-exports":92,"./scopeify":98,"dup":12}],90:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"./composition":88,"dup":13}],91:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],92:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./regex":95,"dup":15}],93:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./css-key":91,"dup":16}],94:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],95:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],96:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./regex":95,"dup":19}],97:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./base62-encode":86,"./hash-string":94,"dup":20}],98:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./regex":95,"./replace-animations":96,"./scoped-name":97,"dup":21}],99:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],100:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"dup":23,"hyperscript-attribute-to-property":99}],101:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],102:[function(require,module,exports){
+},{"bel":4,"csjs-inject":7,"input-address":26,"input-boolean":28,"input-integer":29,"input-string":31}],28:[function(require,module,exports){
+var bel = require('bel')
+var csjs = require('csjs-inject')
+
+module.exports = displayBooleanInput
+
+function displayBooleanInput({theme: {classes: css, colors}, type}) {
+  var boolFalse = bel `<div class=${css.false} onclick=${e=>toggle(e)}>false</div>`
+  var boolTrue = bel `<div class=${css.true} onclick=${e=>toggle(e)}>true</div>`
+
+  return bel`
+    <div class=${css.booleanField}>
+      ${boolFalse}
+      ${boolTrue}
+    </div>
+  `
+
+  function toggle (e) {
+    if (e.target.innerHTML === 'true') {
+      boolFalse.style.color = colors.slateGrey
+      boolFalse.style.backgroundColor = colors.dark
+      boolTrue.style.color = colors.dark
+      boolTrue.style.backgroundColor = colors.aquaMarine
+
+    } else if (e.target.innerHTML === 'false') {
+      boolTrue.style.color = colors.slateGrey
+      boolTrue.style.backgroundColor = colors.dark
+      boolFalse.style.color = colors.dark
+      boolFalse.style.backgroundColor = colors.violetRed
+    }
+  }
+}
+
+},{"bel":4,"csjs-inject":7}],29:[function(require,module,exports){
 var bel = require('bel')
 var csjs = require('csjs-inject')
 var validateInput = require('validate-input')
@@ -1422,7 +1357,7 @@ function displayIntegerInput({theme: {classes: css}, type}) {
 
 }
 
-},{"bel":79,"csjs-inject":82,"validate-input":103}],103:[function(require,module,exports){
+},{"bel":4,"csjs-inject":7,"validate-input":30}],30:[function(require,module,exports){
 module.exports = validateInput
 
 function validateInput ({ type, e }) {
@@ -1437,105 +1372,44 @@ function validateInput ({ type, e }) {
   }
 }
 
-},{}],104:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],105:[function(require,module,exports){
-arguments[4][2][0].apply(exports,arguments)
-},{"./appendChild":104,"dup":2,"hyperx":126}],106:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"csjs":111,"dup":3,"insert-css":127}],107:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"csjs/get-css":110,"dup":4}],108:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"./csjs":106,"./get-css":107,"dup":5}],109:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"./lib/csjs":115,"dup":6}],110:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"./lib/get-css":119,"dup":7}],111:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./csjs":109,"./get-css":110,"dup":8}],112:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],113:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"./composition":114,"dup":10}],114:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],115:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./build-exports":113,"./composition":114,"./css-extract-extends":116,"./css-key":117,"./extract-exports":118,"./scopeify":124,"dup":12}],116:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"./composition":114,"dup":13}],117:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],118:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./regex":121,"dup":15}],119:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./css-key":117,"dup":16}],120:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],121:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],122:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./regex":121,"dup":19}],123:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./base62-encode":112,"./hash-string":120,"dup":20}],124:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./regex":121,"./replace-animations":122,"./scoped-name":123,"dup":21}],125:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],126:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"dup":23,"hyperscript-attribute-to-property":125}],127:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],128:[function(require,module,exports){
-arguments[4][50][0].apply(exports,arguments)
-},{"bel":105,"csjs-inject":108,"dup":50}],129:[function(require,module,exports){
-arguments[4][1][0].apply(exports,arguments)
-},{"dup":1}],130:[function(require,module,exports){
-arguments[4][2][0].apply(exports,arguments)
-},{"./appendChild":129,"dup":2,"hyperx":151}],131:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"csjs":136,"dup":3,"insert-css":152}],132:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"csjs/get-css":135,"dup":4}],133:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"./csjs":131,"./get-css":132,"dup":5}],134:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"./lib/csjs":140,"dup":6}],135:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"./lib/get-css":144,"dup":7}],136:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./csjs":134,"./get-css":135,"dup":8}],137:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],138:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"./composition":139,"dup":10}],139:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],140:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./build-exports":138,"./composition":139,"./css-extract-extends":141,"./css-key":142,"./extract-exports":143,"./scopeify":149,"dup":12}],141:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"./composition":139,"dup":13}],142:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],143:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"./regex":146,"dup":15}],144:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./css-key":142,"dup":16}],145:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],146:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],147:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./regex":146,"dup":19}],148:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./base62-encode":137,"./hash-string":145,"dup":20}],149:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./regex":146,"./replace-animations":147,"./scoped-name":148,"dup":21}],150:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],151:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"dup":23,"hyperscript-attribute-to-property":150}],152:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],153:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
+var bel = require('bel')
+var csjs = require('csjs-inject')
+
+module.exports = displayStringInput
+
+function displayStringInput({theme: {classes: css}, type}) {
+  return bel`
+    <div class=${css.stringField}>
+      <input class=${css.inputField} placeholder='abc'>
+    </div>`
+}
+
+},{"bel":4,"csjs-inject":7}],32:[function(require,module,exports){
+var inserted = {};
+
+module.exports = function (css, options) {
+    if (inserted[css]) return;
+    inserted[css] = true;
+    
+    var elem = document.createElement('style');
+    elem.setAttribute('type', 'text/css');
+
+    if ('textContent' in elem) {
+      elem.textContent = css;
+    } else {
+      elem.styleSheet.cssText = css;
+    }
+    
+    var head = document.getElementsByTagName('head')[0];
+    if (options && options.prepend) {
+        head.insertBefore(elem, head.childNodes[0]);
+    } else {
+        head.appendChild(elem);
+    }
+};
+
+},{}],33:[function(require,module,exports){
 var inputAddress = require("input-address")
 var inputArray = require("input-array")
 var inputInteger = require("input-integer")
@@ -1559,7 +1433,17 @@ function checkInputType ({ name, theme, type }) {
 
 // boolean, int/uint, fixed/ufixed, address, string, byte/bytes, enum, hash 
 
-},{"input-address":25,"input-array":52,"input-boolean":77,"input-container":154,"input-integer":102,"input-string":128}],154:[function(require,module,exports){
+},{"input-address":26,"input-array":27,"input-boolean":28,"input-container":35,"input-integer":29,"input-string":31}],34:[function(require,module,exports){
+module.exports = word => glossary[word]
+
+var glossary = {
+  pure: `PURE FUNCTION - function, that is promised not to modify or read the state.`,
+  view: `VIEW FUNCTION - function, that is promised not to modify the state.`,
+  payable: `PAYABLE FUNCTION`,
+  nonpayable: `NONPAYABLE FUNCTION`
+}
+
+},{}],35:[function(require,module,exports){
 var inputArray = require("input-array")
 var bel = require('bel')
 
@@ -1586,123 +1470,15 @@ function template({name, theme: {classes: css}, type, input}) {
     </div>`
 }
 
-},{"bel":130,"input-array":52}],155:[function(require,module,exports){
-module.exports=[{
-  compiler: { version: "0.4.24+commit.e67f0147" },
-  language: "Solidity",
-  output: {
-    abi: [
-      {
-        constant: false,
-        inputs: [{ name: "data", type: "bytes" }],
-        name: "byteArrays",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [],
-        name: "clear",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [{ name: "size", type: "uint256" }],
-        name: "createMemoryArray",
-        outputs: [{ name: "", type: "bytes" }],
-        payable: false,
-        stateMutability: "pure",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [
-          { name: "index", type: "uint256" },
-          { name: "flagA", type: "bool" },
-          { name: "flagB", type: "bool" }
-        ],
-        name: "setFlagPair",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "flag", type: "bool[2]" }],
-        name: "addFlag",
-        outputs: [{ name: "", type: "uint256" }],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newPairs", type: "bool[2][]" }],
-        name: "setAllFlagPairs",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      },
-      {
-        constant: false,
-        inputs: [{ name: "newSize", type: "uint256" }],
-        name: "changeFlagArraySize",
-        outputs: [],
-        payable: false,
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ],
-    devdoc: { methods: {} },
-    userdoc: { methods: {} }
-  },
-  settings: {
-    compilationTarget: { "browser/Untitled.sol": "ArrayContract" },
-    evmVersion: "byzantium",
-    libraries: {},
-    optimizer: { enabled: false, runs: 200 },
-    remappings: []
-  },
-  sources: {
-    "browser/Untitled.sol": {
-      keccak256:
-        "0x16d1586ab97ab12aa92899517fa9c5f3fa5f459e86b6251ea9c5fa5a3b9c91aa",
-      urls: [
-        "bzzr://8bc07a7f3f0c8ddc4ca4daef71fd74eea482ad1b0ce4c25b82c50754fe0cb993"
-      ]
-    }
-  },
-  version: 1
-},
-{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[],"name":"topBidder","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"bid","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[],"name":"auctionClose","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"withdraw","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"topBid","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"beneficiaryAddress","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_biddingTime","type":"uint256"},{"name":"_beneficiary","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"bidder","type":"address"},{"indexed":false,"name":"bidAmount","type":"uint256"}],"name":"topBidIncreased","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"winner","type":"address"},{"indexed":false,"name":"bidAmount","type":"uint256"}],"name":"auctionResult","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"auctionClose()":{"notice":"Auction ends and highest bid is sent to the beneficiary."},"bid()":{"notice":"You may bid on the auction with the value sent along with this transaction. The value may only be refunded if the auction was not won."},"withdraw()":{"notice":"Withdraw a bid that was overbid."}}}},"settings":{"compilationTarget":{"browser/new.sol":"SimpleAuction"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/new.sol":{"keccak256":"0xce815b13911e2b0466a1a45b9a0464d341f789ff31f2cb0574d91814b42868fc","urls":["bzzr://924b3a45537858a5b74790fa87507c90f348fdd339a4096772778322b48176d6"]}},"version":1},
-
-{"compiler":{"version":"0.4.12-nightly.2017.5.4+commit.025b32d9"},"language":"Solidity","output":{"abi":[{"constant":false,"inputs":[],"name":"purchaseConfirm","outputs":[],"payable":true,"type":"function"},{"constant":true,"inputs":[],"name":"sellerAddress","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"buyerAddress","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"abortPurchase","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"purchaseValue","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"receivedConfirm","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"purchasestate","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"inputs":[],"payable":true,"type":"constructor"},{"anonymous":false,"inputs":[],"name":"abortedPurchase","type":"event"},{"anonymous":false,"inputs":[],"name":"confirmedPurchase","type":"event"},{"anonymous":false,"inputs":[],"name":"receivedItem","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"abortPurchase()":{"notice":"Purchase is aborted and ether is reclaimed. May only be called by the seller before locking the contract."},"purchaseConfirm()":{"notice":"The purchase confirmed as a buyer. Transaction includes <code data-enlighter-language=\"generic\" class=\"EnlighterJSRAW\">2 * purchaseValue</code> ether. The ether is locked until receivedConfirm is called."},"receivedConfirm()":{"notice":"Confirm that you (the buyerAddress) received the item. This will release the locked ether."}}}},"settings":{"compilationTarget":{"browser/new.sol":"Purchase"},"libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/new.sol":{"keccak256":"0xd9fe3eb2b4db9728dc6e7930f5aaf9435df43e3bb18eb172da7d77fca9c9428a","urls":["bzzr://309481eb13f97d3428215812f8f2e300e3d6eae15fbb61cc369ec9dfebcc48d0"]}},"version":1},
-
-{"compiler":{"version":"0.4.25-nightly.2018.8.16+commit.a9e7ae29"},"language":"Solidity","output":{"abi":[{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"}],"devdoc":{"details":"The Ownable contract has an owner address, and provides basic authorization control functions, this simplifies the implementation of \"user permissions\".","methods":{"constructor":{"details":"The Ownable constructor sets the original `owner` of the contract to the sender account."},"renounceOwnership()":{"details":"Allows the current owner to relinquish control of the contract."},"transferOwnership(address)":{"details":"Allows the current owner to transfer control of the contract to a newOwner.","params":{"_newOwner":"The address to transfer ownership to."}}},"title":"Ownable"},"userdoc":{"methods":{"renounceOwnership()":{"notice":"Renouncing to ownership will leave the contract without an owner. It will not be possible to call the functions with the `onlyOwner` modifier anymore."}}}},"settings":{"compilationTarget":{"browser/Ownable.sol":"Ownable"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":true,"runs":200},"remappings":[]},"sources":{"browser/Ownable.sol":{"keccak256":"0x73b445fc1bbb2a288d9a44d162ec6ea228cc02707de2148722f730cf572f5237","urls":["bzzr://82bc986fbb29e8788dc2968dccc8e6ea6762f50961ea0b7f0d0de1568d58ce7f"]}},"version":1},
-
-{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[],"name":"mintingFinished","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"currBallot","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getPreviousWinners","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"startRound","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_subtractedValue","type":"uint256"}],"name":"decreaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"finishMinting","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"prevWinners","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"closeRoundEarly","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"}],"name":"increaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"closeRound","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_msg","type":"string"}],"name":"log","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_win","type":"address"}],"name":"winLog","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_addr","type":"address"}],"name":"newBallot","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"Mint","type":"event"},{"anonymous":false,"inputs":[],"name":"MintFinished","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"}],"devdoc":{"methods":{"allowance(address,address)":{"details":"Function to check the amount of tokens that an owner allowed to a spender.","params":{"_owner":"address The address which owns the funds.","_spender":"address The address which will spend the funds."},"return":"A uint256 specifying the amount of tokens still available for the spender."},"balanceOf(address)":{"details":"Gets the balance of the specified address.","params":{"_owner":"The address to query the the balance of."},"return":"An uint256 representing the amount owned by the passed address."},"finishMinting()":{"details":"Function to stop minting new tokens.","return":"True if the operation was successful."},"mint(address,uint256)":{"details":"Function to mint tokens","params":{"_amount":"The amount of tokens to mint.","_to":"The address that will receive the minted tokens."},"return":"A boolean that indicates if the operation was successful."},"renounceOwnership()":{"details":"Allows the current owner to relinquish control of the contract."},"totalSupply()":{"details":"Total number of tokens in existence"},"transferOwnership(address)":{"details":"Allows the current owner to transfer control of the contract to a newOwner.","params":{"_newOwner":"The address to transfer ownership to."}}}},"userdoc":{"methods":{"renounceOwnership()":{"notice":"Renouncing to ownership will leave the contract without an owner. It will not be possible to call the functions with the `onlyOwner` modifier anymore."}}}},"settings":{"compilationTarget":{"gist/AwardToken.sol":"AwardToken"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"gist/AwardToken.sol":{"keccak256":"0x73a3854a8e477290b8b69a5261bdf21487941c4374b4a83267fb38ba6e1b6d10","urls":["bzzr://e3e01005c97336bf20e994d52520014e8fc821715ec3cf10db3829f9f518bfee"]},"gist/Ballot.sol":{"keccak256":"0x61e0c249dd89ceccb617a6baa6cc13e8c70f56b935c052602a74b04b4d5c48f0","urls":["bzzr://c05e1b9a14ddce2a27cef8366812c7f1609bddbbac59b804d3d31552721d119c"]},"github/OpenZeppelin/zeppelin-solidity/contracts/math/SafeMath.sol":{"keccak256":"0x8c5e37342d3f9636554735b684cb26921801c87c4d953c9caf5d667d4c9b9c3b","urls":["bzzr://7d388351ebfdf6c0f83e84a9a380703b164e416f3b8546b699a4c8336e753ac5"]},"github/OpenZeppelin/zeppelin-solidity/contracts/ownership/Ownable.sol":{"keccak256":"0x84c7090c27cf3657b73d9e26b6b316975fa0bd233b8169f254de0c3b3acfaefc","urls":["bzzr://b983355647976c1daa5de581a1b6a41be9c5adc17cce257b8679649db78f8a11"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/ERC20.sol":{"keccak256":"0x673f572af0517ad91ec96c4799c2d4c3289e7d292b597bdfa1f066c7f5917189","urls":["bzzr://6404b8cb70abbf843f545f40adb716dfab6e2e5c3a63817c83f1f8bc0d122209"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/MintableToken.sol":{"keccak256":"0x93291d648d30d9f17ee9cd40bea4db40997e5974d0b2ecf8d4d73a643ae68b9a","urls":["bzzr://1759f5d9b9215b3f8fb454f6e296411d2d904bc18ae50ad3c354279d417fd7e0"]},"github/OpenZeppelin/zeppelin-solidity/contracts/token/ERC20/StandardToken.sol":{"keccak256":"0x0782167ec5031df141d1efb63ed7159d0d380cdabdcd3deb1731ab88ad6090fb","urls":["bzzr://3f18b04d56e053c85baf197dfaf83d8f90eb7b02f131a9948568f66b81281cde"]}},"version":1},
-
-{"compiler":{"version":"0.4.24+commit.e67f0147"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"proposals","outputs":[{"name":"description","type":"string"},{"name":"title","type":"string"},{"name":"voteCount","type":"uint256"},{"name":"targetAddress","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"desc","type":"string"},{"name":"title","type":"string"},{"name":"targetAddr","type":"address"}],"name":"addProposal","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"winningProposal","outputs":[{"name":"currLeader","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"timeOut","outputs":[{"name":"timeOver","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getProposals","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"proposal","type":"address"}],"name":"vote","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"proposalsSender","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"finish","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"duration","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_msg","type":"string"}],"name":"log","type":"event"}],"devdoc":{"methods":{}},"userdoc":{"methods":{"vote(address)":{"notice":"Give a single vote to proposal $(toProposal)."}}}},"settings":{"compilationTarget":{"gist/Ballot.sol":"Ballot"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"gist/Ballot.sol":{"keccak256":"0x61e0c249dd89ceccb617a6baa6cc13e8c70f56b935c052602a74b04b4d5c48f0","urls":["bzzr://c05e1b9a14ddce2a27cef8366812c7f1609bddbbac59b804d3d31552721d119c"]}},"version":1}
-
-
-]
-
-},{}],156:[function(require,module,exports){
+},{"bel":4,"input-array":27}],36:[function(require,module,exports){
 var bel = require("bel")
 var csjs = require("csjs-inject")
 var checkInputType = require('check-input-type')
-var metadata = require('metadata.json')
+var glossary = require('glossary')
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-  'https://fonts.googleapis.com/css?family=Overpass+Mono" rel="stylesheet'
+  'https://fonts.googleapis.com/css?family=Overpass+Mono'
 ]
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
@@ -1711,352 +1487,451 @@ document.head.appendChild(overpassMono)
 
 var colors = {
   white: "#ffffff", // borders, font on input background
-  dark: "#202020", //background dark
-  darkSmoke: '#363636',  // separators
-  whiteSmoke: "#D5C5C8", // background light
+  dark: "#2c323c", //background dark
+  darkSmoke: '#21252b',  // separators
+  whiteSmoke: "#f5f5f5", // background light
   lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
   violetRed: "#b25068",  // used as red in types (bool etc.)
-  aquaMarine: "#4b9f98",  // used as green in types (bool etc.)
+  aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
   turquoise: "#14b9d5",
   yellow: "#F2CD5D",
   androidGreen: "#9BC53D"
 }
 
 var css = csjs`
-  .preview {
-    min-width: 350px;
-    font-family: 'Overpass Mono', monospace;
-    background-color: ${colors.dark};
-    font-size: 12px;
-    color: ${colors.whiteSmoke};
+  @media only screen and (max-width: 3000px) {
+    .preview {
+      padding: 5%;
+      min-width: 350px;
+      height: 100%;
+      font-family: 'Overpass Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: ${colors.dark};
+      color: ${colors.whiteSmoke};
+    }
+    .error {
+      border: 1px solid ${colors.violetRed};
+      position: relative;
+      padding: 1em;
+    }
+    .errorTitle {
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+      font-size: 1.3rem;
+      color: ${colors.violetRed};
+    }
+    .errorIcon {
+      font-size: 1.3rem;
+    }
+    .ulVisible {
+      visibility: visible;
+      height: 100%;
+      padding: 0;
+    }
+    .ulHidden {
+      visibility: hidden;
+      height: 0;
+    }
+    .contractName {
+      cursor: pointer;
+      font-size: 2rem;
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+      margin: 10px 0 0px 10px;
+      min-width: 200px;
+      width: 30%;
+      display: flex;
+      align-items: end;
+    }
+    .fnName {
+      display: flex;
+      margin: 10px 5px 20px 0px;
+      text-decoration: none;
+    }
+    .stateMutability {
+      margin-left: 5px;
+      color: ${colors.whiteSmoke};
+      border-radius: 20px;
+      border: 1px solid;
+      padding: 1px;
+      font-size: 1rem;
+      width: 65px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .constructorFn {
+      padding-top: 18px;
+      padding-bottom: 3em;
+      width: 650px;
+    }
+    .functions {
+      font-size: 1.3rem;
+      width: 650px;
+    }
+    .title {
+      display: flex;
+      align-items: baseline;
+      position: absolute;
+      top: -25px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+    }
+    .title:hover {
+      cursor: pointer;
+    }
+    .function {
+      display: flex;
+      flex-direction: column;
+      color: ${colors.whiteSmoke};
+      position: relative;
+      margin-left: 20px;
+    }
+    .pure {
+      color: ${colors.yellow};
+    }
+    .view {
+      color: ${colors.androidGreen};
+    }
+    .nonpayable {
+      color: ${colors.turquoise};
+    }
+    .payable {
+      color: ${colors.violetRed};
+    }
+    .toggleIcon {
+      margin-left: 5px;
+      font-size: 1.3rem;
+    }
+    .inputContainer {
+      font-family: 'Overpass Mono', monospace;
+      margin-top: 10px;
+      display: flex;
+      font-size: 1rem;
+      color: ${colors.whiteSmoke};
+    }
+    .inputParam {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      justify-content: center;
+      font-size: 1.1rem;
+      display: flex;
+      min-width: 230px;
+      padding: 10px;
+    }
+    .inputFields {
+      display: flex;
+      justify-content: center
+    }
+    .inputType {
+      display: flex;
+      justify-content: center;
+    }
+    .inputField {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      text-align: center;
+      display: flex;
+      width: 100%;
+    }
+    .inputField::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .icon {
+      color: ${colors.dark};
+    }
+    .integerValue {
+      ${inputStyle()}
+      font-size: 1rem;
+      color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      display: flex;
+      text-align: center;
+      width: 25%;
+    }
+    .integerValue::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerSlider {
+      width: 75%;
+      border: 1px solid ${colors.whiteSmoke};
+      -webkit-appearance: none;
+      height: 0.2px;
+    }
+    .integerSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      border: 1px solid ${colors.whiteSmoke};
+      height: 22px;
+      width: 10px;
+      background: ${colors.darkSmoke};
+      cursor: pointer;
+    }
+    .integerField {
+      display: flex;
+      width: 300px;
+      align-items: center;
+    }
+    .booleanField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .stringField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .addressField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .keyField {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.aquaMarine};
+      border-color: ${colors.whiteSmoke};
+    }
+    .false {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.violetRed};
+      color: ${colors.dark};
+      width: 50%;
+      text-align: center;
+      border-color: ${colors.whiteSmoke};
+    }
+    .true {
+      ${inputStyle()}
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      cursor: pointer;
+    }
+    .arrayContainer {
+      border: 1px solid ${colors.whiteSmoke};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 5px;
+      margin-top: 10px;
+    }
+    .arrayInput {
+      padding: 1px;
+      margin: 20px;
+    }
+    .arrayPlusMinus {
+      margin: 10px;
+    }
+    .arrayPlus {
+      cursor: pointer;
+    }
+    .arrayMinus {
+      cursor: pointer;
+    }
   }
-  .ulVisible {
-    visibility: visible;
-    height: 100%;
-    padding: 0;
-    transition-delay: 0.25s;
+  @media only screen and (max-device-width: 480px) {
+    html {
+      font-size: 30px;
+    }
+    .constructorFn, .functions {
+      width: 80%;
+    }
+    .title {
+      top: -30px;
+    }
   }
-  .ulHidden {
-    visibility: hidden;
-    height: 0;
-    transition-delay: 0.25s;
-  }
-  .contractName {
-    font-size: 20px;
-    font-weight: bold;
-    color: ${colors.whiteSmoke};
-    margin: 10px 0 40px 10px;
-    min-width: 200px;
-    width: 30%;
-  }
-  .fnName {
-    font-size: 16px;
-    display: flex;
-    color: ${colors.whiteSmoke};
-    margin: 10px 5px 20px 10px;
-    text-decoration: none;
-  }
-  .stateMutability {
-    margin-left: 5px;
-    color: ${colors.whiteSmoke};
-    border-radius: 20px;
-    border: 1px solid;
-    padding: 1px;
-    font-size: 9px;
-    width: 65px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .constructorFn {
-    padding-top: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid ${colors.darkSmoke};
-  }
-  .title {
-    display: flex;
-    align-items: baseline;
-    width: 300px;
-  }
-  .function {
-    display: flex;
-    flex-direction: column;
-    color: ${colors.whiteSmoke};
-    padding-top: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid ${colors.darkSmoke};
-  }
-  .toggleIcon {
-    margin-left: 5px;
-    font-size: 16px;
-  }
-  .title:hover {
-    opacity: 0.7;
-    cursor: pointer;
-  }
-  .inputContainer {
-    font-family: 'Overpass Mono', monospace;
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    flex-wrap: wrap;
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-  }
-  .inputParam {
-    color: ${colors.whiteSmoke};
-    font-size: 1em;
-    font-weight: bold;
-    display: flex;
-    min-width: 230px;
-    padding: 10px;
-  }
-  .inputFields {
-    display: flex;
-    justify-content: center
-  }
-  .inputType {
-    display: flex;
-    justify-content: center;
-  }
-  .inputField {
-    ${inputStyle()}
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-    text-align: center;
-    display: flex;
-    width: 100%;
-  }
-  .inputField::placeholder {
-    color: ${colors.whiteSmoke};
-    text-align: center;
-    opacity: 0.5;
-  }
-  .icon {
-    color: ${colors.dark};
-  }
-  .integerValue {
-    ${inputStyle()}
-    font-size: 1em;
-    color: ${colors.whiteSmoke};
-    display: flex;
-    text-align: center;
-    width: 25%;
-  }
-  .integerValue::placeholder {
-    color: ${colors.whiteSmoke};
-    text-align: center;
-    opacity: 0.5;
-  }
-  .integerSlider {
-    width: 75%;
-    border: 1px solid ${colors.darkSmoke};
-    -webkit-appearance: none;
-    height: 0.2px;
-  }
-  .integerSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: 1px solid ${colors.darkSmoke};
-    height: 22px;
-    width: 10px;
-    background: ${colors.slateGrey};
-    cursor: pointer;
-  }
-  .integerField {
-    display: flex;
-    width: 300px;
-    align-items: center;
-  }
-  .booleanField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .stringField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .addressField {
-    display: flex;
-    width: 300px;
-    justify-content: center;
-  }
-  .keyField {
-    ${inputStyle()}
-    border-right: none;
-    background-color: ${colors.aquaMarine}
-  }
-  .false {
-    ${inputStyle()}
-    border-right: none;
-    background-color: ${colors.violetRed};
-    color: ${colors.dark};
-    width: 50%;
-    text-align: center;
-  }
-  .true {
-    ${inputStyle()}
-    color: ${colors.whiteSmoke};
-    width: 50%;
-    text-align: center;
-    cursor: pointer;
-  }
-  .arrayContainer {
-    border: 1px solid ${colors.darkSmoke};
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 5px;
-    margin-top: 10px;
-  }
-  .arrayInput {
-    padding: 1px;
-    margin: 20px;
-  }
-  .arrayPlusMinus {
-    margin: 10px;
-  }
-  .arrayPlus {
-    cursor: pointer;
-  }
-  .arrayMinus {
-    cursor: pointer;
-  }
-`;
+`
+
 
 function inputStyle() {
   return `
-    border: 1px solid ${colors.darkSmoke};
+    border: 1px solid ${colors.whiteSmoke};
     background-color: ${colors.dark};
-    padding: 5px 10px;
+    padding: 5px;
   `
 }
-
-
-var solcMetadata = metadata[5]  // 4 and 5 are AwardToken and Ballot
-
-function getConstructorName() {
-  var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
-  return solcMetadata.settings.compilationTarget[file]
-}
-
-function getConstructorInput() {
-  return solcMetadata.output.abi.map(fn => {
-    if (fn.type === "constructor") {
-      return treeForm(fn.inputs)
-    }
-  })
-}
-
-function getContractFunctions() {
-  return solcMetadata.output.abi.map(x => {
-    var obj = {}
-    obj.name = x.name
-    obj.type = x.type
-    obj.inputs = getAllInputs(x)
-    obj.stateMutability = x.stateMutability
-    return obj
-  })
-}
-
-function getAllInputs(fn) {
-  var inputs = []
-  if (fn.inputs) {
-    return treeForm(fn.inputs)
-  }
-}
-
-function treeForm(data) {
-  return data.map(x => {
-    if (x.components) {
-      return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(
-        x.components
-      )}</ul></li>`
-    }
-    if (!x.components) {
-      return contractUI(x)
-    }
-  })
-}
-
-var metadata = {
-  compiler: solcMetadata.compiler.version,
-  compilationTarget: solcMetadata.settings.compilationTarget,
-  constructorName: getConstructorName(),
-  constructorInput: getConstructorInput(),
-  functions: getContractFunctions()
-}
-
-function contractUI(field) {
-  var theme = { classes: css, colors}
-  var name = field.name
-  var type = field.type
-  return checkInputType({name, theme, type})
-}
-
 /*--------------------
       PAGE
 --------------------*/
+module.exports = displayContractUI
 
-function displayContractUI() {
-  var html = bel`
+function displayContractUI(opts) {
+  if (!Array.isArray(opts.metadata)) {
+    var solcMetadata = opts.metadata
+
+    function getConstructorName() {
+      var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
+      return solcMetadata.settings.compilationTarget[file]
+    }
+
+    function getConstructorInput() {
+      return solcMetadata.output.abi.map(fn => {
+        if (fn.type === "constructor") {
+          return treeForm(fn.inputs)
+        }
+      })
+    }
+
+    function getContractFunctions() {
+      return solcMetadata.output.abi.map(x => {
+        var obj = {}
+        obj.name = x.name
+        obj.type = x.type
+        obj.inputs = getAllInputs(x)
+        obj.stateMutability = x.stateMutability
+        return obj
+      })
+    }
+
+    function getAllInputs(fn) {
+      var inputs = []
+      if (fn.inputs) {
+        return treeForm(fn.inputs)
+      }
+    }
+
+    function treeForm(data) {
+      return data.map(x => {
+        if (x.components) {
+          return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
+        }
+        if (!x.components) {
+          return contractUI(x)
+        }
+      })
+    }
+
+    var metadata = {
+      compiler: solcMetadata.compiler.version,
+      compilationTarget: solcMetadata.settings.compilationTarget,
+      constructorName: getConstructorName(),
+      constructorInput: getConstructorInput(),
+      functions: getContractFunctions()
+    }
+
+    var sorted = sort(metadata.functions)
+    function sort (functions) {
+      return functions.filter(x => x.type === 'function').sort((a, b) => type2num(a) - type2num(b))
+      function type2num ({ stateMutability: sm }) {
+        if (sm === 'view') return 1
+        if (sm === 'nonpayable') return 2
+        if (sm === 'pure') return 3
+        if (sm === 'payable') return 4
+      }
+    }
+
+    function contractUI(field) {
+      var theme = { classes: css, colors}
+      var name = field.name
+      var type = field.type
+      return checkInputType({name, theme, type})
+    }
+
+    var html = bel`
     <div class=${css.preview}>
-      <div class=${css.constructorFn}>
-        <div class=${css.contractName}>${metadata.constructorName}</div>
+    <div class=${css.constructorFn}>
+      <div class=${css.contractName} onclick=${e=>toggleConstructor(e)}>
+        ${metadata.constructorName}
+        <span class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></span>
+      </div>
+      <div class=${css.function}>
         ${metadata.constructorInput}
       </div>
-      <p>${displayFunctions()}</p>
     </div>
-  `
+    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
+    </div>
+    `
 
-  function displayFunctions() {
-    return metadata.functions.map(fn => {
-      if (fn.type === "function") {
-        return bel`
-        <div class=${css.function}>
-          ${displayFn(fn)}
-          <ul class=${css.ulVisible}>${fn.inputs}</ul>
+    function functions (fn, toggleIcon) {
+      var label = fn.stateMutability
+      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
+      var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></div>`
+      var functionClass = css[label]
+      return bel` <div class="${functionClass} ${css.function}">
+      <div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>
+      <ul class=${css.ulHidden}>${fn.inputs}</ul>
       </div>`
+    }
+
+    function toggleConstructor (e) {
+      var fnContainer = e.currentTarget.parentNode.nextSibling
+      var constructorToggle = e.currentTarget.children[0]
+      var constructorIcon = constructorToggle.children[0]
+      constructorToggle.removeChild(constructorIcon)
+      var minus = bel`<i class="fa fa-minus-circle">`
+      var plus = bel`<i class="fa fa-plus-circle">`
+      var icon = constructorIcon.className.includes('plus') ? minus : plus
+      constructorToggle.appendChild(icon)
+      for (var i = 0; i < fnContainer.children.length; i++) {
+        var fn = fnContainer.children[i]
+        var e = fn.children[0]
+        toggle(e, fn, constructorIcon)
       }
-    })
-  }
+    }
 
-  function displayFn (fn) {
-    var label = fn.stateMutability
-    var fnName = bel`<a title="${label}" class=${css.fnName}>${fn.name}</a>`
-    var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-chevron-circle-up"></i></div>`
-    var col
-    if (label === 'pure') { col = colors.yellow }
-    else if (label === 'view') {col = colors.androidGreen }
-    else if (label === 'nonpayable') {col = colors.turquoise }
-    else if (label === 'payable') {col = colors.violetRed }
-    fnName.style.color = col
-    toggleIcon.style.color = col
-    return bel`<div class=${css.title} onclick=${e=>toggle(e)}> ${fnName}  ${toggleIcon} </div>`
-  }
-
-  function toggle (e) {
-    var params = e.currentTarget.parentNode.children[1]
-      var toggleContainer = e.currentTarget.children[1]
+    function toggle (e, fun, constructorIcon) {
+      var fn
+      var toggleContainer
+      if (fun != null) {  // toggle all functions is triggered by toggleConstructor
+        fn = fun
+        toggleContainer = e.children[1]
+        if (constructorIcon.className.includes('plus') && fn.children[1].className === css.ulVisible.toString()) {
+          fn.children[1].classList.remove(css.ulVisible)
+          fn.children[1].classList.add(css.ulHidden)
+        }
+        else if (constructorIcon.className.includes('minus') && fn.children[1].className === css.ulHidden.toString()) {
+          fn.children[1].classList.remove(css.ulHidden)
+          fn.children[1].classList.add(css.ulVisible)
+        }
+      } else {
+        fn = e.currentTarget.parentNode
+        toggleContainer = e.currentTarget.children[1]
+      }
+      var params = fn.children[1]
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
       if (params.className === css.ulVisible.toString()) {
-        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-down">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
+        fn.style.border = 'none'
+        fn.style.marginBottom = 0
       } else {
-        toggleContainer.appendChild(bel`<i class="fa fa-chevron-circle-up">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
+        fn.style.border = `3px solid ${colors.darkSmoke}`
+        fn.style.marginBottom = '2em'
       }
+    }
+  } else {
+    var html = bel`
+    <div class=${css.preview}>
+      <div class=${css.error}>
+        <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
+        ${opts.metadata}
+      </div>
+    </div>
+    `
   }
 
-  document.body.appendChild(html)
+  return html
 }
 
-displayContractUI()
-
-},{"bel":130,"check-input-type":153,"csjs-inject":133,"metadata.json":155}]},{},[156]);
+},{"bel":4,"check-input-type":33,"csjs-inject":7,"glossary":34}]},{},[1]);

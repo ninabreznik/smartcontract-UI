@@ -66,12 +66,15 @@ var css = csjs`
       height: 0;
     }
     .contractName {
+      cursor: pointer;
       font-size: 2rem;
       font-weight: bold;
       color: ${colors.whiteSmoke};
       margin: 10px 0 0px 10px;
       min-width: 200px;
       width: 30%;
+      display: flex;
+      align-items: end;
     }
     .fnName {
       display: flex;
@@ -370,7 +373,10 @@ function displayContractUI(opts) {
     var html = bel`
     <div class=${css.preview}>
     <div class=${css.constructorFn}>
-      <div class=${css.contractName}>${metadata.constructorName}</div>
+      <div class=${css.contractName} onclick=${e=>toggleConstructor(e)}>
+        ${metadata.constructorName}
+        <span class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></span>
+      </div>
       <div class=${css.function}>
         ${metadata.constructorInput}
       </div>
@@ -379,21 +385,52 @@ function displayContractUI(opts) {
     </div>
     `
 
-    function functions (fn) {
+    function functions (fn, toggleIcon) {
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
       var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></div>`
       var functionClass = css[label]
       return bel` <div class="${functionClass} ${css.function}">
-      <div class=${css.title} onclick=${e=>toggle(e)}>${fnName} ${toggleIcon}</div>
+      <div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>
       <ul class=${css.ulHidden}>${fn.inputs}</ul>
       </div>`
     }
 
-    function toggle (e) {
-      var fn = e.currentTarget.parentNode
+    function toggleConstructor (e) {
+      var fnContainer = e.currentTarget.parentNode.nextSibling
+      var constructorToggle = e.currentTarget.children[0]
+      var constructorIcon = constructorToggle.children[0]
+      constructorToggle.removeChild(constructorIcon)
+      var minus = bel`<i class="fa fa-minus-circle">`
+      var plus = bel`<i class="fa fa-plus-circle">`
+      var icon = constructorIcon.className.includes('plus') ? minus : plus
+      constructorToggle.appendChild(icon)
+      for (var i = 0; i < fnContainer.children.length; i++) {
+        var fn = fnContainer.children[i]
+        var e = fn.children[0]
+        toggle(e, fn, constructorIcon)
+      }
+    }
+
+    function toggle (e, fun, constructorIcon) {
+      var fn
+      var toggleContainer
+      if (fun != null) {  // toggle all functions is triggered by toggleConstructor
+        fn = fun
+        toggleContainer = e.children[1]
+        if (constructorIcon.className.includes('plus') && fn.children[1].className === css.ulVisible.toString()) {
+          fn.children[1].classList.remove(css.ulVisible)
+          fn.children[1].classList.add(css.ulHidden)
+        }
+        else if (constructorIcon.className.includes('minus') && fn.children[1].className === css.ulHidden.toString()) {
+          fn.children[1].classList.remove(css.ulHidden)
+          fn.children[1].classList.add(css.ulVisible)
+        }
+      } else {
+        fn = e.currentTarget.parentNode
+        toggleContainer = e.currentTarget.children[1]
+      }
       var params = fn.children[1]
-      var toggleContainer = e.currentTarget.children[1]
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
       if (params.className === css.ulVisible.toString()) {
@@ -406,7 +443,7 @@ function displayContractUI(opts) {
         toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
-        fn.style.border = `1px solid ${colors.whiteSmoke}`
+        fn.style.border = `3px solid ${colors.darkSmoke}`
         fn.style.marginBottom = '2em'
       }
     }
