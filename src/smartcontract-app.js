@@ -103,6 +103,7 @@ var css = csjs`
       width: 650px;
     }
     .title {
+      font-size: 1.3rem;
       display: flex;
       align-items: baseline;
       position: absolute;
@@ -112,6 +113,20 @@ var css = csjs`
       padding: 0 5px 0 5px;
     }
     .title:hover {
+      cursor: pointer;
+    }
+    .send {
+      display: flex;
+      align-items: baseline;
+      bottom: -15px;
+      right: 20px;
+      font-size: 2rem;
+      position: absolute;
+      color: ${colors.darkSmoke};
+      background-color: ${colors.dark};
+      padding-right: 5px;
+    }
+    .send:hover {
       cursor: pointer;
     }
     .function {
@@ -133,13 +148,12 @@ var css = csjs`
     .payable {
       color: ${colors.violetRed};
     }
-    .toggleIcon {
+    .icon {
       margin-left: 5px;
-      font-size: 1.3rem;
     }
     .inputContainer {
       font-family: 'Overpass Mono', monospace;
-      margin-top: 10px;
+      margin: 10px 0 10px 0;
       display: flex;
       font-size: 1rem;
       color: ${colors.whiteSmoke};
@@ -175,9 +189,6 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       text-align: center;
       opacity: 0.5;
-    }
-    .icon {
-      color: ${colors.dark};
     }
     .integerValue {
       ${inputStyle()}
@@ -301,6 +312,7 @@ module.exports = displayContractUI
 function displayContractUI(opts) {
   if (!Array.isArray(opts.metadata)) {
     var solcMetadata = opts.metadata
+    console.log(solcMetadata)
 
     function getConstructorName() {
       var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
@@ -321,6 +333,7 @@ function displayContractUI(opts) {
         obj.name = x.name
         obj.type = x.type
         obj.inputs = getAllInputs(x)
+        obj.outputs = getAllOutputs(x)
         obj.stateMutability = x.stateMutability
         return obj
       })
@@ -330,6 +343,13 @@ function displayContractUI(opts) {
       var inputs = []
       if (fn.inputs) {
         return treeForm(fn.inputs)
+      }
+    }
+
+    function getAllOutputs(fn) {
+      var outputs = []
+      if (fn.outputs) {
+        return treeForm(fn.outputs)
       }
     }
 
@@ -373,9 +393,9 @@ function displayContractUI(opts) {
     var html = bel`
     <div class=${css.preview}>
     <div class=${css.constructorFn}>
-      <div class=${css.contractName} onclick=${e=>toggleConstructor(e)}>
+      <div class=${css.contractName} onclick=${e=>toggleAll(e)}>
         ${metadata.constructorName}
-        <span class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></span>
+        <span class=${css.icon}><i class="fa fa-plus-circle"></i></span>
       </div>
       <div class=${css.function}>
         ${metadata.constructorInput}
@@ -388,15 +408,22 @@ function displayContractUI(opts) {
     function functions (fn, toggleIcon) {
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
-      var toggleIcon = bel`<div class=${css.toggleIcon}><i class="fa fa-plus-circle"></i></div>`
+      var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></div>`
+      var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>`
+      var send = bel`<div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
+      // var returns = bel`<div>${fn.outputs}</div>`
       var functionClass = css[label]
-      return bel` <div class="${functionClass} ${css.function}">
-      <div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>
-      <ul class=${css.ulHidden}>${fn.inputs}</ul>
+      return bel`
+      <div class="${functionClass} ${css.function}">
+        ${title}
+        <ul class=${css.ulHidden}>
+          ${fn.inputs}
+          ${send}
+        </ul>
       </div>`
     }
 
-    function toggleConstructor (e) {
+    function toggleAll (e) {
       var fnContainer = e.currentTarget.parentNode.nextSibling
       var constructorToggle = e.currentTarget.children[0]
       var constructorIcon = constructorToggle.children[0]
@@ -415,21 +442,26 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
-      if (fun != null) {  // toggle all functions is triggered by toggleConstructor
+      // toggle triggered by toggleAll
+      if (fun != null) {
         fn = fun
         toggleContainer = e.children[1]
-        if (constructorIcon.className.includes('plus') && fn.children[1].className === css.ulVisible.toString()) {
-          fn.children[1].classList.remove(css.ulVisible)
-          fn.children[1].classList.add(css.ulHidden)
+        var fnInputs = fn.children[1]
+        // Makes sure all functions are opened or closed before toggleAll executes
+        if (constructorIcon.className.includes('plus') && fnInputs.className === css.ulVisible.toString()) {
+          fnInputs.classList.remove(css.ulVisible)
+          fnInputs.classList.add(css.ulHidden)
         }
-        else if (constructorIcon.className.includes('minus') && fn.children[1].className === css.ulHidden.toString()) {
-          fn.children[1].classList.remove(css.ulHidden)
-          fn.children[1].classList.add(css.ulVisible)
+        else if (constructorIcon.className.includes('minus') && fnInputs.className === css.ulHidden.toString()) {
+          fnInputs.classList.remove(css.ulHidden)
+          fnInputs.classList.add(css.ulVisible)
         }
+      // toggle triggered with onclick on function title
       } else {
         fn = e.currentTarget.parentNode
         toggleContainer = e.currentTarget.children[1]
       }
+      // toggle input fields in a single function
       var params = fn.children[1]
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
