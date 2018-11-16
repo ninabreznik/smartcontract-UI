@@ -2,6 +2,7 @@ var bel = require("bel")
 var csjs = require("csjs-inject")
 var checkInputType = require('check-input-type')
 var glossary = require('glossary')
+var validator = require('solidity-validator');
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -70,7 +71,7 @@ var css = csjs`
       font-size: 2rem;
       font-weight: bold;
       color: ${colors.whiteSmoke};
-      margin: 10px 0 0px 10px;
+      margin: 10px 0 20px 10px;
       min-width: 200px;
       width: 30%;
       display: flex;
@@ -95,7 +96,7 @@ var css = csjs`
     }
     .constructorFn {
       padding-top: 18px;
-      padding-bottom: 3em;
+      padding-bottom: 4em;
       width: 650px;
     }
     .functions {
@@ -135,6 +136,9 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       position: relative;
       margin-left: 20px;
+    }
+    .ctor {
+      border: 3px solid ${colors.darkSmoke};
     }
     .pure {
       color: ${colors.yellow};
@@ -296,7 +300,6 @@ var css = csjs`
   }
 `
 
-
 function inputStyle() {
   return `
     border: 1px solid ${colors.whiteSmoke};
@@ -304,12 +307,15 @@ function inputStyle() {
     padding: 5px;
   `
 }
+
+var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></div>`
 /*--------------------
       PAGE
 --------------------*/
 module.exports = displayContractUI
 
 function displayContractUI(opts) {
+
   if (!Array.isArray(opts.metadata)) {
     var solcMetadata = opts.metadata
     console.log(solcMetadata)
@@ -397,8 +403,9 @@ function displayContractUI(opts) {
         ${metadata.constructorName}
         <span class=${css.icon}><i class="fa fa-plus-circle"></i></span>
       </div>
-      <div class=${css.function}>
+      <div class="${css.function} ${css.ctor}">
         ${metadata.constructorInput}
+        <div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>
       </div>
     </div>
     <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
@@ -410,8 +417,7 @@ function displayContractUI(opts) {
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
       var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></div>`
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>`
-      var send = bel`<div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
-      // var returns = bel`<div>${fn.outputs}</div>`
+      var send = bel`<div class=${css.send} onclick=${e => sendTx(e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
       return bel`
       <div class="${functionClass} ${css.function}">
@@ -421,6 +427,14 @@ function displayContractUI(opts) {
           ${send}
         </ul>
       </div>`
+    }
+
+    function sendTx (e) {
+      console.log(e.target.parentNode.parentNode.children[0].children[1])
+    }
+
+    function validate () {
+
     }
 
     function toggleAll (e) {
@@ -479,6 +493,7 @@ function displayContractUI(opts) {
         fn.style.marginBottom = '2em'
       }
     }
+
   } else {
     var html = bel`
     <div class=${css.preview}>
