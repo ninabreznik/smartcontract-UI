@@ -19,7 +19,6 @@
     "input-array": "^1.0.2",
     "input-boolean": "^1.0.7",
     "input-integer": "^1.0.8",
-    "input-string": "^1.0.8",
-    "solidity-validator": "0.0.4"
+    "input-string": "^1.0.8"
   }
 }

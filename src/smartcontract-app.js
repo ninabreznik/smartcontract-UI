@@ -1,8 +1,12 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
-var checkInputType = require('check-input-type')
 var glossary = require('glossary')
-var validator = require('solidity-validator');
+var validator = require('solidity-validator')
+var inputAddress = require("input-address")
+var inputArray = require("input-array")
+var inputInteger = require("input-integer")
+var inputBoolean = require("input-boolean")
+var inputString = require("input-string")
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -155,10 +159,23 @@ var css = csjs`
     .icon {
       margin-left: 5px;
     }
+    .output {
+      font-size: 1.5rem;
+      display: flex;
+      align-self: flex-end;
+    }
+    .valError {
+      color: red;
+    }
+    .valSuccess {
+      color: ${colors.aquaMarine};
+      padding-left: 20px;
+    }
     .inputContainer {
       font-family: 'Overpass Mono', monospace;
-      margin: 10px 0 10px 0;
+      margin: 15px 0 15px 0;
       display: flex;
+      align-items: baseline;
       font-size: 1rem;
       color: ${colors.whiteSmoke};
     }
@@ -169,15 +186,10 @@ var css = csjs`
       font-size: 1.1rem;
       display: flex;
       min-width: 230px;
-      padding: 10px;
     }
     .inputFields {
-      display: flex;
-      justify-content: center
     }
     .inputType {
-      display: flex;
-      justify-content: center;
     }
     .inputField {
       ${inputStyle()}
@@ -230,7 +242,7 @@ var css = csjs`
     .booleanField {
       display: flex;
       width: 300px;
-      justify-content: center;
+      align-items: baseline;
     }
     .stringField {
       display: flex;
@@ -256,6 +268,7 @@ var css = csjs`
       width: 50%;
       text-align: center;
       border-color: ${colors.whiteSmoke};
+      cursor: pointer;
     }
     .true {
       ${inputStyle()}
@@ -266,11 +279,9 @@ var css = csjs`
       cursor: pointer;
     }
     .arrayContainer {
-      border: 1px solid ${colors.whiteSmoke};
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 5px;
       margin-top: 10px;
     }
     .arrayInput {
@@ -315,11 +326,19 @@ var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></d
 module.exports = displayContractUI
 
 function displayContractUI(opts) {
+  if (!opts || !opts.metadata) {
+    return  bel`
+    <div class=${css.preview}>
+      <div class=${css.error}>
+        <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
+        ${opts}
+      </div>
+    </div>
+    `
+  }
 
   if (!Array.isArray(opts.metadata)) {
     var solcMetadata = opts.metadata
-    console.log(solcMetadata)
-
     function getConstructorName() {
       var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
       return solcMetadata.settings.compilationTarget[file]
@@ -365,7 +384,7 @@ function displayContractUI(opts) {
           return bel`<li><div>${x.name} (${x.type})</div><ul>${treeForm(x.components)}</ul></li>`
         }
         if (!x.components) {
-          return contractUI(x)
+          return generateInputContainer(x)
         }
       })
     }
@@ -389,28 +408,40 @@ function displayContractUI(opts) {
       }
     }
 
-    function contractUI(field) {
+    function generateInputContainer (field) {
       var theme = { classes: css, colors}
       var name = field.name
       var type = field.type
-      return checkInputType({name, theme, type})
+      var inputField = getInputField( {theme, type, cb})
+      var inputContainer = bel`
+        <div class=${css.inputContainer}>
+        <div class=${css.inputParam}>${name || 'key'} (${type})</div>
+        <div class=${css.inputFields}>${inputField}</div>
+        <div class=${css.output}></div>
+        </div>`
+      return inputContainer
+      function cb (msg) {
+        var output = inputContainer.lastChild
+        output.innerHTML = msg ? `<div class=${css.valError}>${msg}</div>` : `<div class=${css.valSuccess}><i class="fa fa-check-circle"></i></div>`
+      }
     }
 
-    var html = bel`
-    <div class=${css.preview}>
-    <div class=${css.constructorFn}>
-      <div class=${css.contractName} onclick=${e=>toggleAll(e)}>
-        ${metadata.constructorName}
-        <span class=${css.icon}><i class="fa fa-plus-circle"></i></span>
-      </div>
-      <div class="${css.function} ${css.ctor}">
-        ${metadata.constructorInput}
-        <div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>
-      </div>
-    </div>
-    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
-    </div>
-    `
+    function getInputField ({ theme, type, cb}) {
+      var field
+      if ((type.search(/\]/) != -1)) {
+        var arrayInfo = type.split('[')[1]
+        var digit = arrayInfo.search(/\d/)
+        field = inputArray({ theme, type, cb })
+      } else {
+        if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb })
+        if (type.search(/\bbyte/) != -1) field = inputString({ theme, type, cb })
+        if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb })
+        if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb })
+        if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb })
+        if (type.search(/\baddress/) != -1) field = inputAddress({ theme, type, cb })
+      }
+      return field
+    }
 
     function functions (fn, toggleIcon) {
       var label = fn.stateMutability
@@ -433,10 +464,6 @@ function displayContractUI(opts) {
       console.log(e.target.parentNode.parentNode.children[0].children[1])
     }
 
-    function validate () {
-
-    }
-
     function toggleAll (e) {
       var fnContainer = e.currentTarget.parentNode.nextSibling
       var constructorToggle = e.currentTarget.children[0]
@@ -456,7 +483,7 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
-      // toggle triggered by toggleAll
+      // TOGGLE triggered by toggleAll
       if (fun != null) {
         fn = fun
         toggleContainer = e.children[1]
@@ -470,12 +497,12 @@ function displayContractUI(opts) {
           fnInputs.classList.remove(css.ulHidden)
           fnInputs.classList.add(css.ulVisible)
         }
-      // toggle triggered with onclick on function title
+      // TOGGLE triggered with onclick on function title
       } else {
         fn = e.currentTarget.parentNode
         toggleContainer = e.currentTarget.children[1]
       }
-      // toggle input fields in a single function
+      // TOGGLE input fields in a single function
       var params = fn.children[1]
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
@@ -494,16 +521,21 @@ function displayContractUI(opts) {
       }
     }
 
-  } else {
-    var html = bel`
+    return bel`
     <div class=${css.preview}>
-      <div class=${css.error}>
-        <div class=${css.errorTitle}>error <i class="${css.errorIcon} fa fa-exclamation-circle"></i></div>
-        ${opts.metadata}
+    <div class=${css.constructorFn}>
+      <div class=${css.contractName} onclick=${e=>toggleAll(e)}>
+        ${metadata.constructorName}
+        <span class=${css.icon}><i class="fa fa-plus-circle"></i></span>
+      </div>
+      <div class="${css.function} ${css.ctor}">
+        ${metadata.constructorInput}
+        <div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>
       </div>
     </div>
+    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
+    </div>
     `
-  }
 
-  return html
+  }
 }
