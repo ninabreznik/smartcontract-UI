@@ -5,5 +5,6 @@ var opts = {
   metadata: metadata[0]
 }
 
+document.body.appendChild(smartcontractapp(opts, async (error, fns) => { 
 
-document.body.appendChild(smartcontractapp(opts))
+}))

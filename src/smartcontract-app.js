@@ -325,7 +325,7 @@ var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></d
 --------------------*/
 module.exports = displayContractUI
 
-function displayContractUI(opts) {
+function displayContractUI(opts, next) {
   if (!opts || !opts.metadata) {
     return  bel`
     <div class=${css.preview}>
@@ -360,6 +360,7 @@ function displayContractUI(opts) {
         obj.inputs = getAllInputs(x)
         obj.outputs = getAllOutputs(x)
         obj.stateMutability = x.stateMutability
+        obj.send = bel`<div class=${css.send} onclick=${e => sendTx(e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`;
         return obj
       })
     }
@@ -455,7 +456,7 @@ function displayContractUI(opts) {
         ${title}
         <ul class=${css.ulHidden}>
           ${fn.inputs}
-          ${send}
+          ${fn.send}
         </ul>
       </div>`
     }
@@ -520,6 +521,7 @@ function displayContractUI(opts) {
         fn.style.marginBottom = '2em'
       }
     }
+    next(null, sorted);
 
     return bel`
     <div class=${css.preview}>
