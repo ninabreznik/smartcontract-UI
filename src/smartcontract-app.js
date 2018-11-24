@@ -165,11 +165,14 @@ var css = csjs`
       align-self: flex-end;
     }
     .valError {
-      color: red;
+      color: ${colors.violetRed};
+      padding-left: 20px;
+      cursor: pointer;
     }
     .valSuccess {
       color: ${colors.aquaMarine};
       padding-left: 20px;
+      cursor: pointer;
     }
     .inputContainer {
       font-family: 'Overpass Mono', monospace;
@@ -264,7 +267,7 @@ var css = csjs`
       ${inputStyle()}
       border-right: none;
       background-color: ${colors.violetRed};
-      color: ${colors.dark};
+      color: ${colors.whiteSmoke};
       width: 50%;
       text-align: center;
       border-color: ${colors.whiteSmoke};
@@ -422,9 +425,11 @@ function displayContractUI(opts) {
       return inputContainer
       function cb (msg) {
         var output = inputContainer.lastChild
-        output.innerHTML = msg ? `<div class=${css.valError}>${msg}</div>` : `<div class=${css.valSuccess}><i class="fa fa-check-circle"></i></div>`
+        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation-circle"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check-circle"></i></a>`
       }
     }
+
+
 
     function getInputField ({ theme, type, cb}) {
       var field
