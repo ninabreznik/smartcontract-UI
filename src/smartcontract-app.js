@@ -18,16 +18,17 @@ document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
 
 var colors = {
+  transparent: "transparent",
   white: "#ffffff", // borders, font on input background
   dark: "#2c323c", //background dark
   darkSmoke: '#21252b',  // separators
   whiteSmoke: "#f5f5f5", // background light
-  lavenderGrey: "#e3e8ee", // inputs background
   slateGrey: "#8a929b", // text
   violetRed: "#b25068",  // used as red in types (bool etc.)
   aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
   turquoise: "#14b9d5",
   yellow: "#F2CD5D",
+  lavender: "#EDC9FF",
   androidGreen: "#9BC53D"
 }
 
@@ -81,6 +82,10 @@ var css = csjs`
       display: flex;
       align-items: end;
     }
+    .contractName:hover {
+      cursor: pointer;
+      color: ${colors.androidGreen};
+    }
     .fnName {
       display: flex;
       margin: 10px 5px 20px 0px;
@@ -119,6 +124,28 @@ var css = csjs`
     }
     .title:hover {
       cursor: pointer;
+      color: ${colors.whiteSmoke};
+    }
+    .deployTitle {
+      font-size: 1.3rem;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 0;
+      font-weight: 800;
+    }
+    .deploy {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      align-items: center;
+      bottom: -16px;
+      right: 20px;
+      font-size: 1.8rem;
+      position: absolute;
+      padding: 0 5px;
+      background-color: ${colors.dark};
+    }
+    .deploy:hover {
+      cursor: pointer;
+      color: ${colors.androidGreen};
     }
     .send {
       display: flex;
@@ -133,6 +160,7 @@ var css = csjs`
     }
     .send:hover {
       cursor: pointer;
+      color: ${colors.androidGreen};
     }
     .function {
       display: flex;
@@ -143,12 +171,13 @@ var css = csjs`
     }
     .ctor {
       border: 3px solid ${colors.darkSmoke};
+      padding: 20px 0;
     }
     .pure {
       color: ${colors.yellow};
     }
     .view {
-      color: ${colors.androidGreen};
+      color: ${colors.lavender};
     }
     .nonpayable {
       color: ${colors.turquoise};
@@ -322,7 +351,7 @@ function inputStyle() {
   `
 }
 
-var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></div>`
+var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
 /*--------------------
       PAGE
 --------------------*/
@@ -451,7 +480,7 @@ function displayContractUI(opts) {
     function functions (fn, toggleIcon) {
       var label = fn.stateMutability
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
-      var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle"></i></div>`
+      var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>`
       var send = bel`<div class=${css.send} onclick=${e => sendTx(e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
@@ -474,8 +503,8 @@ function displayContractUI(opts) {
       var constructorToggle = e.currentTarget.children[0]
       var constructorIcon = constructorToggle.children[0]
       constructorToggle.removeChild(constructorIcon)
-      var minus = bel`<i class="fa fa-minus-circle">`
-      var plus = bel`<i class="fa fa-plus-circle">`
+      var minus = bel`<i class="fa fa-minus-circle" title="Collapse">`
+      var plus = bel`<i class="fa fa-plus-circle title='Expand to see the details'">`
       var icon = constructorIcon.className.includes('plus') ? minus : plus
       constructorToggle.appendChild(icon)
       for (var i = 0; i < fnContainer.children.length; i++) {
@@ -512,13 +541,13 @@ function displayContractUI(opts) {
       var icon = toggleContainer.children[0]
       toggleContainer.removeChild(icon)
       if (params.className === css.ulVisible.toString()) {
-        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle" title="Expand to see the details">`)
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
-        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle">`)
+        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle" title="Collapse">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
         fn.style.border = `3px solid ${colors.darkSmoke}`
@@ -529,13 +558,18 @@ function displayContractUI(opts) {
     return bel`
     <div class=${css.preview}>
     <div class=${css.constructorFn}>
-      <div class=${css.contractName} onclick=${e=>toggleAll(e)}>
+      <div class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
         ${metadata.constructorName}
-        <span class=${css.icon}><i class="fa fa-plus-circle"></i></span>
+        <span class=${css.icon}>
+          <i class="fa fa-plus-circle" title="Expand to see the details"></i>
+        </span>
       </div>
       <div class="${css.function} ${css.ctor}">
         ${metadata.constructorInput}
-        <div class=${css.send}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>
+        <div class=${css.deploy}>
+            <div class=${css.deployTitle}>Deploy</div>
+            <i class="${css.icon} fa fa-arrow-circle-right"></i>
+        </div>
       </div>
     </div>
     <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>

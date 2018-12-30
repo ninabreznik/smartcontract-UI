@@ -1,4 +1,6 @@
-[{
+[
+{"compiler":{"version":"0.4.25+commit.59dbf8f1"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[{"name":"addr","type":"address"}],"name":"queryBalance","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"owner","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"send","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_name","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"}],"devdoc":{"methods":{}},"userdoc":{"methods":{}}},"settings":{"compilationTarget":{"browser/ballot.sol":"Coin"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/ballot.sol":{"keccak256":"0x51afed3c3d8f1fc2fbdd8265ba329c4eca42d828b7b7afe3f4ba3cdd4b1d40e7","urls":["bzzr://e1dcf63e9d7b3f8e456dd70a2fb755489285fc9f184bb0b0334453ef9ae81045"]}},"version":1},
+  {
   compiler: { version: "0.4.24+commit.e67f0147" },
   language: "Solidity",
   output: {
@@ -85,7 +87,7 @@
     "browser/Untitled.sol": {
       keccak256:
         "0x16d1586ab97ab12aa92899517fa9c5f3fa5f459e86b6251ea9c5fa5a3b9c91aa",
-      urls: [
+      urls: [+
         "bzzr://8bc07a7f3f0c8ddc4ca4daef71fd74eea482ad1b0ce4c25b82c50754fe0cb993"
       ]
     }
