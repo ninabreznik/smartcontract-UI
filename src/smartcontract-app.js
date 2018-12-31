@@ -1,5 +1,6 @@
 var bel = require("bel")
 var csjs = require("csjs-inject")
+var Web3 = require('web3');
 var glossary = require('glossary')
 var validator = require('solidity-validator')
 var inputAddress = require("input-address")
@@ -7,6 +8,8 @@ var inputArray = require("input-array")
 var inputInteger = require("input-integer")
 var inputBoolean = require("input-boolean")
 var inputString = require("input-string")
+
+// Styling variables
 
 var fonts = [
   "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
@@ -84,7 +87,7 @@ var css = csjs`
     }
     .contractName:hover {
       cursor: pointer;
-      color: ${colors.androidGreen};
+      opacity: 0.9;
     }
     .fnName {
       display: flex;
@@ -124,7 +127,7 @@ var css = csjs`
     }
     .title:hover {
       cursor: pointer;
-      color: ${colors.whiteSmoke};
+      opacity: 0.9;
     }
     .deployTitle {
       font-size: 1.3rem;
@@ -145,7 +148,7 @@ var css = csjs`
     }
     .deploy:hover {
       cursor: pointer;
-      color: ${colors.androidGreen};
+      opacity: 0.9;
     }
     .send {
       display: flex;
@@ -157,10 +160,6 @@ var css = csjs`
       color: ${colors.darkSmoke};
       background-color: ${colors.dark};
       padding-right: 5px;
-    }
-    .send:hover {
-      cursor: pointer;
-      color: ${colors.androidGreen};
     }
     .function {
       display: flex;
@@ -187,6 +186,10 @@ var css = csjs`
     }
     .icon {
       margin-left: 5px;
+    }
+    .icon:hover {
+      opacity: 0.9;
+      cursor: pointer;
     }
     .output {
       font-size: 1.5rem;
@@ -352,6 +355,62 @@ function inputStyle() {
 }
 
 var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
+
+
+// Initialize Web3
+
+async function web3Init() {
+  if (ethereum) {
+    web3 = new Web3(ethereum);
+    try {
+      //  https://bit.ly/2QQHXvF
+      console.log('ethereum.enable()');
+      const accounts = await ethereum.enable();
+      web3.eth.defaultAccount = accounts[0];
+    } catch (error) {}
+  } else if (web3) {
+    console.log('load web3.currentProvider');
+    web3 = new Web3(web3.currentProvider);
+  } else {
+    console.log('Your browser does not support Web3, try browser like Firefox, Chrome, Brave or any other browser that supports the use of MetaMask!');
+  }
+}
+
+web3Init();
+
+/******************************************************************************
+  START
+******************************************************************************/
+function done(err, result) {
+  if (err) return log(new Error(err))
+  const {
+    username
+  } = result
+  if (username) {
+    log(null, 'success')
+    // var el = dapp(result)
+    // document.body.appendChild(el)
+  } else log(new Error('fail'))
+}
+
+function start (event) {
+  getMyAddress({
+    wallet: null
+  })
+}
+
+function getMyAddress(result) {
+  console.log('loading getMyAddress')
+  web3.eth.getAccounts((err, localAddresses) => {
+    if (!localAddresses) console.log('You must be have MetaMask or local RPC endpoint.')
+    if (!localAddresses[0]) console.log('You need to login MetaMask.')
+    if (err) return done(err)
+    localStorage.wallet = localAddresses[0]
+    result.wallet = localAddresses[0]
+    console.log(result.wallet)
+  })
+}
+
 /*--------------------
       PAGE
 --------------------*/
@@ -578,3 +637,5 @@ function displayContractUI(opts) {
 
   }
 }
+
+start();
