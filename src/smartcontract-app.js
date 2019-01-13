@@ -356,6 +356,9 @@ function inputStyle() {
 
 var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
 
+/******************************************************************************
+  WEB3
+******************************************************************************/
 
 // Initialize Web3
 
@@ -378,36 +381,17 @@ async function web3Init() {
 
 web3Init();
 
-/******************************************************************************
-  START
-******************************************************************************/
-function done(err, result) {
-  if (err) return log(new Error(err))
-  const {
-    username
-  } = result
-  if (username) {
-    log(null, 'success')
-    // var el = dapp(result)
-    // document.body.appendChild(el)
-  } else log(new Error('fail'))
-}
+var web3Data = {}
+getMyAddress(web3Data)
 
-function start (event) {
-  getMyAddress({
-    wallet: null
-  })
-}
-
-function getMyAddress(result) {
+function getMyAddress(web3Data) {
   console.log('loading getMyAddress')
   web3.eth.getAccounts((err, localAddresses) => {
     if (!localAddresses) console.log('You must be have MetaMask or local RPC endpoint.')
     if (!localAddresses[0]) console.log('You need to login MetaMask.')
-    if (err) return done(err)
+    if (err) return log(new Error(err))
     localStorage.wallet = localAddresses[0]
-    result.wallet = localAddresses[0]
-    console.log(result.wallet)
+    web3Data.wallet = localAddresses[0]
   })
 }
 
@@ -614,6 +598,47 @@ function displayContractUI(opts) {
       }
     }
 
+    function createContract(next) {
+      var jsonInterface = solcMetadata.output.abi
+      var address = '' //Use deployed contract's address if you want to interact with already deployed contract
+      var options = {
+        from: web3Data.wallet, // default from address
+        gasPrice: '20000000000', // default gas price in wei, 20 gwei in this case
+        data : '0x608060405234801561001057600080fd5b5060405161047a38038061047a8339810180604052810190808051820192919050505060018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156100c95780601f1061009e576101008083540402835291602001916100c9565b820191906000526020600020905b8154815290600101906020018083116100ac57829003601f168201915b50505050509050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505061035a806101206000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806337f428411461005c57806340c10f19146100b3578063d0679d3414610100575b600080fd5b34801561006857600080fd5b5061009d600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061014d565b6040518082815260200191505060405180910390f35b3480156100bf57600080fd5b506100fe600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610196565b005b34801561010c57600080fd5b5061014b600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610243565b005b6000600260008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156101f15761023f565b80600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b5050565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054101561028f5761032a565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555080600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b50505600a165627a7a723058204a30e625936611910cafe5d5cb195dd3bf4e88257c4064fdff3a6b918d1e94220029'
+      }
+      var myContract = new web3.eth.Contract(jsonInterface, options)
+      next(myContract)
+    }
+
+    function deployContract() {
+      var myContract = createContract(next)
+      function getArgs() {
+        var args = []
+        var constructorFn = document.querySelector("[class^='constructorFn']")
+        var inputs = constructorFn.querySelectorAll("[class^='inputFields']")
+        inputs.forEach(x => {
+          console.log(x.querySelector('input').value)
+          args.push(x.querySelector('input').value)
+        })
+        return args
+      }
+      function next(myContract) {
+        console.log('deploying')
+        myContract.deploy({
+            data: myContract.options.data,
+            arguments: getArgs() // The arguments which get passed to the constructor on deployment
+        })
+        .send({
+            from: web3Data.wallet,
+            gas: 1500000,
+            gasPrice: '20000000000'
+        })
+        .then(function(newContractInstance){
+            console.log(newContractInstance.options.address) // instance with the new contract address
+        });
+      }
+    }
+
     return bel`
     <div class=${css.preview}>
     <div class=${css.constructorFn}>
@@ -626,7 +651,7 @@ function displayContractUI(opts) {
       <div class="${css.function} ${css.ctor}">
         ${metadata.constructorInput}
         <div class=${css.deploy}>
-            <div class=${css.deployTitle}>Deploy</div>
+            <div class=${css.deployTitle} onclick=${()=>deployContract()}>Deploy</div>
             <i class="${css.icon} fa fa-arrow-circle-right"></i>
         </div>
       </div>
@@ -637,5 +662,3 @@ function displayContractUI(opts) {
 
   }
 }
-
-start();
