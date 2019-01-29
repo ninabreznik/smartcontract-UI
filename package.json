@@ -15,12 +15,13 @@
   "dependencies": {
     "bel": "^6.0.0",
     "csjs-inject": "^1.0.1",
+    "ethers": "^4.0.23",
     "input-address": "^2.0.0",
     "input-array": "^2.0.0",
     "input-boolean": "^2.0.0",
-    "input-integer": "^2.0.0",
+    "input-integer": "^2.1.5",
     "input-string": "^2.0.0",
-    "solidity-validator": "0.0.5",
+    "solidity-validator": "^0.1.1",
     "web3": "^1.0.0-beta.37"
   }
 }
