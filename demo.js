@@ -2,7 +2,7 @@ var smartcontractapp = require('./')
 var metadata = require('./metadata.json')
 
 var opts = {
-  metadata: metadata[6]
+  metadata: metadata[7]
 }
 
 

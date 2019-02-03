@@ -3,6 +3,7 @@ const csjs = require("csjs-inject")
 const Web3 = require('web3')
 var ethers = require('ethers')
 const glossary = require('glossary')
+const date = require('getDate')
 const validator = require('solidity-validator')
 const inputAddress = require("input-address")
 const inputArray = require("input-array")
@@ -55,7 +56,7 @@ var css = csjs`
       padding: 1em;
     }
     .errorTitle {
-      position: absolute;
+      position: absolute;Deploy
       top: -14px;
       left: 20px;
       background-color: ${colors.dark};
@@ -94,6 +95,16 @@ var css = csjs`
       display: flex;
       margin: 10px 5px 20px 0px;
       text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    .fnIcon {
+      margin-right: 5%;
+      font-size: 1.1em;
+    }
+    .name {
+      font-size: 0.7em;
+      margin-bottom: 5px;
     }
     .stateMutability {
       margin-left: 5px;
@@ -165,14 +176,35 @@ var css = csjs`
     .function {
       display: flex;
       flex-direction: column;
-      color: ${colors.whiteSmoke};
       position: relative;
       margin-left: 20px;
     }
     .ctor {
-      border: 3px solid ${colors.darkSmoke};
+      border: 2px solid ${colors.whiteSmoke};
       padding: 20px 0;
+      width: 65%;
+      margin-top: 2em;
     }
+    .statsEl {
+      display:flex;
+    }
+    .statsElTitle {
+      min-width: 220px;
+    }
+    .statsElValue {
+
+    }
+    .deployStats {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      justify-content: left;
+      flex-direction: column;
+      font-size: 0.8rem;
+      min-width: 230px;
+      margin: 10px 0 10px 20px;
+    }
+    .signature {}
+    .date {}
     .pure {
       color: ${colors.yellow};
     }
@@ -211,7 +243,7 @@ var css = csjs`
       font-family: 'Overpass Mono', monospace;
       margin: 15px 0 15px 0;
       display: flex;
-      align-items: baseline;
+      align-items: center;
       font-size: 1rem;
       color: ${colors.whiteSmoke};
     }
@@ -219,7 +251,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       display: flex;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 0.8rem;
       display: flex;
       min-width: 230px;
     }
@@ -229,7 +261,7 @@ var css = csjs`
     }
     .inputField {
       ${inputStyle()}
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       color: ${colors.whiteSmoke};
       border-color: ${colors.whiteSmoke};
       background-color: ${colors.darkSmoke};
@@ -355,8 +387,6 @@ function inputStyle() {
   `
 }
 
-var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
-
 /******************************************************************************
   ETHERS
 ******************************************************************************/
@@ -371,14 +401,15 @@ async function getProvider() {
       // Request account access if needed
       await ethereum.enable();
       // Acccounts now exposed
-      provider = new ethers.providers.Web3Provider(web3.currentProvider);
+      provider = new ethers.providers.Web3Provider(web3.currentProvider)
     } catch (error) {
       // User denied account access...
     }
+  } else {
+    window.open("https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn")
   }
+  return provider
 }
-
-getProvider()
 
 /*--------------------
       PAGE
@@ -475,7 +506,7 @@ function displayContractUI(opts) {
       var inputField = getInputField( {theme, type, cb})
       var inputContainer = bel`
         <div class=${css.inputContainer}>
-        <div class=${css.inputParam}>${name || 'key'} (${type})</div>
+        <div class=${css.inputParam} title="data type: ${type}">${name || 'key'}</div>
         <div class=${css.inputFields}>${inputField}</div>
         <div class=${css.output}></div>
         </div>`
@@ -503,11 +534,15 @@ function displayContractUI(opts) {
       return field
     }
 
-    function functions (fn, toggleIcon) {
+    function functions (fn) {
       var label = fn.stateMutability
-      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fn.name}</a>`
-      var toggleIcon = bel`<div class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></div>`
-      var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName} ${toggleIcon}</div>`
+      var fnIcon = ()=>{
+        if (label ==='payable' || label === 'nonpayable') return bel`<div class=${css.fnIcon}><i class="fa fa-edit"></i></div>`
+        if (label ==='pure') return bel`<div class=${css.fnIcon}><i class="fa fa-cogs"></i></div>`
+        if (label ==='view') return bel`<div class=${css.fnIcon}><i class="fa fa-eye"></i></div>`
+      }
+      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fnIcon()}<div class=${css.name}>${fn.name}</div></a>`
+      var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
       var send = bel`<div class=${css.send} onclick=${e => sendTx(fnName, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
       return bel`
@@ -586,16 +621,12 @@ function displayContractUI(opts) {
       }
       // TOGGLE input fields in a single function
       var params = fn.children[1]
-      var icon = toggleContainer.children[0]
-      toggleContainer.removeChild(icon)
       if (params.className === css.ulVisible.toString()) {
-        toggleContainer.appendChild(bel`<i class="fa fa-plus-circle" title="Expand to see the details">`)
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
-        toggleContainer.appendChild(bel`<i class="fa fa-minus-circle" title="Collapse">`)
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
         fn.style.border = `3px solid ${colors.darkSmoke}`
@@ -607,15 +638,49 @@ function displayContractUI(opts) {
     async function deployContract() {
       let abi = solcMetadata.output.abi
       let bytecode = '0x608060405234801561001057600080fd5b5060405161047a38038061047a8339810180604052810190808051820192919050505060018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156100c95780601f1061009e576101008083540402835291602001916100c9565b820191906000526020600020905b8154815290600101906020018083116100ac57829003601f168201915b50505050509050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505061035a806101206000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806337f428411461005c57806340c10f19146100b3578063d0679d3414610100575b600080fd5b34801561006857600080fd5b5061009d600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061014d565b6040518082815260200191505060405180910390f35b3480156100bf57600080fd5b506100fe600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610196565b005b34801561010c57600080fd5b5061014b600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610243565b005b6000600260008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156101f15761023f565b80600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b5050565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054101561028f5761032a565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555080600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b50505600a165627a7a723058204a30e625936611910cafe5d5cb195dd3bf4e88257c4064fdff3a6b918d1e94220029'
+      provider =  await getProvider()
+      let signer = await provider.getSigner()
       let element = document.querySelector("[class^='constructorFn']")
-      let signer = provider.getSigner()
-      let factory = new ethers.ContractFactory(abi, bytecode, signer)
+      let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       let instance = await factory.deploy(getArgs(element, 'inputFields'))
-      contract = instance
-      console.log(contract.address)
-      let contractHash = contract.deployTransaction.hash
-      await contract.deployed()
+      createDeployStats(instance)
     }
+
+    function createDeployStats (contract) {
+      ctor.innerHTML = `
+        <div class=${css.deployStats}>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Deployed:</div>
+            <div class=${css.statsElValue}>${date}</div>
+          </div>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Contract address:</div>
+            <div class=${css.statsElValue}>${contract.deployTransaction.hash}</div>
+          </div>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Signed by:</div>
+            <div class=${css.statsElValue}>${contract.deployTransaction.from}</div>
+          </div>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Gas price:</div>
+            <div class=${css.statsElValue}>${contract.deployTransaction.gasPrice.toString()}</div>
+          </div>
+        </div>
+      `
+      console.log(contract)
+      console.log(contract.deployTransaction.hash)
+    }
+
+    var ctor = bel`
+    <div class="${css.function} ${css.ctor}">
+      ${metadata.constructorInput}
+      <div class=${css.ctorFooter}>
+      </div>
+      <div class=${css.deploy} onclick=${()=>deployContract()}>
+        <div class=${css.deployTitle}>Deploy</div>
+        <i class="${css.icon} fa fa-arrow-circle-right"></i>
+      </div>
+    </div>`
 
     return bel`
     <div class=${css.preview}>
@@ -626,15 +691,9 @@ function displayContractUI(opts) {
           <i class="fa fa-plus-circle" title="Expand to see the details"></i>
         </span>
       </div>
-      <div class="${css.function} ${css.ctor}">
-        ${metadata.constructorInput}
-        <div class=${css.deploy} onclick=${()=>deployContract()}>
-            <div class=${css.deployTitle}>Deploy</div>
-            <i class="${css.icon} fa fa-arrow-circle-right"></i>
-        </div>
-      </div>
     </div>
     <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
+    ${ctor}
     </div>
     `
 
