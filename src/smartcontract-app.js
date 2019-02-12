@@ -1,7 +1,7 @@
 const bel = require("bel")
 const csjs = require("csjs-inject")
 const Web3 = require('web3')
-var ethers = require('ethers')
+const ethers = require('ethers')
 const glossary = require('glossary')
 const date = require('getDate')
 const shortenHexData = require('shortenHexData')
@@ -43,7 +43,6 @@ var css = csjs`
     .preview {
       padding: 5%;
       min-width: 350px;
-      height: 100%;
       font-family: 'Overpass Mono', monospace;
       display: flex;
       flex-direction: column;
@@ -80,12 +79,34 @@ var css = csjs`
     .txReturn {
       border: 3px dashed ${colors.darkSmoke};
       border-top: none;
-      top: 87px;
-      left: -3px;
+      min-width: 230px;
+      top: -41px;
+      left: 20px;
       height: 80px;
       width: 624px;
       position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+    .txReturnLeft, .txReturnRight {
+      display: flex;
+      flex-direction: column;
+    }
+    .txReturnBody {
+      font-size: 0.7rem;
+      display: flex;
+      color: ${colors.whiteSmoke};
+      width: 100%;
+      margin: 1% 5%;
+      justify-content: space-evenly;
+    }
+    .txReturnField {
+      display:flex;
+      justify-content: flex-start;
+    }
+    .txReturnTitle {}
+    .txReturnValue {}
     .contractName {
       cursor: pointer;
       font-size: 2rem;
@@ -187,6 +208,9 @@ var css = csjs`
       background-color: ${colors.dark};
       padding-right: 5px;
     }
+    .fnContainer {
+      position: relative;
+    }
     .function {
       display: flex;
       flex-direction: column;
@@ -212,6 +236,9 @@ var css = csjs`
     .statsElValue {
 
     }
+    .inProgress {
+
+    }
     .deployStats {
       color: ${colors.whiteSmoke};
       display: flex;
@@ -219,7 +246,7 @@ var css = csjs`
       flex-direction: column;
       font-size: 0.8rem;
       min-width: 230px;
-      margin: 1% 10%;
+      margin: 1% 5%;
     }
     .signature {}
     .date {}
@@ -564,12 +591,14 @@ function displayContractUI(opts) {
       var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
       return bel`
-      <div class="${functionClass} ${css.function}">
-        ${title}
-        <ul class=${css.ulHidden}>
-          ${fn.inputs}
-          ${send}
-        </ul>
+      <div class=${css.fnContainer}>
+        <div class="${functionClass} ${css.function}">
+          ${title}
+          <ul class=${css.ulHidden}>
+            ${fn.inputs}
+            ${send}
+          </ul>
+        </div>
       </div>`
     }
 
@@ -583,22 +612,49 @@ function displayContractUI(opts) {
     }
 
     async function sendTx (name, e) {
-      let fnName = name
-      let element = e.target.parentNode.parentNode.parentNode
-      let txReturn = bel`
-        <div class=${css.txReturn}>
-        </div>`
-      let args = getArgs(element, 'inputContainer')
-      let overrides = {
+      let element = e.target.parentNode.parentNode.parentNode.parentNode
+      let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+      if (contract) {
+        let fnName = name
+        let args = getArgs(element, 'inputContainer')
+        let overrides = {
           // The address to execute the call as
           from: provider,
           // The maximum units of gas for the transaction to use
           gasLimit: 23000,
+        }
+        let transaction = await contract[fnName](...args)
+        let receipt = await provider.getTransactionReceipt(transaction.hash)
+        console.log(receipt)
+        console.log(transaction)
+        txReturn.innerHTML = `
+          <div class=${css.txReturnBody}>
+          <div class=${css.txReturnLeft}>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Sent: </div>
+              <div class=${css.txReturnValue}>${date}</div>
+            </div>
+            <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle} title="Transaction's address">Tx address: </div>
+            <div class=${css.txReturnValue}>${shortenHexData(transaction.hash)}</div>
+            </div>
+          </div>
+          <div class=${css.txReturnRight}>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Signed by: </div>
+              <div class=${css.txReturnValue}>${shortenHexData(transaction.from)}</div>
+            </div>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Gas price: </div>
+              <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
+            </div>
+          </div>
+        </div>`
+      } else {
+        txReturn.innerHTML = `<div class=${css.txReturnBody}>You need to deploy the contract first. Only after that you can call the functions and interact with the deployed contract.</div>`
+        setTimeout(()=>{txReturn.parentNode.removeChild(txReturn)}, 4000)
       }
-      let transaction = await contract[fnName](...args)
       element.appendChild(txReturn)
-      element.style.marginBottom = "6em";
-      console.log(transaction)
     }
 
     function toggleAll (e) {
@@ -620,15 +676,17 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
+      var txReturn = document.querySelector("[class^='txReturn']")
       // TOGGLE triggered by toggleAll
       if (fun != null) {
-        fn = fun
+        fn = fun.children[0]
         toggleContainer = e.children[1]
         var fnInputs = fn.children[1]
         // Makes sure all functions are opened or closed before toggleAll executes
         if (constructorIcon.className.includes('plus') && fnInputs.className === css.ulVisible.toString()) {
           fnInputs.classList.remove(css.ulVisible)
           fnInputs.classList.add(css.ulHidden)
+          if (txReturn) txReturn.parentNode.removeChild(txReturn)
         }
         else if (constructorIcon.className.includes('minus') && fnInputs.className === css.ulHidden.toString()) {
           fnInputs.classList.remove(css.ulHidden)
@@ -644,6 +702,7 @@ function displayContractUI(opts) {
       if (params.className === css.ulVisible.toString()) {
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
+        if (txReturn) txReturn.parentNode.removeChild(txReturn)
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
@@ -664,7 +723,32 @@ function displayContractUI(opts) {
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       let instance = await factory.deploy(getArgs(element, 'inputFields'))
       contract = instance
-      createDeployStats(instance)
+      deployingNotice()
+      let deployed = await contract.deployed()
+      createDeployStats(contract)
+      activateSendTx(contract)
+    }
+
+    function deployingNotice() {
+      let txReturn = document.querySelector("[class^='txReturn']")
+      ctor.innerHTML = `
+        <div class=${css.deployStats}>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Deploying to Ethereum network</div>
+            <div class=${css.inProgress}>...</div>
+          </div>
+        </div>`
+      if (txReturn) txReturn.parentNode.removeChild(txReturn)
+    }
+
+    function activateSendTx(instance) {
+      let sendButtons = document.querySelectorAll("[class^='send']")
+      for(var i = 0;i < sendButtons.length;i++) {
+        sendButtons[i].style.color = colors.slateGrey
+      }
+      for(var i = 0;i < sendButtons.length;i++) {
+        sendButtons[i].style.color = colors.whiteSmoke
+      }
     }
 
     function createDeployStats (contract) {
@@ -688,7 +772,6 @@ function displayContractUI(opts) {
           </div>
         </div>
       `
-
     }
 
     var ctor = bel`
