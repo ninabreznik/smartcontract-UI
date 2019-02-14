@@ -9,7 +9,7 @@ var opts = {
 
 document.body.appendChild(smartcontractapp(opts))
 
-},{"./":413,"./metadata.json":2}],2:[function(require,module,exports){
+},{"./":414,"./metadata.json":2}],2:[function(require,module,exports){
 module.exports=[
 {"compiler":{"version":"0.4.25+commit.59dbf8f1"},"language":"Solidity","output":{"abi":[{"constant":true,"inputs":[{"name":"addr","type":"address"}],"name":"queryBalance","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"owner","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"send","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_name","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"}],"devdoc":{"methods":{}},"userdoc":{"methods":{}}},"settings":{"compilationTarget":{"browser/ballot.sol":"Coin"},"evmVersion":"byzantium","libraries":{},"optimizer":{"enabled":false,"runs":200},"remappings":[]},"sources":{"browser/ballot.sol":{"keccak256":"0x51afed3c3d8f1fc2fbdd8265ba329c4eca42d828b7b7afe3f4ba3cdd4b1d40e7","urls":["bzzr://e1dcf63e9d7b3f8e456dd70a2fb755489285fc9f184bb0b0334453ef9ae81045"]}},"version":1},
   {
@@ -54368,12 +54368,23 @@ var glossary = {
 }
 
 },{}],413:[function(require,module,exports){
+module.exports = shortenHexData
+
+function shortenHexData (data) {
+  if (!data) return ''
+  if (data.length < 5) return data
+  var len = data.length
+  return data.slice(0, 8) + '...' + data.slice(len - 8, len)
+}
+
+},{}],414:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 const Web3 = require('web3')
-var ethers = require('ethers')
+const ethers = require('ethers')
 const glossary = require('glossary')
 const date = require('getDate')
+const shortenHexData = require('shortenHexData')
 const validator = require('solidity-validator')
 const inputAddress = require("input-address")
 const inputArray = require("input-array")
@@ -54412,7 +54423,6 @@ var css = csjs`
     .preview {
       padding: 5%;
       min-width: 350px;
-      height: 100%;
       font-family: 'Overpass Mono', monospace;
       display: flex;
       flex-direction: column;
@@ -54446,6 +54456,40 @@ var css = csjs`
       visibility: hidden;
       height: 0;
     }
+    .txReturn {
+      border: 3px dashed ${colors.darkSmoke};
+      border-top: none;
+      min-width: 230px;
+      top: -41px;
+      left: 20px;
+      min-height: 80px;
+      width: 624px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .txReturnLeft, .txReturnRight {
+      display: flex;
+      flex-direction: column;
+    }
+    .txReturnBody {
+      font-size: 0.7rem;
+      display: flex;
+      color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      border: 1px solid ${colors.whiteSmoke};
+      width: 100%;
+      margin: 5%;
+      padding: 3%;
+      justify-content: space-evenly;
+    }
+    .txReturnField {
+      display:flex;
+      justify-content: flex-start;
+    }
+    .txReturnTitle {}
+    .txReturnValue {}
     .contractName {
       cursor: pointer;
       font-size: 2rem;
@@ -54471,6 +54515,13 @@ var css = csjs`
     .fnIcon {
       margin-right: 5%;
       font-size: 1.1em;
+      position: relative;
+      width: 30px;
+    }
+    .faIcon {
+      position: absolute;
+      top: -15px;
+      left: 0;
     }
     .name {
       font-size: 0.7em;
@@ -54502,7 +54553,7 @@ var css = csjs`
       display: flex;
       align-items: baseline;
       position: absolute;
-      top: -25px;
+      top: -20px;
       left: 20px;
       background-color: ${colors.dark};
       padding: 0 5px 0 5px;
@@ -54527,10 +54578,7 @@ var css = csjs`
       position: absolute;
       padding: 0 5px;
       background-color: ${colors.dark};
-    }
-    .deploy:hover {
       cursor: pointer;
-      opacity: 0.9;
     }
     .send {
       display: flex;
@@ -54543,6 +54591,13 @@ var css = csjs`
       background-color: ${colors.dark};
       padding-right: 5px;
     }
+    .send:hover {
+      opacity: 0.9;
+      cursor: pointer;
+    }
+    .fnContainer {
+      position: relative;
+    }
     .function {
       display: flex;
       flex-direction: column;
@@ -54550,18 +54605,25 @@ var css = csjs`
       margin-left: 20px;
     }
     .ctor {
-      border: 2px solid ${colors.whiteSmoke};
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 2px dashed ${colors.darkSmoke};
       padding: 20px 0;
-      width: 65%;
-      margin-top: 2em;
+      width: 630px;
+      margin: 2em 0 0 20px;
     }
     .statsEl {
       display:flex;
+      justify-content: flex-start;
     }
     .statsElTitle {
       min-width: 220px;
     }
     .statsElValue {
+
+    }
+    .inProgress {
 
     }
     .deployStats {
@@ -54571,7 +54633,7 @@ var css = csjs`
       flex-direction: column;
       font-size: 0.8rem;
       min-width: 230px;
-      margin: 10px 0 10px 20px;
+      margin: 1% 5%;
     }
     .signature {}
     .date {}
@@ -54589,10 +54651,6 @@ var css = csjs`
     }
     .icon {
       margin-left: 5px;
-    }
-    .icon:hover {
-      opacity: 0.9;
-      cursor: pointer;
     }
     .output {
       font-size: 1.5rem;
@@ -54876,9 +54934,9 @@ function displayContractUI(opts) {
       var inputField = getInputField( {theme, type, cb})
       var inputContainer = bel`
         <div class=${css.inputContainer}>
-        <div class=${css.inputParam} title="data type: ${type}">${name || 'key'}</div>
-        <div class=${css.inputFields}>${inputField}</div>
-        <div class=${css.output}></div>
+          <div class=${css.inputParam} title="data type: ${type}">${name || 'key'}</div>
+          <div class=${css.inputFields}>${inputField}</div>
+          <div class=${css.output}></div>
         </div>`
       return inputContainer
       function cb (msg) {
@@ -54907,21 +54965,23 @@ function displayContractUI(opts) {
     function functions (fn) {
       var label = fn.stateMutability
       var fnIcon = ()=>{
-        if (label ==='payable' || label === 'nonpayable') return bel`<div class=${css.fnIcon}><i class="fa fa-edit"></i></div>`
-        if (label ==='pure') return bel`<div class=${css.fnIcon}><i class="fa fa-cogs"></i></div>`
-        if (label ==='view') return bel`<div class=${css.fnIcon}><i class="fa fa-eye"></i></div>`
+        if (label ==='payable' || label === 'nonpayable') return bel`<div class=${css.fnIcon}><i class="fa fa-edit ${css.faIcon}"></i></div>`
+        if (label ==='pure') return bel`<div class=${css.fnIcon}><i class="fa fa-cogs ${css.faIcon}"></i></div>`
+        if (label ==='view') return bel`<div class=${css.fnIcon}><i class="fa fa-eye ${css.faIcon}"></i></div>`
       }
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fnIcon()}<div class=${css.name}>${fn.name}</div></a>`
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
-      var send = bel`<div class=${css.send} onclick=${e => sendTx(fnName, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
+      var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
       return bel`
-      <div class="${functionClass} ${css.function}">
-        ${title}
-        <ul class=${css.ulHidden}>
-          ${fn.inputs}
-          ${send}
-        </ul>
+      <div class=${css.fnContainer}>
+        <div class="${functionClass} ${css.function}">
+          ${title}
+          <ul class=${css.ulHidden}>
+            ${fn.inputs}
+            ${send}
+          </ul>
+        </div>
       </div>`
     }
 
@@ -54934,21 +54994,57 @@ function displayContractUI(opts) {
       return args
     }
 
-    async function sendTx (fn, e) {
-      let fnName = fn.innerHTML
-      let element = e.target.parentNode.parentNode.parentNode
-      let args = getArgs(element, 'inputContainer')
-      let overrides = {
+    async function sendTx (name, e) {
+      let element = e.target.parentNode.parentNode.parentNode.parentNode
+      let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+      if (contract) {
+        let fnName = name
+        let args = getArgs(element, 'inputContainer')
+        let overrides = {
           // The address to execute the call as
           from: provider,
-
           // The maximum units of gas for the transaction to use
           gasLimit: 23000,
-      };
-      let sendPromise = contract[fnName](...args)
-      sendPromise.then(function(transaction) {
-        console.log(transaction);
-      });
+        }
+        let transaction = await contract[fnName](...args)
+        let receipt = await provider.getTransactionReceipt(transaction.hash)
+        console.log(receipt)
+        console.log(transaction)
+        txReturn.innerHTML = `
+          <div class=${css.txReturnBody}>
+          <div class=${css.txReturnLeft}>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Sent: </div>
+              <div class=${css.txReturnValue}>${date}</div>
+            </div>
+            <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle} title="Transaction's address">Tx address: </div>
+            <div class=${css.txReturnValue}>${shortenHexData(transaction.hash)}</div>
+            </div>
+          </div>
+          <div class=${css.txReturnRight}>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Signed by: </div>
+              <div class=${css.txReturnValue}>${shortenHexData(transaction.from)}</div>
+            </div>
+            <div class=${css.txReturnField}>
+              <div class=${css.txReturnTitle}>Gas price: </div>
+              <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
+            </div>
+          </div>
+        </div>`
+      } else {
+        txReturn.innerHTML = `<div class=${css.txReturnBody}>You need to deploy the contract first. Only after that you can call the functions and interact with the deployed contract.</div>`
+        let deploy = document.querySelector("[class^='deploy']")
+        setTimeout(()=>{txReturn.parentNode.removeChild(txReturn)}, 8000)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 3000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 3500)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 4000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 4500)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 5000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 5500)
+      }
+      element.appendChild(txReturn)
     }
 
     function toggleAll (e) {
@@ -54970,15 +55066,17 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
+      var txReturn = document.querySelector("[class^='txReturn']")
       // TOGGLE triggered by toggleAll
       if (fun != null) {
-        fn = fun
+        fn = fun.children[0]
         toggleContainer = e.children[1]
         var fnInputs = fn.children[1]
         // Makes sure all functions are opened or closed before toggleAll executes
         if (constructorIcon.className.includes('plus') && fnInputs.className === css.ulVisible.toString()) {
           fnInputs.classList.remove(css.ulVisible)
           fnInputs.classList.add(css.ulHidden)
+          if (txReturn) txReturn.parentNode.removeChild(txReturn)
         }
         else if (constructorIcon.className.includes('minus') && fnInputs.className === css.ulHidden.toString()) {
           fnInputs.classList.remove(css.ulHidden)
@@ -54994,12 +55092,13 @@ function displayContractUI(opts) {
       if (params.className === css.ulVisible.toString()) {
         params.classList.remove(css.ulVisible)
         params.classList.add(css.ulHidden)
+        if (txReturn) txReturn.parentNode.removeChild(txReturn)
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
         params.classList.remove(css.ulHidden)
         params.classList.add(css.ulVisible)
-        fn.style.border = `3px solid ${colors.darkSmoke}`
+        fn.style.border = `3px dashed ${colors.darkSmoke}`
         fn.style.marginBottom = '2em'
       }
     }
@@ -55007,13 +55106,39 @@ function displayContractUI(opts) {
 // Create and deploy contract using WEB3
     async function deployContract() {
       let abi = solcMetadata.output.abi
-      let bytecode = '0x608060405234801561001057600080fd5b5060405161047a38038061047a8339810180604052810190808051820192919050505060018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156100c95780601f1061009e576101008083540402835291602001916100c9565b820191906000526020600020905b8154815290600101906020018083116100ac57829003601f168201915b50505050509050336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505061035a806101206000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806337f428411461005c57806340c10f19146100b3578063d0679d3414610100575b600080fd5b34801561006857600080fd5b5061009d600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061014d565b6040518082815260200191505060405180910390f35b3480156100bf57600080fd5b506100fe600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610196565b005b34801561010c57600080fd5b5061014b600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050610243565b005b6000600260008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156101f15761023f565b80600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b5050565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054101561028f5761032a565b80600260003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555080600260008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055505b50505600a165627a7a723058204a30e625936611910cafe5d5cb195dd3bf4e88257c4064fdff3a6b918d1e94220029'
+      let bytecode = '608060405234801561001057600080fd5b50610d16806100206000396000f3fe608060405260043610610072576000357c010000000000000000000000000000000000000000000000000000000090048063093e71571461007757806319994442146100a057806374adad1d146100c9578063daea85c51461010a578063e01212c014610133578063fb1a002a1461015c575b600080fd5b34801561008357600080fd5b5061009e6004803603610099919081019061097f565b610187565b005b3480156100ac57600080fd5b506100c760048036036100c291908101906108ef565b61033c565b005b3480156100d557600080fd5b506100f060048036036100eb91908101906108ef565b61033f565b604051610101959493929190610b47565b60405180910390f35b34801561011657600080fd5b50610131600480360361012c91908101906108ef565b6104c5565b005b34801561013f57600080fd5b5061015a60048036036101559190810190610918565b6104c8565b005b34801561016857600080fd5b506101716104cd565b60405161017e9190610b25565b60405180910390f35b60a0604051908101604052808481526020018381526020018281526020016040805190810160405280600981526020017f7375626d6974746564000000000000000000000000000000000000000000000081525081526020013373ffffffffffffffffffffffffffffffffffffffff16815250600160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008201518160000155602082015181600101556040820151816002019080519060200190610269929190610786565b506060820151816003019080519060200190610286929190610786565b5060808201518160040160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555090505060003390806001815401808255809150509060018203906000526020600020016000909192909190916101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050505050565b50565b6001602052806000526040600020600091509050806000015490806001015490806002018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156103f75780601f106103cc576101008083540402835291602001916103f7565b820191906000526020600020905b8154815290600101906020018083116103da57829003601f168201915b505050505090806003018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156104955780601f1061046a57610100808354040283529160200191610495565b820191906000526020600020905b81548152906001019060200180831161047857829003601f168201915b5050505050908060040160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905085565b50565b505050565b60608060008054905060405190808252806020026020018201604052801561050f57816020015b6104fc610806565b8152602001906001900390816104f45790505b50905060008090505b60008054905081101561077e5760016000808381548110151561053757fe5b9060005260206000200160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060a060405190810160405290816000820154815260200160018201548152602001600282018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156106555780601f1061062a57610100808354040283529160200191610655565b820191906000526020600020905b81548152906001019060200180831161063857829003601f168201915b50505050508152602001600382018054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156106f75780601f106106cc576101008083540402835291602001916106f7565b820191906000526020600020905b8154815290600101906020018083116106da57829003601f168201915b505050505081526020016004820160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681525050828281518110151561076457fe5b906020019060200201819052508080600101915050610518565b508091505090565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106107c757805160ff19168380011785556107f5565b828001600101855582156107f5579182015b828111156107f45782518255916020019190600101906107d9565b5b509050610802919061084c565b5090565b60a06040519081016040528060008152602001600081526020016060815260200160608152602001600073ffffffffffffffffffffffffffffffffffffffff1681525090565b61086e91905b8082111561086a576000816000905550600101610852565b5090565b90565b600061087d8235610c6d565b905092915050565b600082601f830112151561089857600080fd5b81356108ab6108a682610bd5565b610ba8565b915080825260208301602083018583830111156108c757600080fd5b6108d2838284610c89565b50505092915050565b60006108e78235610c7f565b905092915050565b60006020828403121561090157600080fd5b600061090f84828501610871565b91505092915050565b60008060006060848603121561092d57600080fd5b600061093b868287016108db565b935050602084013567ffffffffffffffff81111561095857600080fd5b61096486828701610885565b925050604061097586828701610871565b9150509250925092565b60008060006060848603121561099457600080fd5b60006109a2868287016108db565b93505060206109b3868287016108db565b925050604084013567ffffffffffffffff8111156109d057600080fd5b6109dc86828701610885565b9150509250925092565b6109ef81610c31565b82525050565b6000610a0082610c0e565b80845260208401935083602082028501610a1985610c01565b60005b84811015610a52578383038852610a34838351610a99565b9250610a3f82610c24565b9150602088019750600181019050610a1c565b508196508694505050505092915050565b6000610a6e82610c19565b808452610a82816020860160208601610c98565b610a8b81610ccb565b602085010191505092915050565b600060a083016000830151610ab16000860182610b16565b506020830151610ac46020860182610b16565b5060408301518482036040860152610adc8282610a63565b91505060608301518482036060860152610af68282610a63565b9150506080830151610b0b60808601826109e6565b508091505092915050565b610b1f81610c63565b82525050565b60006020820190508181036000830152610b3f81846109f5565b905092915050565b600060a082019050610b5c6000830188610b16565b610b696020830187610b16565b8181036040830152610b7b8186610a63565b90508181036060830152610b8f8185610a63565b9050610b9e60808301846109e6565b9695505050505050565b6000604051905081810181811067ffffffffffffffff82111715610bcb57600080fd5b8060405250919050565b600067ffffffffffffffff821115610bec57600080fd5b601f19601f8301169050602081019050919050565b6000602082019050919050565b600081519050919050565b600081519050919050565b6000602082019050919050565b6000610c3c82610c43565b9050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000819050919050565b6000610c7882610c43565b9050919050565b6000819050919050565b82818337600083830152505050565b60005b83811015610cb6578082015181840152602081019050610c9b565b83811115610cc5576000848401525b50505050565b6000601f19601f830116905091905056fea265627a7a723058204747206ad99bddbdedcf31c4746d1bf4c8314bfb73df10ca69b7d8e608dc00526c6578706572696d656e74616cf50037'
       provider =  await getProvider()
       let signer = await provider.getSigner()
       let element = document.querySelector("[class^='constructorFn']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       let instance = await factory.deploy(getArgs(element, 'inputFields'))
-      createDeployStats(instance)
+      contract = instance
+      deployingNotice()
+      let deployed = await contract.deployed()
+      createDeployStats(contract)
+      activateSendTx(contract)
+    }
+
+    function deployingNotice() {
+      let txReturn = document.querySelector("[class^='txReturn']")
+      ctor.innerHTML = `
+        <div class=${css.deployStats}>
+          <div class=${css.statsEl}>
+            <div class=${css.statsElTitle}>Deploying to Ethereum network</div>
+            <div class=${css.inProgress}>...</div>
+          </div>
+        </div>`
+      if (txReturn) txReturn.parentNode.removeChild(txReturn)
+    }
+
+    function activateSendTx(instance) {
+      let sendButtons = document.querySelectorAll("[class^='send']")
+      for(var i = 0;i < sendButtons.length;i++) {
+        sendButtons[i].style.color = colors.slateGrey
+      }
+      for(var i = 0;i < sendButtons.length;i++) {
+        sendButtons[i].style.color = colors.whiteSmoke
+      }
     }
 
     function createDeployStats (contract) {
@@ -55023,13 +55148,13 @@ function displayContractUI(opts) {
             <div class=${css.statsElTitle}>Deployed:</div>
             <div class=${css.statsElValue}>${date}</div>
           </div>
-          <div class=${css.statsEl}>
+          <div class=${css.statsEl} title="${contract.deployTransaction.hash}"}>
             <div class=${css.statsElTitle}>Contract address:</div>
-            <div class=${css.statsElValue}>${contract.deployTransaction.hash}</div>
+            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.hash)}</div>
           </div>
-          <div class=${css.statsEl}>
+          <div class=${css.statsEl} title="${contract.deployTransaction.from}">
             <div class=${css.statsElTitle}>Signed by:</div>
-            <div class=${css.statsElValue}>${contract.deployTransaction.from}</div>
+            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
           </div>
           <div class=${css.statsEl}>
             <div class=${css.statsElTitle}>Gas price:</div>
@@ -55037,15 +55162,11 @@ function displayContractUI(opts) {
           </div>
         </div>
       `
-      console.log(contract)
-      console.log(contract.deployTransaction.hash)
     }
 
     var ctor = bel`
-    <div class="${css.function} ${css.ctor}">
+    <div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.ctorFooter}>
-      </div>
       <div class=${css.deploy} onclick=${()=>deployContract()}>
         <div class=${css.deployTitle}>Deploy</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
@@ -55070,4 +55191,4 @@ function displayContractUI(opts) {
   }
 }
 
-},{"bel":22,"csjs-inject":69,"ethers":118,"getDate":411,"glossary":412,"input-address":155,"input-array":170,"input-boolean":180,"input-integer":181,"input-string":191,"solidity-validator":260,"web3":393}]},{},[1]);
+},{"bel":22,"csjs-inject":69,"ethers":118,"getDate":411,"glossary":412,"input-address":155,"input-array":170,"input-boolean":180,"input-integer":181,"input-string":191,"shortenHexData":413,"solidity-validator":260,"web3":393}]},{},[1]);

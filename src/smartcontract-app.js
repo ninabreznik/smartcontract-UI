@@ -82,7 +82,7 @@ var css = csjs`
       min-width: 230px;
       top: -41px;
       left: 20px;
-      height: 80px;
+      min-height: 80px;
       width: 624px;
       position: relative;
       display: flex;
@@ -97,8 +97,11 @@ var css = csjs`
       font-size: 0.7rem;
       display: flex;
       color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      border: 1px solid ${colors.whiteSmoke};
       width: 100%;
-      margin: 1% 5%;
+      margin: 5%;
+      padding: 3%;
       justify-content: space-evenly;
     }
     .txReturnField {
@@ -107,6 +110,13 @@ var css = csjs`
     }
     .txReturnTitle {}
     .txReturnValue {}
+    .txReturnValue a {
+      text-decoration: none;
+      color: ${colors.whiteSmoke};
+    }
+    .txReturnValue a:hover {
+      opacity: 0.8;
+    }
     .contractName {
       cursor: pointer;
       font-size: 2rem;
@@ -208,6 +218,10 @@ var css = csjs`
       background-color: ${colors.dark};
       padding-right: 5px;
     }
+    .send:hover {
+      opacity: 0.9;
+      cursor: pointer;
+    }
     .fnContainer {
       position: relative;
     }
@@ -264,10 +278,6 @@ var css = csjs`
     }
     .icon {
       margin-left: 5px;
-    }
-    .icon:hover {
-      opacity: 0.9;
-      cursor: pointer;
     }
     .output {
       font-size: 1.5rem;
@@ -588,7 +598,7 @@ function displayContractUI(opts) {
       }
       var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fnIcon()}<div class=${css.name}>${fn.name}</div></a>`
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
-      var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
+      var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
       return bel`
       <div class=${css.fnContainer}>
@@ -611,50 +621,69 @@ function displayContractUI(opts) {
       return args
     }
 
-    async function sendTx (name, e) {
+    async function sendTx (name, label, e) {
       let element = e.target.parentNode.parentNode.parentNode.parentNode
       let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
       if (contract) {
         let fnName = name
         let args = getArgs(element, 'inputContainer')
-        let overrides = {
-          // The address to execute the call as
-          from: provider,
-          // The maximum units of gas for the transaction to use
-          gasLimit: 23000,
-        }
-        let transaction = await contract[fnName](...args)
-        let receipt = await provider.getTransactionReceipt(transaction.hash)
-        console.log(receipt)
-        console.log(transaction)
-        txReturn.innerHTML = `
+        let transaction = await contract.functions[fnName](...args)
+        if (label === 'payable' || label === 'nonpayable') {
+          let receipt = await transaction.wait()
+          let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
+          txReturn.innerHTML = `
           <div class=${css.txReturnBody}>
-          <div class=${css.txReturnLeft}>
-            <div class=${css.txReturnField}>
-              <div class=${css.txReturnTitle}>Sent: </div>
-              <div class=${css.txReturnValue}>${date}</div>
+            <div class=${css.txReturnLeft}>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle}>Sent: </div>
+                <div class=${css.txReturnValue}>${date}</div>
+              </div>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle} title="Transaction's address">Tx address: </div>
+                <div class=${css.txReturnValue}>${shortenHexData(receipt.transactionHash)}</div>
+              </div>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle}>Signed by: </div>
+                <div class=${css.txReturnValue}>${shortenHexData(receipt.from)}</div>
+              </div>
             </div>
-            <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle} title="Transaction's address">Tx address: </div>
-            <div class=${css.txReturnValue}>${shortenHexData(transaction.hash)}</div>
+            <div class=${css.txReturnRight}>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle}>Gas price: </div>
+                <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
+              </div>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle}>Gas used: </div>
+                <div class=${css.txReturnValue}>${parseInt(receipt.gasUsed._hex)}</div>
+              </div>
+              <div class=${css.txReturnField}>
+                <div class=${css.txReturnTitle}>Details: </div>
+                <div class=${css.txReturnValue}><a href=${linkToEtherscan} target="_blank">Link to Etherscan</a></div>
+              </div>
             </div>
-          </div>
-          <div class=${css.txReturnRight}>
-            <div class=${css.txReturnField}>
-              <div class=${css.txReturnTitle}>Signed by: </div>
-              <div class=${css.txReturnValue}>${shortenHexData(transaction.from)}</div>
-            </div>
-            <div class=${css.txReturnField}>
-              <div class=${css.txReturnTitle}>Gas price: </div>
-              <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
-            </div>
-          </div>
-        </div>`
+          </div>`
+        }
+        if (label === 'pure' || label === 'view') {
+          debugger
+          txReturn.innerHTML = `<div class=${css.txReturnBody}>${JSON.stringify(transaction)}</>`
+        }
       } else {
         txReturn.innerHTML = `<div class=${css.txReturnBody}>You need to deploy the contract first. Only after that you can call the functions and interact with the deployed contract.</div>`
-        setTimeout(()=>{txReturn.parentNode.removeChild(txReturn)}, 4000)
+        let deploy = document.querySelector("[class^='deploy']")
+        setTimeout(()=>{txReturn.parentNode.removeChild(txReturn)}, 8000)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 3000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 3500)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 4000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 4500)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 5000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 5500)
       }
       element.appendChild(txReturn)
+    }
+
+    function getTxCallReturn () {
+      // transaction.length    =>    number of arguments
+      //parseInt
     }
 
     function toggleAll (e) {
