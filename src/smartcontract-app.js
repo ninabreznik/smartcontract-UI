@@ -2,6 +2,8 @@ const bel = require("bel")
 const csjs = require("csjs-inject")
 const Web3 = require('web3')
 const ethers = require('ethers')
+const utils = require('ethers').utils
+const bigNumber = require('bignumber.js')
 const glossary = require('glossary')
 const date = require('getDate')
 const shortenHexData = require('shortenHexData')
@@ -11,6 +13,7 @@ const inputArray = require("input-array")
 const inputInteger = require("input-integer")
 const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
+const copy = require('copy-text-to-clipboard')
 
 // Styling variables
 
@@ -43,6 +46,7 @@ var css = csjs`
     .preview {
       padding: 5%;
       min-width: 350px;
+      min-height: 100vh;
       font-family: 'Overpass Mono', monospace;
       display: flex;
       flex-direction: column;
@@ -98,21 +102,32 @@ var css = csjs`
       display: flex;
       color: ${colors.whiteSmoke};
       background-color: ${colors.darkSmoke};
-      border: 1px solid ${colors.whiteSmoke};
       width: 100%;
-      margin: 5%;
+      margin: 5% 3%;
       padding: 3%;
-      justify-content: space-evenly;
+      justify-content: space-between;
+    }
+    .returnJSON {
+
     }
     .txReturnField {
       display:flex;
       justify-content: flex-start;
+      cursor: pointer;
     }
-    .txReturnTitle {}
-    .txReturnValue {}
+    .txReturnField:hover {
+      opacity: 0.8;
+    }
+    .txReturnTitle {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    .txReturnValue {
+      color: ${colors.whiteSmoke};
+    }
     .txReturnValue a {
       text-decoration: none;
-      color: ${colors.whiteSmoke};
+      color: ${colors.slateGrey};
     }
     .txReturnValue a:hover {
       opacity: 0.8;
@@ -235,17 +250,22 @@ var css = csjs`
       display: flex;
       flex-direction: column;
       position: relative;
-      border: 2px dashed ${colors.darkSmoke};
+      border: 3px dashed ${colors.darkSmoke};
       padding: 20px 0;
       width: 630px;
       margin: 2em 0 0 20px;
     }
     .statsEl {
       display:flex;
-      justify-content: flex-start;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .statsEl:hover {
+        opacity: 0.8;
     }
     .statsElTitle {
-      min-width: 220px;
+      margin-right: 5px;
+      font-weight: bold;
     }
     .statsElValue {
 
@@ -616,7 +636,18 @@ function displayContractUI(opts) {
       var args = []
       var inputs = element.querySelectorAll(`[class^=${selector}]`)
       inputs.forEach(x => {
-        args.push(x.querySelector('input').value)
+        let el = x.querySelector('input')
+        let val = el.value
+        var argument
+        if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
+          let number = bigNumber(Number(val)).toFixed(0)
+          argument = ethers.utils.bigNumberify(number.toString())
+        }
+        if (el.dataset.type.search(/\bbyte/) != -1) argument = val
+        if (el.dataset.type.search(/\bstring/) != -1) argument = val
+        if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
+        if (el.dataset.type.search(/\baddress/) != -1) argument = val
+        args.push(argument)
       })
       return args
     }
@@ -631,41 +662,45 @@ function displayContractUI(opts) {
         if (label === 'payable' || label === 'nonpayable') {
           let receipt = await transaction.wait()
           let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
-          txReturn.innerHTML = `
+          txReturn.appendChild(bel`
           <div class=${css.txReturnBody}>
             <div class=${css.txReturnLeft}>
               <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Sent: </div>
+                <div class=${css.txReturnTitle}>Sent:</div>
                 <div class=${css.txReturnValue}>${date}</div>
               </div>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle} title="Transaction's address">Tx address: </div>
+              <div class=${css.txReturnField} onclick=${()=>copy(receipt.transactionHash)}>
+                <div class=${css.txReturnTitle} title="Transaction's address">Tx address:</div>
                 <div class=${css.txReturnValue}>${shortenHexData(receipt.transactionHash)}</div>
               </div>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Signed by: </div>
+              <div class=${css.txReturnField} onclick=${()=>copy(receipt.from)}>
+                <div class=${css.txReturnTitle}>Signed by:</div>
                 <div class=${css.txReturnValue}>${shortenHexData(receipt.from)}</div>
               </div>
             </div>
-            <div class=${css.txReturnRight}>
+            <div class=${css.txReturnRight} onclick=${()=>copy(transaction.gasPrice._hex)}>
               <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Gas price: </div>
+                <div class=${css.txReturnTitle}>Gas price:</div>
                 <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
               </div>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Gas used: </div>
+              <div class=${css.txReturnField} onclick=${()=>copy(receipt.gasUsed._hex)}>
+                <div class=${css.txReturnTitle}>Gas used:</div>
                 <div class=${css.txReturnValue}>${parseInt(receipt.gasUsed._hex)}</div>
               </div>
               <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Details: </div>
+                <div class=${css.txReturnTitle}>Details:</div>
                 <div class=${css.txReturnValue}><a href=${linkToEtherscan} target="_blank">Link to Etherscan</a></div>
               </div>
             </div>
-          </div>`
+          </div>`)
         }
         if (label === 'pure' || label === 'view') {
-          debugger
-          txReturn.innerHTML = `<div class=${css.txReturnBody}>${JSON.stringify(transaction)}</>`
+          txReturn.innerHTML = `
+            <div class=${css.txReturnBody}>
+              <div class=${css.returnJSON}>
+                ${JSON.stringify(transaction, null, 1)}
+              </div>
+            </div>`
         }
       } else {
         txReturn.innerHTML = `<div class=${css.txReturnBody}>You need to deploy the contract first. Only after that you can call the functions and interact with the deployed contract.</div>`
@@ -679,11 +714,6 @@ function displayContractUI(opts) {
         setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 5500)
       }
       element.appendChild(txReturn)
-    }
-
-    function getTxCallReturn () {
-      // transaction.length    =>    number of arguments
-      //parseInt
     }
 
     function toggleAll (e) {
@@ -705,7 +735,6 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
-      var txReturn = document.querySelector("[class^='txReturn']")
       // TOGGLE triggered by toggleAll
       if (fun != null) {
         fn = fun.children[0]
@@ -715,7 +744,6 @@ function displayContractUI(opts) {
         if (constructorIcon.className.includes('plus') && fnInputs.className === css.ulVisible.toString()) {
           fnInputs.classList.remove(css.ulVisible)
           fnInputs.classList.add(css.ulHidden)
-          if (txReturn) txReturn.parentNode.removeChild(txReturn)
         }
         else if (constructorIcon.className.includes('minus') && fnInputs.className === css.ulHidden.toString()) {
           fnInputs.classList.remove(css.ulHidden)
@@ -781,26 +809,27 @@ function displayContractUI(opts) {
     }
 
     function createDeployStats (contract) {
-      ctor.innerHTML = `
+      ctor.innerHTML = ''
+      ctor.appendChild(bel`
         <div class=${css.deployStats}>
           <div class=${css.statsEl}>
             <div class=${css.statsElTitle}>Deployed:</div>
             <div class=${css.statsElValue}>${date}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.hash}"}>
+          <div class=${css.statsEl} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
             <div class=${css.statsElTitle}>Contract address:</div>
             <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.hash)}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.from}">
+          <div class=${css.statsEl} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
             <div class=${css.statsElTitle}>Signed by:</div>
             <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
           </div>
-          <div class=${css.statsEl}>
+          <div class=${css.statsEl} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
             <div class=${css.statsElTitle}>Gas price:</div>
             <div class=${css.statsElValue}>${contract.deployTransaction.gasPrice.toString()}</div>
           </div>
         </div>
-      `
+      `)
     }
 
     var ctor = bel`
