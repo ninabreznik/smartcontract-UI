@@ -54495,12 +54495,12 @@ var css = csjs`
     .errorIcon {
       font-size: 1.3rem;
     }
-    .ulVisible {
+    .visible {
       visibility: visible;
       height: 100%;
       padding: 0;
     }
-    .ulHidden {
+    .hidden {
       visibility: hidden;
       height: 0;
     }
@@ -55048,7 +55048,7 @@ function displayContractUI(opts) {
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
-          <ul class=${css.ulHidden}>
+          <ul class=${css.hidden}>
             ${fn.inputs}
             ${send}
           </ul>
@@ -55121,6 +55121,7 @@ function displayContractUI(opts) {
               </div>
             </div>
           </div>`)
+          element.appendChild(txReturn)
         }
         if (label === 'pure' || label === 'view') {
           txReturn.innerHTML = `
@@ -55129,19 +55130,17 @@ function displayContractUI(opts) {
                 ${JSON.stringify(transaction, null, 1)}
               </div>
             </div>`
+          element.appendChild(txReturn)
         }
       } else {
-        txReturn.innerHTML = `<div class=${css.txReturnItem}>You need to deploy the contract first. Only after that you can call the functions and interact with the deployed contract.</div>`
         let deploy = document.querySelector("[class^='deploy']")
-        setTimeout(()=>{txReturn.parentNode.removeChild(txReturn)}, 8000)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 1000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 1500)
+        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 2000)
+        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 2500)
         setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 3000)
         setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 3500)
-        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 4000)
-        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 4500)
-        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 5000)
-        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 5500)
       }
-      element.appendChild(txReturn)
     }
 
     function toggleAll (e) {
@@ -55163,36 +55162,55 @@ function displayContractUI(opts) {
     function toggle (e, fun, constructorIcon) {
       var fn
       var toggleContainer
+      function removeLogs (el) {
+        var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
+        if (txReturn) {
+          txReturn.classList.remove(css.visible)
+          txReturn.classList.add(css.hidden)
+          txReturn.style.minHeight = 0
+        }
+      }
+      function addLogs (el) {
+        var txReturn = el.parentNode.querySelectorAll("[class^='txReturn']")[0]
+        if (txReturn) {
+          txReturn.classList.remove(css.hidden)
+          txReturn.classList.add(css.visible)
+          txReturn.style.minHeight = '80px'
+        }
+      }
       // TOGGLE triggered by toggleAll
       if (fun != null) {
         fn = fun.children[0]
         toggleContainer = e.children[1]
         var fnInputs = fn.children[1]
         // Makes sure all functions are opened or closed before toggleAll executes
-        if (constructorIcon.className.includes('plus') && fnInputs.className === css.ulVisible.toString()) {
-          fnInputs.classList.remove(css.ulVisible)
-          fnInputs.classList.add(css.ulHidden)
+        if (constructorIcon.className.includes('plus') && fnInputs.className === css.visible.toString()) {
+          fnInputs.classList.remove(css.visible)
+          fnInputs.classList.add(css.hidden)
+          removeLogs(fn)
         }
-        else if (constructorIcon.className.includes('minus') && fnInputs.className === css.ulHidden.toString()) {
-          fnInputs.classList.remove(css.ulHidden)
-          fnInputs.classList.add(css.ulVisible)
+        else if (constructorIcon.className.includes('minus') && fnInputs.className === css.hidden.toString()) {
+          fnInputs.classList.remove(css.hidden)
+          fnInputs.classList.add(css.visible)
+          addLogs(fn)
         }
-      // TOGGLE triggered with onclick on function title
+      // TOGGLE triggered with onclick on function title (toggle single function)
       } else {
         fn = e.currentTarget.parentNode
         toggleContainer = e.currentTarget.children[1]
       }
       // TOGGLE input fields in a single function
       var params = fn.children[1]
-      if (params.className === css.ulVisible.toString()) {
-        params.classList.remove(css.ulVisible)
-        params.classList.add(css.ulHidden)
-        if (txReturn) txReturn.parentNode.removeChild(txReturn)
+      if (params.className === css.visible.toString()) {
+        params.classList.remove(css.visible)
+        params.classList.add(css.hidden)
+        removeLogs(fn)
         fn.style.border = 'none'
         fn.style.marginBottom = 0
       } else {
-        params.classList.remove(css.ulHidden)
-        params.classList.add(css.ulVisible)
+        params.classList.remove(css.hidden)
+        params.classList.add(css.visible)
+        addLogs(fn)
         fn.style.border = `3px dashed ${colors.darkSmoke}`
         fn.style.marginBottom = '2em'
       }
