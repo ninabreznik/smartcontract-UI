@@ -1,6 +1,5 @@
 const bel = require("bel")
 const csjs = require("csjs-inject")
-const Web3 = require('web3')
 const ethers = require('ethers')
 const utils = require('ethers').utils
 const bigNumber = require('bignumber.js')
@@ -471,17 +470,17 @@ var contract
 
 async function getProvider() {
   if (window.ethereum) {
-    window.web3 = new Web3(ethereum);
+    //window.web3 = new Web3(ethereum);
     try {
       // Request account access if needed
       await ethereum.enable();
       // Acccounts now exposed
-      provider = new ethers.providers.Web3Provider(web3.currentProvider)
+      provider = new ethers.providers.Web3Provider(window.web3.currentProvider)
     } catch (error) {
       // User denied account access...
     }
   } else {
-    window.open("https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn")
+    window.open("https://metamask.io/")
   }
   return provider
 }
