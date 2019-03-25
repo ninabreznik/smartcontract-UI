@@ -426,10 +426,6 @@ var css = csjs`
       align-items: center;
       margin-top: 10px;
     }
-    .arrayInput {
-      padding: 1px;
-      margin: 20px;
-    }
     .arrayPlusMinus {
       margin: 10px;
     }
