@@ -32,6 +32,7 @@ var colors = {
   darkSmoke: '#21252b',  // separators
   whiteSmoke: "#f5f5f5", // background light
   slateGrey: "#8a929b", // text
+  lightGrey: "#F1F2EB",
   violetRed: "#b25068",  // used as red in types (bool etc.)
   aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
   turquoise: "#14b9d5",
@@ -46,7 +47,7 @@ var css = csjs`
       padding: 5%;
       min-width: 350px;
       min-height: 100vh;
-      font-family: 'Overpass Mono', monospace;
+      font-family: 'Overpass Mono', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -149,25 +150,24 @@ var css = csjs`
     }
     .fnName {
       display: flex;
-      margin: 10px 5px 20px 0px;
       text-decoration: none;
       display: flex;
       align-items: center;
+      justify-content: center;
     }
     .fnIcon {
-      margin-right: 5%;
-      font-size: 1.1em;
+      font-size: 0.7em;
       position: relative;
-      width: 30px;
+      width: 25px;
+      top: 8px;
     }
     .faIcon {
       position: absolute;
-      top: -15px;
+      top: -16px;
       left: 0;
     }
     .name {
       font-size: 0.7em;
-      margin-bottom: 5px;
     }
     .stateMutability {
       margin-left: 5px;
@@ -183,7 +183,6 @@ var css = csjs`
     }
     .constructorFn {
       padding-top: 18px;
-      padding-bottom: 4em;
       width: 650px;
     }
     .functions {
@@ -195,7 +194,7 @@ var css = csjs`
       display: flex;
       align-items: baseline;
       position: absolute;
-      top: -20px;
+      top: -10px;
       left: 20px;
       background-color: ${colors.dark};
       padding: 0 5px 0 5px;
@@ -215,10 +214,10 @@ var css = csjs`
       display: flex;
       align-items: center;
       bottom: -16px;
-      right: 20px;
+      right: -12px;
       font-size: 1.8rem;
       position: absolute;
-      padding: 0 5px;
+      padding: 5 8px;
       background-color: ${colors.dark};
       cursor: pointer;
     }
@@ -226,7 +225,7 @@ var css = csjs`
       display: flex;
       align-items: baseline;
       bottom: -15px;
-      right: 20px;
+      right: 22px;
       font-size: 2rem;
       position: absolute;
       color: ${colors.darkSmoke};
@@ -253,7 +252,7 @@ var css = csjs`
       border: 3px dashed ${colors.darkSmoke};
       padding: 20px 0;
       width: 630px;
-      margin: 2em 0 0 20px;
+      margin: 0 0 5em 20px;
     }
     .statsEl {
       display:flex;
@@ -314,7 +313,7 @@ var css = csjs`
       cursor: pointer;
     }
     .inputContainer {
-      font-family: 'Overpass Mono', monospace;
+      font-family: 'Overpass Mono', sans-serif;
       margin: 15px 0 15px 0;
       display: flex;
       align-items: center;
@@ -327,7 +326,7 @@ var css = csjs`
       justify-content: center;
       font-size: 0.8rem;
       display: flex;
-      min-width: 230px;
+      min-width: 165px;
     }
     .inputFields {
     }
@@ -734,7 +733,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function toggleAll (e) {
-      var fnContainer = e.currentTarget.parentNode.nextSibling
+      var fnContainer = e.currentTarget.parentElement.parentElement.children[2]
       var constructorToggle = e.currentTarget.children[0]
       var constructorIcon = constructorToggle.children[0]
       constructorToggle.removeChild(constructorIcon)
@@ -891,8 +890,8 @@ function displayContractUI(result) {   // compilation result metadata
         </span>
       </div>
     </div>
-    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
     ${ctor}
+    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
     </div>
     `
 
