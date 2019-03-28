@@ -81,13 +81,13 @@ var css = csjs`
       height: 0;
     }
     .txReturn {
-      border: 3px dashed ${colors.darkSmoke};
+      border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 624px;
+      width: 626px;
       position: relative;
       display: flex;
       justify-content: center;
@@ -104,7 +104,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       background-color: ${colors.darkSmoke};
       width: 87%;
-      margin: 5% 3%;
+      margin: 3%;
       padding: 3%;
       justify-content: space-between;
     }
@@ -213,7 +213,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       display: flex;
       align-items: center;
-      bottom: -16px;
+      bottom: -15px;
       right: -12px;
       font-size: 1.8rem;
       position: absolute;
@@ -224,7 +224,7 @@ var css = csjs`
     .send {
       display: flex;
       align-items: baseline;
-      bottom: -15px;
+      bottom: -16px;
       right: 22px;
       font-size: 2rem;
       position: absolute;
@@ -249,7 +249,7 @@ var css = csjs`
       display: flex;
       flex-direction: column;
       position: relative;
-      border: 3px dashed ${colors.darkSmoke};
+      border: 2px dashed ${colors.darkSmoke};
       padding: 20px 0;
       width: 630px;
       margin: 0 0 5em 20px;
@@ -296,6 +296,7 @@ var css = csjs`
     }
     .icon {
       margin-left: 5px;
+      font-size: 0.9em;
     }
     .output {
       font-size: 1.5rem;
@@ -326,7 +327,7 @@ var css = csjs`
       justify-content: center;
       font-size: 0.8rem;
       display: flex;
-      min-width: 165px;
+      min-width: 200px;
     }
     .inputFields {
     }
@@ -647,26 +648,41 @@ function displayContractUI(result) {   // compilation result metadata
 
     function getArgs(element, selector) {
       var args = []
-      var inputs = element.querySelectorAll(`[class^=${selector}]`)
-      inputs.forEach(x => {
-        let el = x.querySelector('input')
-        let val = el.value
-        var argument
-        if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
-          if (val.isBigNumber) {
-            let number = bigNumber(Number(val)).toFixed(0)
-            argument = ethers.utils.bigNumberify(number.toString())
-          } else {
-            argument = Number(val)
-          }
+      var fields = element.querySelectorAll(`[class^=${selector}]`)
+      fields.forEach(x => {
+        if (x.children[0].title.includes('[')) {  // check if array
+          var argumentsInArr = []
+          var inputs = x.querySelectorAll('input')
+          inputs.forEach(i => {
+            let el = i
+            let val = i.value
+            argumentsInArr.push(getArgument(el, val))
+          })
+          args.push(argumentsInArr)
+        } else { // not an array (inputs.length = 1)
+          let el = x.querySelector('input')
+          let val = el.value
+          args.push(getArgument(el, val))
         }
-        if (el.dataset.type.search(/\bbyte/) != -1) argument = val
-        if (el.dataset.type.search(/\bstring/) != -1) argument = val
-        if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
-        if (el.dataset.type.search(/\baddress/) != -1) argument = val
-        args.push(argument)
       })
       return args
+    }
+
+    function getArgument(el, val) {
+      var argument
+      if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
+        if (val > Number.MAX_SAFE_INTEGER) {
+          let number = bigNumber(Number(val)).toFixed(0)
+          argument = ethers.utils.bigNumberify(number.toString())
+        } else {
+          argument = Number(val)
+        }
+      }
+      if (el.dataset.type.search(/\bbyte/) != -1) argument = val
+      if (el.dataset.type.search(/\bstring/) != -1) argument = val
+      if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
+      if (el.dataset.type.search(/\baddress/) != -1) argument = val
+      return argument
     }
 
     async function sendTx (name, label, e) {
@@ -800,7 +816,7 @@ function displayContractUI(result) {   // compilation result metadata
         params.classList.remove(css.hidden)
         params.classList.add(css.visible)
         addLogs(fn)
-        fn.style.border = `3px dashed ${colors.darkSmoke}`
+        fn.style.border = `2px dashed ${colors.darkSmoke}`
         fn.style.marginBottom = '2em'
       }
     }

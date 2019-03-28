@@ -18,72 +18,91 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-  pragma solidity >=0.4.22 <0.6.0;
-  contract Ballot {
+pragma solidity >=0.5.0;
+pragma experimental ABIEncoderV2;
 
-      struct Voter {
-          uint weight;
-          bool voted;
-          uint8 vote;
-          address delegate;
-      }
-      struct Proposal {
-          uint voteCount;
-      }
+contract InvoiceJournal {
 
-      address chairperson;
-      mapping(address => Voter) voters;
-      Proposal[] proposals;
-
-      /// Create a new ballot with $(_numProposals) different proposals.
-      constructor(uint8 _numProposals) public {
-          chairperson = msg.sender;
-          voters[chairperson].weight = 1;
-          proposals.length = _numProposals;
-      }
-
-      /// Give $(toVoter) the right to vote on this ballot.
-      /// May only be called by $(chairperson).
-      function giveRightToVote(address toVoter) public {
-          if (msg.sender != chairperson || voters[toVoter].voted) return;
-          voters[toVoter].weight = 1;
-      }
-
-      /// Delegate your vote to the voter $(to).
-      function delegate(address to) public {
-          Voter storage sender = voters[msg.sender]; // assigns reference
-          if (sender.voted) return;
-          while (voters[to].delegate != address(0) && voters[to].delegate != msg.sender)
-              to = voters[to].delegate;
-          if (to == msg.sender) return;
-          sender.voted = true;
-          sender.delegate = to;
-          Voter storage delegateTo = voters[to];
-          if (delegateTo.voted)
-              proposals[delegateTo.vote].voteCount += sender.weight;
-          else
-              delegateTo.weight += sender.weight;
-      }
-
-      /// Give a single vote to proposal $(toProposal).
-      function vote(uint8 toProposal) public {
-          Voter storage sender = voters[msg.sender];
-          if (sender.voted || toProposal >= proposals.length) return;
-          sender.voted = true;
-          sender.vote = toProposal;
-          proposals[toProposal].voteCount += sender.weight;
-      }
-
-      function winningProposal() public view returns (uint8 _winningProposal) {
-          uint256 winningVoteCount = 0;
-          for (uint8 prop = 0; prop < proposals.length; prop++)
-              if (proposals[prop].voteCount > winningVoteCount) {
-                  winningVoteCount = proposals[prop].voteCount;
-                  _winningProposal = prop;
-              }
-      }
+  struct Contractor {
+    string name;
+    string email;
+    string pubkey;
+    bool active;
+    bool exists;
   }
-      `
+  struct Invoice {
+    address contractor;
+    uint invoice_id;
+    string storage_url;
+    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+  }
+
+  address accountant;
+  mapping(address => Contractor) contractors;
+  mapping(address => Invoice[]) invoices;
+  address[] contractor_addresses;
+
+  function getAllInvoices () public view returns (Invoice[][] memory) {
+    uint len = contractor_addresses.length;
+  	Invoice[][] memory result = new Invoice[][](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = invoices[contractor_addresses[i]];
+    }
+
+    return result;
+  }
+  function getAllContractors () public view returns (Contractor[] memory) {
+    uint len = contractor_addresses.length;
+  	Contractor[] memory result = new Contractor[](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = contractors[contractor_addresses[i]];
+    }
+    return result;
+  }
+  function getYourInvoices () public view returns (Invoice[] memory) {
+    return invoices[msg.sender];
+  }
+  function activateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    contractor.active = true;
+    if (!contractor.exists) {
+      contractor.exists = true;
+      contractor_addresses.push(contractor_address);
+    }
+  }
+  function deactivateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    if (!contractor.active) return;
+    contractor.active = false;
+  }
+  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+    Contractor storage contractor = contractors[msg.sender];
+    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
+    contractor.name = name;
+    contractor.email = email;
+    contractor.pubkey = pubkey;
+  }
+  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+    Contractor memory contractor = contractors[msg.sender];
+    require(contractor.exists, "Unknown contractors cannot submit invoices");
+    require(contractor.active, "Unauthorized contractors cannot submit invoices");
+    Invoice[] storage _invoices = invoices[msg.sender];
+    Invoice memory new_invoice = Invoice({
+      contractor: msg.sender,
+      invoice_id: invoice_id,
+      storage_url: storage_url,
+      encrypted_decrypt_keys: keys
+    });
+    _invoices.push(new_invoice);
+    return contractor;
+  }
+  constructor () public {
+    accountant = msg.sender;
+  }
+}
+`
 
 },{"../":120,"solc-js":66}],2:[function(require,module,exports){
 const kvidb = require('kv-idb');
@@ -427,7 +446,7 @@ module.exports.createElement = belCreateElement
   'use strict';
 
 /*
- *      bignumber.js v8.0.2
+ *      bignumber.js v8.1.1
  *      A JavaScript library for arbitrary-precision arithmetic.
  *      https://github.com/MikeMcl/bignumber.js
  *      Copyright (c) 2019 Michael Mclaughlin <M8ch88l@gmail.com>
@@ -476,6 +495,7 @@ module.exports.createElement = belCreateElement
 
   var BigNumber,
     isNumeric = /^-?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i,
+    hasSymbol = typeof Symbol == 'function' && typeof Symbol.iterator == 'symbol',
 
     mathceil = Math.ceil,
     mathfloor = Math.floor,
@@ -601,51 +621,57 @@ module.exports.createElement = belCreateElement
      * The BigNumber constructor and exported function.
      * Create and return a new instance of a BigNumber object.
      *
-     * n {number|string|BigNumber} A numeric value.
-     * [b] {number} The base of n. Integer, 2 to ALPHABET.length inclusive.
+     * v {number|string|BigNumber} A numeric value.
+     * [b] {number} The base of v. Integer, 2 to ALPHABET.length inclusive.
      */
-    function BigNumber(n, b) {
+    function BigNumber(v, b) {
       var alphabet, c, caseChanged, e, i, isNum, len, str,
         x = this;
 
-      // Enable constructor usage without new.
-      if (!(x instanceof BigNumber)) {
-
-        // Don't throw on constructor call without new (#81).
-        // '[BigNumber Error] Constructor call without new: {n}'
-        //throw Error(bignumberError + ' Constructor call without new: ' + n);
-        return new BigNumber(n, b);
-      }
+      // Enable constructor call without `new`.
+      if (!(x instanceof BigNumber)) return new BigNumber(v, b);
 
       if (b == null) {
 
-        // Duplicate.
-        if (n instanceof BigNumber) {
-          x.s = n.s;
-          x.e = n.e;
-          x.c = (n = n.c) ? n.slice() : n;
+        if (v && v._isBigNumber === true) {
+          x.s = v.s;
+
+          if (!v.c || v.e > MAX_EXP) {
+            x.c = x.e = null;
+          } else if (v.e < MIN_EXP) {
+            x.c = [x.e = 0];
+          } else {
+            x.e = v.e;
+            x.c = v.c.slice();
+          }
+
           return;
         }
 
-        isNum = typeof n == 'number';
-
-        if (isNum && n * 0 == 0) {
+        if ((isNum = typeof v == 'number') && v * 0 == 0) {
 
           // Use `1 / n` to handle minus zero also.
-          x.s = 1 / n < 0 ? (n = -n, -1) : 1;
+          x.s = 1 / v < 0 ? (v = -v, -1) : 1;
 
-          // Faster path for integers.
-          if (n === ~~n) {
-            for (e = 0, i = n; i >= 10; i /= 10, e++);
-            x.e = e;
-            x.c = [n];
+          // Fast path for integers, where n < 2147483648 (2**31).
+          if (v === ~~v) {
+            for (e = 0, i = v; i >= 10; i /= 10, e++);
+
+            if (e > MAX_EXP) {
+              x.c = x.e = null;
+            } else {
+              x.e = e;
+              x.c = [v];
+            }
+
             return;
           }
 
-          str = String(n);
+          str = String(v);
         } else {
-          str = String(n);
-          if (!isNumeric.test(str)) return parseNumeric(x, str, isNum);
+
+          if (!isNumeric.test(str = String(v))) return parseNumeric(x, str, isNum);
+
           x.s = str.charCodeAt(0) == 45 ? (str = str.slice(1), -1) : 1;
         }
 
@@ -669,32 +695,28 @@ module.exports.createElement = belCreateElement
 
         // '[BigNumber Error] Base {not a primitive number|not an integer|out of range}: {b}'
         intCheck(b, 2, ALPHABET.length, 'Base');
-        str = String(n);
 
         // Allow exponential notation to be used with base 10 argument, while
         // also rounding to DECIMAL_PLACES as with other bases.
         if (b == 10) {
-          x = new BigNumber(n instanceof BigNumber ? n : str);
+          x = new BigNumber(v);
           return round(x, DECIMAL_PLACES + x.e + 1, ROUNDING_MODE);
         }
 
-        isNum = typeof n == 'number';
+        str = String(v);
 
-        if (isNum) {
+        if (isNum = typeof v == 'number') {
 
           // Avoid potential interpretation of Infinity and NaN as base 44+ values.
-          if (n * 0 != 0) return parseNumeric(x, str, isNum, b);
+          if (v * 0 != 0) return parseNumeric(x, str, isNum, b);
 
-          x.s = 1 / n < 0 ? (str = str.slice(1), -1) : 1;
+          x.s = 1 / v < 0 ? (str = str.slice(1), -1) : 1;
 
           // '[BigNumber Error] Number primitive has more than 15 significant digits: {n}'
           if (BigNumber.DEBUG && str.replace(/^0\.0*|\./, '').length > 15) {
             throw Error
-             (tooManyDigits + n);
+             (tooManyDigits + v);
           }
-
-          // Prevent later check for length on converted number.
-          isNum = false;
         } else {
           x.s = str.charCodeAt(0) === 45 ? (str = str.slice(1), -1) : 1;
         }
@@ -703,7 +725,7 @@ module.exports.createElement = belCreateElement
         e = i = 0;
 
         // Check that str is a valid base b number.
-        // Don't use RegExp so alphabet can contain special characters.
+        // Don't use RegExp, so alphabet can contain special characters.
         for (len = str.length; i < len; i++) {
           if (alphabet.indexOf(c = str.charAt(i)) < 0) {
             if (c == '.') {
@@ -725,10 +747,12 @@ module.exports.createElement = belCreateElement
               }
             }
 
-            return parseNumeric(x, String(n), isNum, b);
+            return parseNumeric(x, String(v), isNum, b);
           }
         }
 
+        // Prevent later check for length on converted number.
+        isNum = false;
         str = convertBase(str, b, 10, x.s);
 
         // Decimal point?
@@ -742,22 +766,18 @@ module.exports.createElement = belCreateElement
       // Determine trailing zeros.
       for (len = str.length; str.charCodeAt(--len) === 48;);
 
-      str = str.slice(i, ++len);
-
-      if (str) {
+      if (str = str.slice(i, ++len)) {
         len -= i;
 
         // '[BigNumber Error] Number primitive has more than 15 significant digits: {n}'
         if (isNum && BigNumber.DEBUG &&
-          len > 15 && (n > MAX_SAFE_INTEGER || n !== mathfloor(n))) {
+          len > 15 && (v > MAX_SAFE_INTEGER || v !== mathfloor(v))) {
             throw Error
-             (tooManyDigits + (x.s * n));
+             (tooManyDigits + (x.s * v));
         }
 
-        e = e - i - 1;
-
          // Overflow?
-        if (e > MAX_EXP) {
+        if ((e = e - i - 1) > MAX_EXP) {
 
           // Infinity.
           x.c = x.e = null;
@@ -776,7 +796,7 @@ module.exports.createElement = belCreateElement
           // e is the base 10 exponent.
           // i is where to slice str to get the first element of the coefficient array.
           i = (e + 1) % LOG_BASE;
-          if (e < 0) i += LOG_BASE;
+          if (e < 0) i += LOG_BASE;  // i < 1
 
           if (i < len) {
             if (i) x.c.push(+str.slice(0, i));
@@ -785,8 +805,7 @@ module.exports.createElement = belCreateElement
               x.c.push(+str.slice(i, i += LOG_BASE));
             }
 
-            str = str.slice(i);
-            i = LOG_BASE - str.length;
+            i = LOG_BASE - (str = str.slice(i)).length;
           } else {
             i -= len;
           }
@@ -1003,10 +1022,56 @@ module.exports.createElement = belCreateElement
     /*
      * Return true if v is a BigNumber instance, otherwise return false.
      *
+     * If BigNumber.DEBUG is true, throw if a BigNumber instance is not well-formed.
+     *
      * v {any}
+     *
+     * '[BigNumber Error] Invalid BigNumber: {v}'
      */
     BigNumber.isBigNumber = function (v) {
-      return v instanceof BigNumber || v && v._isBigNumber === true || false;
+      if (!v || v._isBigNumber !== true) return false;
+      if (!BigNumber.DEBUG) return true;
+
+      var i, n,
+        c = v.c,
+        e = v.e,
+        s = v.s;
+
+      out: if ({}.toString.call(c) == '[object Array]') {
+
+        if ((s === 1 || s === -1) && e >= -MAX && e <= MAX && e === mathfloor(e)) {
+
+          // If the first element is zero, the BigNumber value must be zero.
+          if (c[0] === 0) {
+            if (e === 0 && c.length === 1) return true;
+            break out;
+          }
+
+          // Calculate number of digits that c[0] should have, based on the exponent.
+          i = (e + 1) % LOG_BASE;
+          if (i < 1) i += LOG_BASE;
+
+          // Calculate number of digits of c[0].
+          //if (Math.ceil(Math.log(c[0] + 1) / Math.LN10) == i) {
+          if (String(c[0]).length == i) {
+
+            for (i = 0; i < c.length; i++) {
+              n = c[i];
+              if (n < 0 || n >= BASE || n !== mathfloor(n)) break out;
+            }
+
+            // Last element cannot be zero, unless it is the only element.
+            if (n !== 0) return true;
+          }
+        }
+
+      // Infinity/NaN
+      } else if (c === null && e === null && (s === null || s === 1 || s === -1)) {
+        return true;
+      }
+
+      throw Error
+        (bignumberError + 'Invalid BigNumber: ' + v);
     };
 
 
@@ -1740,7 +1805,6 @@ module.exports.createElement = belCreateElement
         // No exception on ±Infinity or NaN.
         if (isInfinityOrNaN.test(s)) {
           x.s = isNaN(s) ? null : s < 0 ? -1 : 1;
-          x.c = x.e = null;
         } else {
           if (!isNum) {
 
@@ -1768,8 +1832,10 @@ module.exports.createElement = belCreateElement
           }
 
           // NaN
-          x.c = x.e = x.s = null;
+          x.s = null;
         }
+
+        x.c = x.e = null;
       }
     })();
 
@@ -3124,8 +3190,9 @@ module.exports.createElement = belCreateElement
 
     P._isBigNumber = true;
 
-    if (typeof Symbol == 'function' && typeof Symbol.iterator == 'symbol') {
+    if (hasSymbol) {
       P[Symbol.toStringTag] = 'BigNumber';
+
       // Node.js v10.12.0+
       P[Symbol.for('nodejs.util.inspect.custom')] = P.valueOf;
     }
@@ -3137,6 +3204,9 @@ module.exports.createElement = belCreateElement
 
 
   // PRIVATE HELPER FUNCTIONS
+
+  // These functions don't need access to variables,
+  // e.g. DECIMAL_PLACES, in the scope of the `clone` function above.
 
 
   function bitFloor(n) {
@@ -3211,7 +3281,7 @@ module.exports.createElement = belCreateElement
    * Check that n is a primitive number, an integer, and in range, otherwise throw.
    */
   function intCheck(n, min, max, name) {
-    if (n < min || n > max || n !== (n < 0 ? mathceil(n) : mathfloor(n))) {
+    if (n < min || n > max || n !== mathfloor(n)) {
       throw Error
        (bignumberError + (name || 'Argument') + (typeof n == 'number'
          ? n < min || n > max ? ' out of range: ' : ' not an integer: '
@@ -8132,7 +8202,7 @@ function displayArrayInput ({ theme: { classes: css, colors }, type, cb }) {
       container.appendChild(innerContainer)
       next({ container: innerContainer, arr, cb })
     } else { // final step (stop recursion)
-      container.appendChild(returnInputFields({ classes: { css, colors } }, type, cb))
+      container.appendChild(returnInputFields({ classes: css, colors }, type, cb))
     }
   }
   function plusMinus ({ container, arr, cb }) {
@@ -8206,24 +8276,25 @@ const bigNumber = require('bignumber.js')
 module.exports = displayIntegerInput
 
 function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
-  const min = validator.getRange(type).MIN
-  const max = validator.getRange(type).MAX
-  const title = `Valid values for type ${type} are from ${min} to ${max}`
-  const num = bel`<input data-type=${type} type="text" class=${css.integerValue} value="0" oninput=${(e)=>sliderUpdate(e, type)} onkeydown=${(e)=>keysUpdating(e, type)}>`
-  const slider = bel`<input data-type=${type} class=${css.integerSlider} type="range" title=${title} min=${min} max=${max} value="0" step=1 oninput=${(e)=>numUpdate(e, type)}>`
+  const splitType = type.split('[')[0] // split to get basic type (bool, uint8)
+  const min = validator.getRange(splitType).MIN
+  const max = validator.getRange(splitType).MAX
+  const title = `Valid values for type ${splitType} are from ${min} to ${max}`
+  const num = bel`<input data-type=${splitType} type="text" class=${css.integerValue} value="0" oninput=${(e)=>sliderUpdate(e, splitType)} onkeydown=${(e)=>keysUpdating(e, splitType)}>`
+  const slider = bel`<input data-type=${splitType} class=${css.integerSlider} type="range" title=${title} min=${min} max=${max} value="0" step=1 oninput=${(e)=>numUpdate(e, splitType)}>`
   return bel`<div class=${css.integerField}>
     ${slider}
     ${num}
   </div>`
-  function numUpdate (e, type) {
+  function numUpdate (e, splitType) {
     num.value = num.title = bigNumber(e.target.value).toFixed(0)
-    validate(e, type)
+    validate(e, splitType)
   }
-  function validate (e, type) {
+  function validate (e, splitType) {
     const value = e.target.value
     cb(validator.getMessage(type, value), value)
   }
-  function keysUpdating (e, type) {
+  function keysUpdating (e, splitType) {
     const key = e.which
     const val = parseInt(e.target.value)
     if (key === 38 && val != slider.max) {
@@ -8232,15 +8303,15 @@ function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
     else if (key === 40 && val != slider.min) {
       slider.value = num.value = val - 1
     }
-    validate(e, type)
+    validate(e, splitType)
   }
-  function sliderUpdate (e, type) {
+  function sliderUpdate (e, splitType) {
     if (e.target.value === '') {
       slider.value = num.value = 0
     } else {
       slider.value = e.target.value
     }
-    validate(e, type)
+    validate(e, splitType)
   }
 }
 
@@ -13258,13 +13329,13 @@ var css = csjs`
       height: 0;
     }
     .txReturn {
-      border: 3px dashed ${colors.darkSmoke};
+      border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 624px;
+      width: 626px;
       position: relative;
       display: flex;
       justify-content: center;
@@ -13281,7 +13352,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       background-color: ${colors.darkSmoke};
       width: 87%;
-      margin: 5% 3%;
+      margin: 3%;
       padding: 3%;
       justify-content: space-between;
     }
@@ -13390,7 +13461,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
       display: flex;
       align-items: center;
-      bottom: -16px;
+      bottom: -15px;
       right: -12px;
       font-size: 1.8rem;
       position: absolute;
@@ -13401,7 +13472,7 @@ var css = csjs`
     .send {
       display: flex;
       align-items: baseline;
-      bottom: -15px;
+      bottom: -16px;
       right: 22px;
       font-size: 2rem;
       position: absolute;
@@ -13426,7 +13497,7 @@ var css = csjs`
       display: flex;
       flex-direction: column;
       position: relative;
-      border: 3px dashed ${colors.darkSmoke};
+      border: 2px dashed ${colors.darkSmoke};
       padding: 20px 0;
       width: 630px;
       margin: 0 0 5em 20px;
@@ -13473,6 +13544,7 @@ var css = csjs`
     }
     .icon {
       margin-left: 5px;
+      font-size: 0.9em;
     }
     .output {
       font-size: 1.5rem;
@@ -13503,7 +13575,7 @@ var css = csjs`
       justify-content: center;
       font-size: 0.8rem;
       display: flex;
-      min-width: 165px;
+      min-width: 200px;
     }
     .inputFields {
     }
@@ -13824,26 +13896,41 @@ function displayContractUI(result) {   // compilation result metadata
 
     function getArgs(element, selector) {
       var args = []
-      var inputs = element.querySelectorAll(`[class^=${selector}]`)
-      inputs.forEach(x => {
-        let el = x.querySelector('input')
-        let val = el.value
-        var argument
-        if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
-          if (val.isBigNumber) {
-            let number = bigNumber(Number(val)).toFixed(0)
-            argument = ethers.utils.bigNumberify(number.toString())
-          } else {
-            argument = Number(val)
-          }
+      var fields = element.querySelectorAll(`[class^=${selector}]`)
+      fields.forEach(x => {
+        if (x.children[0].title.includes('[')) {  // check if array
+          var argumentsInArr = []
+          var inputs = x.querySelectorAll('input')
+          inputs.forEach(i => {
+            let el = i
+            let val = i.value
+            argumentsInArr.push(getArgument(el, val))
+          })
+          args.push(argumentsInArr)
+        } else { // not an array (inputs.length = 1)
+          let el = x.querySelector('input')
+          let val = el.value
+          args.push(getArgument(el, val))
         }
-        if (el.dataset.type.search(/\bbyte/) != -1) argument = val
-        if (el.dataset.type.search(/\bstring/) != -1) argument = val
-        if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
-        if (el.dataset.type.search(/\baddress/) != -1) argument = val
-        args.push(argument)
       })
       return args
+    }
+
+    function getArgument(el, val) {
+      var argument
+      if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
+        if (val > Number.MAX_SAFE_INTEGER) {
+          let number = bigNumber(Number(val)).toFixed(0)
+          argument = ethers.utils.bigNumberify(number.toString())
+        } else {
+          argument = Number(val)
+        }
+      }
+      if (el.dataset.type.search(/\bbyte/) != -1) argument = val
+      if (el.dataset.type.search(/\bstring/) != -1) argument = val
+      if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
+      if (el.dataset.type.search(/\baddress/) != -1) argument = val
+      return argument
     }
 
     async function sendTx (name, label, e) {
@@ -13977,7 +14064,7 @@ function displayContractUI(result) {   // compilation result metadata
         params.classList.remove(css.hidden)
         params.classList.add(css.visible)
         addLogs(fn)
-        fn.style.border = `3px dashed ${colors.darkSmoke}`
+        fn.style.border = `2px dashed ${colors.darkSmoke}`
         fn.style.marginBottom = '2em'
       }
     }

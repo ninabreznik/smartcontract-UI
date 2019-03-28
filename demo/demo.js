@@ -17,69 +17,88 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-  pragma solidity >=0.4.22 <0.6.0;
-  contract Ballot {
+pragma solidity >=0.5.0;
+pragma experimental ABIEncoderV2;
 
-      struct Voter {
-          uint weight;
-          bool voted;
-          uint8 vote;
-          address delegate;
-      }
-      struct Proposal {
-          uint voteCount;
-      }
+contract InvoiceJournal {
 
-      address chairperson;
-      mapping(address => Voter) voters;
-      Proposal[] proposals;
-
-      /// Create a new ballot with $(_numProposals) different proposals.
-      constructor(uint8 _numProposals) public {
-          chairperson = msg.sender;
-          voters[chairperson].weight = 1;
-          proposals.length = _numProposals;
-      }
-
-      /// Give $(toVoter) the right to vote on this ballot.
-      /// May only be called by $(chairperson).
-      function giveRightToVote(address toVoter) public {
-          if (msg.sender != chairperson || voters[toVoter].voted) return;
-          voters[toVoter].weight = 1;
-      }
-
-      /// Delegate your vote to the voter $(to).
-      function delegate(address to) public {
-          Voter storage sender = voters[msg.sender]; // assigns reference
-          if (sender.voted) return;
-          while (voters[to].delegate != address(0) && voters[to].delegate != msg.sender)
-              to = voters[to].delegate;
-          if (to == msg.sender) return;
-          sender.voted = true;
-          sender.delegate = to;
-          Voter storage delegateTo = voters[to];
-          if (delegateTo.voted)
-              proposals[delegateTo.vote].voteCount += sender.weight;
-          else
-              delegateTo.weight += sender.weight;
-      }
-
-      /// Give a single vote to proposal $(toProposal).
-      function vote(uint8 toProposal) public {
-          Voter storage sender = voters[msg.sender];
-          if (sender.voted || toProposal >= proposals.length) return;
-          sender.voted = true;
-          sender.vote = toProposal;
-          proposals[toProposal].voteCount += sender.weight;
-      }
-
-      function winningProposal() public view returns (uint8 _winningProposal) {
-          uint256 winningVoteCount = 0;
-          for (uint8 prop = 0; prop < proposals.length; prop++)
-              if (proposals[prop].voteCount > winningVoteCount) {
-                  winningVoteCount = proposals[prop].voteCount;
-                  _winningProposal = prop;
-              }
-      }
+  struct Contractor {
+    string name;
+    string email;
+    string pubkey;
+    bool active;
+    bool exists;
   }
-      `
+  struct Invoice {
+    address contractor;
+    uint invoice_id;
+    string storage_url;
+    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+  }
+
+  address accountant;
+  mapping(address => Contractor) contractors;
+  mapping(address => Invoice[]) invoices;
+  address[] contractor_addresses;
+
+  function getAllInvoices () public view returns (Invoice[][] memory) {
+    uint len = contractor_addresses.length;
+  	Invoice[][] memory result = new Invoice[][](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = invoices[contractor_addresses[i]];
+    }
+
+    return result;
+  }
+  function getAllContractors () public view returns (Contractor[] memory) {
+    uint len = contractor_addresses.length;
+  	Contractor[] memory result = new Contractor[](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = contractors[contractor_addresses[i]];
+    }
+    return result;
+  }
+  function getYourInvoices () public view returns (Invoice[] memory) {
+    return invoices[msg.sender];
+  }
+  function activateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    contractor.active = true;
+    if (!contractor.exists) {
+      contractor.exists = true;
+      contractor_addresses.push(contractor_address);
+    }
+  }
+  function deactivateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    if (!contractor.active) return;
+    contractor.active = false;
+  }
+  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+    Contractor storage contractor = contractors[msg.sender];
+    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
+    contractor.name = name;
+    contractor.email = email;
+    contractor.pubkey = pubkey;
+  }
+  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+    Contractor memory contractor = contractors[msg.sender];
+    require(contractor.exists, "Unknown contractors cannot submit invoices");
+    require(contractor.active, "Unauthorized contractors cannot submit invoices");
+    Invoice[] storage _invoices = invoices[msg.sender];
+    Invoice memory new_invoice = Invoice({
+      contractor: msg.sender,
+      invoice_id: invoice_id,
+      storage_url: storage_url,
+      encrypted_decrypt_keys: keys
+    });
+    _invoices.push(new_invoice);
+    return contractor;
+  }
+  constructor () public {
+    accountant = msg.sender;
+  }
+}
+`
