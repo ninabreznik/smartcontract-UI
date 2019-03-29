@@ -2,9 +2,9 @@ const bel = require("bel")
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const utils = require('ethers').utils
-const bigNumber = require('bignumber.js')
 const glossary = require('glossary')
 const date = require('getDate')
+const getArgs = require('getArgs')
 const shortenHexData = require('shortenHexData')
 const validator = require('solidity-validator')
 const inputAddress = require("input-address")
@@ -14,6 +14,7 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const copy = require('copy-text-to-clipboard')
 
+console.log(getArgs)
 // Styling variables
 
 var fonts = [
@@ -102,7 +103,7 @@ var css = csjs`
       font-size: 0.7rem;
       display: flex;
       color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
+      border: 1px solid ${colors.darkSmoke};
       width: 87%;
       margin: 3%;
       padding: 3%;
@@ -385,6 +386,7 @@ var css = csjs`
       display: flex;
       width: 300px;
       align-items: baseline;
+      font-size: 0.8rem;
     }
     .stringField {
       display: flex;
@@ -644,45 +646,6 @@ function displayContractUI(result) {   // compilation result metadata
           </ul>
         </div>
       </div>`
-    }
-
-    function getArgs(element, selector) {
-      var args = []
-      var fields = element.querySelectorAll(`[class^=${selector}]`)
-      fields.forEach(x => {
-        if (x.children[0].title.includes('[')) {  // check if array
-          var argumentsInArr = []
-          var inputs = x.querySelectorAll('input')
-          inputs.forEach(i => {
-            let el = i
-            let val = i.value
-            argumentsInArr.push(getArgument(el, val))
-          })
-          args.push(argumentsInArr)
-        } else { // not an array (inputs.length = 1)
-          let el = x.querySelector('input')
-          let val = el.value
-          args.push(getArgument(el, val))
-        }
-      })
-      return args
-    }
-
-    function getArgument(el, val) {
-      var argument
-      if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
-        if (val > Number.MAX_SAFE_INTEGER) {
-          let number = bigNumber(Number(val)).toFixed(0)
-          argument = ethers.utils.bigNumberify(number.toString())
-        } else {
-          argument = Number(val)
-        }
-      }
-      if (el.dataset.type.search(/\bbyte/) != -1) argument = val
-      if (el.dataset.type.search(/\bstring/) != -1) argument = val
-      if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
-      if (el.dataset.type.search(/\baddress/) != -1) argument = val
-      return argument
     }
 
     async function sendTx (name, label, e) {
