@@ -33,7 +33,7 @@ contract InvoiceJournal {
     address contractor;
     uint invoice_id;
     string storage_url;
-    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+    bool[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
   }
 
   address accountant;
@@ -76,14 +76,15 @@ contract InvoiceJournal {
     if (!contractor.active) return;
     contractor.active = false;
   }
-  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+  function updateContractor (string memory name, string memory email, string memory pubkey, bool active) public {
     Contractor storage contractor = contractors[msg.sender];
     require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
     contractor.name = name;
     contractor.email = email;
+    contractor.active = active;
     contractor.pubkey = pubkey;
   }
-  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+  function addInvoice (uint invoice_id, string memory storage_url, bool[] memory keys) public returns (Contractor memory) {
     Contractor memory contractor = contractors[msg.sender];
     require(contractor.exists, "Unknown contractors cannot submit invoices");
     require(contractor.active, "Unauthorized contractors cannot submit invoices");

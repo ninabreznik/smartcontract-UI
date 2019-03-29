@@ -299,7 +299,7 @@ var css = csjs`
       font-size: 0.9em;
     }
     .output {
-      font-size: 1.5rem;
+      font-size: 1rem;
       display: flex;
       align-self: flex-end;
     }
