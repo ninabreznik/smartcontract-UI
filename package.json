@@ -19,9 +19,9 @@
     "csjs-inject": "^1.0.1",
     "ethers": "^4.0.23",
     "input-address": "^2.1.0",
-    "input-array": "^2.1.1",
+    "input-array": "^2.1.2",
     "input-integer": "^3.1.1",
-    "input-boolean": "^2.1.0",
+    "input-boolean": "^2.2.1",
     "input-string": "^2.1.0",
     "solc-js": "^1.0.0",
     "solidity-validator": "^0.1.1"
