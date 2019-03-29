@@ -34,7 +34,7 @@ contract InvoiceJournal {
     address contractor;
     uint invoice_id;
     string storage_url;
-    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+    bool[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
   }
 
   address accountant;
@@ -77,14 +77,15 @@ contract InvoiceJournal {
     if (!contractor.active) return;
     contractor.active = false;
   }
-  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+  function updateContractor (string memory name, string memory email, string memory pubkey, bool active) public {
     Contractor storage contractor = contractors[msg.sender];
     require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
     contractor.name = name;
     contractor.email = email;
+    contractor.active = active;
     contractor.pubkey = pubkey;
   }
-  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+  function addInvoice (uint invoice_id, string memory storage_url, bool[] memory keys) public returns (Contractor memory) {
     Contractor memory contractor = contractors[msg.sender];
     require(contractor.exists, "Unknown contractors cannot submit invoices");
     require(contractor.active, "Unauthorized contractors cannot submit invoices");
@@ -104,7 +105,7 @@ contract InvoiceJournal {
 }
 `
 
-},{"../":120,"solc-js":66}],2:[function(require,module,exports){
+},{"../":121,"solc-js":66}],2:[function(require,module,exports){
 const kvidb = require('kv-idb');
 const cache = kvidb('store-solcjs');
 
@@ -8243,8 +8244,8 @@ const validator = require('solidity-validator')
 module.exports = displayBooleanInput
 
 function displayBooleanInput ({ theme: { classes: css, colors }, cb }) {
-  const boolFalse = bel `<div class=${css.false} data-type="boolean" value="false" onclick=${toggle}>false</div>`
-  const boolTrue = bel `<div class=${css.true} data-type="boolean" value="true" onclick=${toggle}>true</div>`
+  const boolFalse = bel `<div class=${css.false} data-state="active" data-type="boolean" value="false" onclick=${toggle}>false</div>`
+  const boolTrue = bel `<div class=${css.true} data-state="" data-type="boolean" value="true" onclick=${toggle}>true</div>`
   const input = bel`<div class=${css.booleanField}>
     ${boolFalse}
     ${boolTrue}
@@ -8253,14 +8254,18 @@ function displayBooleanInput ({ theme: { classes: css, colors }, cb }) {
   function toggle (e) {
     const value = e.target.innerHTML
     if (value === 'true') {
-      boolFalse.style.color = colors.slateGrey
+      boolFalse.style.color = colors.whiteSmoke
       boolFalse.style.backgroundColor = colors.dark
+      boolFalse.dataset.state = ""
+      boolTrue.dataset.state = "active"
       boolTrue.style.color = colors.dark
       boolTrue.style.backgroundColor = colors.aquaMarine
     } else if (value === 'false') {
-      boolTrue.style.color = colors.slateGrey
+      boolTrue.style.color = colors.whiteSmoke
       boolTrue.style.backgroundColor = colors.dark
-      boolFalse.style.color = colors.dark
+      boolTrue.dataset.state = ""
+      boolFalse.dataset.state = "active"
+      boolFalse.style.color = colors.whiteSmoke
       boolFalse.style.backgroundColor = colors.violetRed
     }
     cb(validator.getMessage('boolean', value), value)
@@ -13203,6 +13208,74 @@ module.exports = {
 };
 
 },{"bn.js":113,"eth-lib/lib/hash":28,"number-to-bn":43,"underscore":111,"utf8":112}],117:[function(require,module,exports){
+const bigNumber = require('bignumber.js')
+const ethers = require('ethers')
+
+module.exports = getArgs
+
+function getArgs( element, selector ) {
+  var args = []
+  var fields = element.querySelectorAll(`[class^=${selector}]`)
+
+  fields.forEach(x => {
+    let title = x.children[0].title
+    if (title.includes('[')) {  // if type is an array
+      var argumentsInArr = []
+      if (title.includes('bool')) {  // if it's an array of booleans
+        let inputs = x.querySelectorAll("[class^='booleanField']")
+        inputs.forEach(y => {
+            argumentsInArr.push(getBool(y))
+        })
+      } else { // in any other type of array
+        var inputs = x.querySelectorAll('input')
+        inputs.forEach(z => {
+          let el = i
+          let val = i.value
+          argumentsInArr.push(getArgument(el, val))
+        })
+      }
+      args.push(argumentsInArr)
+    }
+    else if (title.includes('bool')) { // if not an array, but boolean
+      var boolField = x.querySelector("[class^='booleanField']")
+      args.push(getBool(boolField))
+    }
+    else { // not an array (inputs.length = 1) and not a boolean
+      let el = x.querySelector('input')
+      let val = el.value
+      args.push(getArgument(el, val))
+    }
+  })
+
+  return args
+}
+
+function getBool (boolField) {
+  var val
+  let falseField = boolField.children[0]
+  let trueField = boolField.children[1]
+  if (falseField.dataset.state === "active") val = false
+  else if (trueField.dataset.state === "active") val = true
+  return val
+}
+
+function getArgument(el, val) {
+  var argument
+  if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
+    if (val > Number.MAX_SAFE_INTEGER) {
+      let number = bigNumber(Number(val)).toFixed(0)
+      argument = ethers.utils.bigNumberify(number.toString())
+    } else {
+      argument = Number(val)
+    }
+  }
+  if (el.dataset.type.search(/\bbyte/) != -1) argument = val
+  if (el.dataset.type.search(/\bstring/) != -1) argument = val
+  if (el.dataset.type.search(/\baddress/) != -1) argument = val
+  return argument
+}
+
+},{"bignumber.js":7,"ethers":29}],118:[function(require,module,exports){
 module.exports = getDate()
 
 function getDate () {
@@ -13225,17 +13298,17 @@ function getDate () {
 
 }
 
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
   pure: `PURE FUNCTION - function, that is promised not to modify or read the state.`,
-  view: `VIEW FUNCTION - function, that is promised not to modify the state.`,
-  payable: `PAYABLE FUNCTION`,
-  nonpayable: `NONPAYABLE FUNCTION`
+  view: `VIEW FUNCTION - function, that returns information from the Ethereum network`,
+  payable: `PAYABLE FUNCTION - function, that enables to send ETH while being called `,
+  nonpayable: `NONPAYABLE FUNCTION - function, that changes the state of the contract on the Ethereum network`
 }
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -13245,14 +13318,14 @@ function shortenHexData (data) {
   return data.slice(0, 8) + '...' + data.slice(len - 8, len)
 }
 
-},{}],120:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const utils = require('ethers').utils
-const bigNumber = require('bignumber.js')
 const glossary = require('glossary')
 const date = require('getDate')
+const getArgs = require('getArgs')
 const shortenHexData = require('shortenHexData')
 const validator = require('solidity-validator')
 const inputAddress = require("input-address")
@@ -13262,6 +13335,7 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const copy = require('copy-text-to-clipboard')
 
+console.log(getArgs)
 // Styling variables
 
 var fonts = [
@@ -13350,7 +13424,7 @@ var css = csjs`
       font-size: 0.7rem;
       display: flex;
       color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
+      border: 1px solid ${colors.darkSmoke};
       width: 87%;
       margin: 3%;
       padding: 3%;
@@ -13547,7 +13621,7 @@ var css = csjs`
       font-size: 0.9em;
     }
     .output {
-      font-size: 1.5rem;
+      font-size: 1rem;
       display: flex;
       align-self: flex-end;
     }
@@ -13633,6 +13707,7 @@ var css = csjs`
       display: flex;
       width: 300px;
       align-items: baseline;
+      font-size: 0.8rem;
     }
     .stringField {
       display: flex;
@@ -13894,45 +13969,6 @@ function displayContractUI(result) {   // compilation result metadata
       </div>`
     }
 
-    function getArgs(element, selector) {
-      var args = []
-      var fields = element.querySelectorAll(`[class^=${selector}]`)
-      fields.forEach(x => {
-        if (x.children[0].title.includes('[')) {  // check if array
-          var argumentsInArr = []
-          var inputs = x.querySelectorAll('input')
-          inputs.forEach(i => {
-            let el = i
-            let val = i.value
-            argumentsInArr.push(getArgument(el, val))
-          })
-          args.push(argumentsInArr)
-        } else { // not an array (inputs.length = 1)
-          let el = x.querySelector('input')
-          let val = el.value
-          args.push(getArgument(el, val))
-        }
-      })
-      return args
-    }
-
-    function getArgument(el, val) {
-      var argument
-      if ((el.dataset.type.search(/\buint/) != -1) || (el.dataset.type.search(/\bint/) != -1) || (el.dataset.type.search(/\bfixed/) != -1)) {
-        if (val > Number.MAX_SAFE_INTEGER) {
-          let number = bigNumber(Number(val)).toFixed(0)
-          argument = ethers.utils.bigNumberify(number.toString())
-        } else {
-          argument = Number(val)
-        }
-      }
-      if (el.dataset.type.search(/\bbyte/) != -1) argument = val
-      if (el.dataset.type.search(/\bstring/) != -1) argument = val
-      if (el.dataset.type.search(/\bbool/) != -1) {} // NOT INPUT FIELD, normal DIV
-      if (el.dataset.type.search(/\baddress/) != -1) argument = val
-      return argument
-    }
-
     async function sendTx (name, label, e) {
       let element = e.target.parentNode.parentNode.parentNode.parentNode
       let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
@@ -14162,4 +14198,4 @@ function displayContractUI(result) {   // compilation result metadata
   }
 }
 
-},{"bel":6,"bignumber.js":7,"copy-text-to-clipboard":8,"csjs-inject":11,"ethers":29,"getDate":117,"glossary":118,"input-address":34,"input-array":35,"input-boolean":36,"input-integer":37,"input-string":38,"shortenHexData":119,"solidity-validator":101}]},{},[1]);
+},{"bel":6,"copy-text-to-clipboard":8,"csjs-inject":11,"ethers":29,"getArgs":117,"getDate":118,"glossary":119,"input-address":34,"input-array":35,"input-boolean":36,"input-integer":37,"input-string":38,"shortenHexData":120,"solidity-validator":101}]},{},[1]);
