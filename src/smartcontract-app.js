@@ -89,7 +89,7 @@ var css = csjs`
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 626px;
+      width: 630px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -719,7 +719,7 @@ function displayContractUI(result) {   // compilation result metadata
         <div class=${css.txReturnLeft}>
           <div class=${css.txReturnField}>
             <div class=${css.txReturnTitle}>Sent:</div>
-            <div class=${css.txReturnValue}>${date}</div>
+            <div class=${css.txReturnValue}>${date()}</div>
           </div>
           <div class=${css.txReturnField} onclick=${()=>copy(receipt.transactionHash)}>
             <div class=${css.txReturnTitle} title="Transaction">Transaction:</div>
@@ -748,7 +748,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function makeLoadingAnimation () {
-      return bel`<div class=${css.txReturnItem}>Sending ${loadingAnimation(colors)}</div></div>`
+      return bel`<div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div></div>`
     }
 
     async function sendTx (fnName, label, e) {
@@ -892,23 +892,23 @@ function displayContractUI(result) {   // compilation result metadata
         <div class=${css.deployStats}>
           <div class=${css.statsEl}>
             <div class=${css.statsElTitle}>Deployed:</div>
-            <div class=${css.statsElValue}>${date}</div>
+            <div class=${css.statsElValue}>${date()}</div>
           </div>
           <div class=${css.statsEl} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
             <div class=${css.statsElTitle}>Transaction:</div>
             <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.hash)}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.statsElTitle}>Signed by:</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
-          </div>
           <div class=${css.statsEl} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.statsElTitle}>Contract address:</div>
+            <div class=${css.statsElTitle}>Contract address (${provider._network.name}):</div>
             <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.creates)}</div>
           </div>
           <div class=${css.statsEl} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
             <div class=${css.statsElTitle}>Gas price:</div>
             <div class=${css.statsElValue}>${contract.deployTransaction.gasPrice.toString()}</div>
+          </div>
+          <div class=${css.statsEl} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
+            <div class=${css.statsElTitle}>Signed by:</div>
+            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
           </div>
         </div>
       `)
