@@ -4,6 +4,7 @@ const ethers = require('ethers')
 const utils = require('ethers').utils
 const glossary = require('glossary')
 const date = require('getDate')
+const loadingAnimation = require('loadingAnimation')
 const getArgs = require('getArgs')
 const shortenHexData = require('shortenHexData')
 const validator = require('solidity-validator')
@@ -14,7 +15,6 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const copy = require('copy-text-to-clipboard')
 
-console.log(getArgs)
 // Styling variables
 
 var fonts = [
@@ -45,7 +45,7 @@ var colors = {
 var css = csjs`
   @media only screen and (max-width: 3000px) {
     .preview {
-      padding: 5%;
+      padding: 1% 2%;
       min-width: 350px;
       min-height: 100vh;
       font-family: 'Overpass Mono', sans-serif;
@@ -82,6 +82,7 @@ var css = csjs`
       height: 0;
     }
     .txReturn {
+      position: relative;
       border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
@@ -89,7 +90,6 @@ var css = csjs`
       left: 20px;
       min-height: 80px;
       width: 626px;
-      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -100,6 +100,7 @@ var css = csjs`
       flex-direction: column;
     }
     .txReturnItem {
+      position: relative;
       font-size: 0.7rem;
       display: flex;
       color: ${colors.whiteSmoke};
@@ -115,10 +116,6 @@ var css = csjs`
     .txReturnField {
       display:flex;
       justify-content: flex-start;
-      cursor: pointer;
-    }
-    .txReturnField:hover {
-      opacity: 0.8;
     }
     .txReturnTitle {
       font-weight: bold;
@@ -126,13 +123,14 @@ var css = csjs`
     }
     .txReturnValue {
       color: ${colors.whiteSmoke};
+      cursor: pointer;
     }
     .txReturnValue a {
       text-decoration: none;
       color: ${colors.slateGrey};
     }
     .txReturnValue a:hover {
-      opacity: 0.8;
+      opacity: 0.6;
     }
     .contractName {
       cursor: pointer;
@@ -140,14 +138,12 @@ var css = csjs`
       font-weight: bold;
       color: ${colors.whiteSmoke};
       margin: 10px 0 20px 10px;
-      min-width: 200px;
-      width: 30%;
       display: flex;
       align-items: end;
     }
     .contractName:hover {
       cursor: pointer;
-      opacity: 0.9;
+      opacity: 0.6;
     }
     .fnName {
       display: flex;
@@ -202,7 +198,7 @@ var css = csjs`
     }
     .title:hover {
       cursor: pointer;
-      opacity: 0.9;
+      opacity: 0.6;
     }
     .deployTitle {
       font-size: 1.3rem;
@@ -218,9 +214,11 @@ var css = csjs`
       right: -12px;
       font-size: 1.8rem;
       position: absolute;
-      padding: 5 8px;
       background-color: ${colors.dark};
       cursor: pointer;
+    }
+    .deploy:hover {
+      opacity: 0.6;
     }
     .send {
       display: flex;
@@ -229,13 +227,67 @@ var css = csjs`
       right: 22px;
       font-size: 2rem;
       position: absolute;
-      color: ${colors.darkSmoke};
       background-color: ${colors.dark};
+      color: ${colors.darkSmoke};
       padding-right: 5px;
     }
     .send:hover {
-      opacity: 0.9;
+      opacity: 0.6;
       cursor: pointer;
+    }
+    .bounce {
+      animation: bounceRight 2s infinite;
+    }
+    @-webkit-keyframes bounceRight {
+      0%,
+      20%,
+      50%,
+      80%,
+      100% {
+        -webkit-transform: translateX(0);
+        transform: translateX(0);
+      }
+      40% {
+        -webkit-transform: translateX(-30px);
+        transform: translateX(-30px);
+      }
+      60% {
+        -webkit-transform: translateX(-15px);
+        transform: translateX(-15px);
+      }
+    }
+    @-moz-keyframes bounceRight {
+      0%,
+      20%,
+      50%,
+      80%,
+      100% {
+        transform: translateX(0);
+      }
+      40% {
+        transform: translateX(-30px);
+      }
+      60% {
+        transform: translateX(-15px);
+      }
+    }
+    @keyframes bounceRight {
+      0%,
+      20%,
+      50%,
+      80%,
+      100% {
+        -ms-transform: translateX(0);
+        transform: translateX(0);
+      }
+      40% {
+        -ms-transform: translateX(-30px);
+        transform: translateX(-30px);
+      }
+      60% {
+        -ms-transform: translateX(-15px);
+        transform: translateX(-15px);
+      }
     }
     .fnContainer {
       position: relative;
@@ -258,17 +310,21 @@ var css = csjs`
     .statsEl {
       display:flex;
       justify-content: space-between;
-      cursor: pointer;
+      position: relative;
     }
-    .statsEl:hover {
-        opacity: 0.8;
+    .deployingNotice {
+      margin-right: 5px;
+      font-weight: bold;
     }
     .statsElTitle {
       margin-right: 5px;
       font-weight: bold;
     }
     .statsElValue {
-
+      cursor: pointer;
+    }
+    .statsElValue:hover {
+      opacity: 0.6;
     }
     .inProgress {
     }
@@ -648,66 +704,72 @@ function displayContractUI(result) {   // compilation result metadata
       </div>`
     }
 
-    async function sendTx (name, label, e) {
+    async function makeReturn (transaction) {
+      return bel`<div class=${css.txReturnItem}>
+        <div class=${css.returnJSON}>
+          ${JSON.stringify(transaction, null, 1)}
+        </div>
+      </div>`
+    }
+
+    async function makeReceipt (transaction) {
+      let receipt = await transaction.wait()
+      let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
+      return bel`<div class=${css.txReturnItem}>
+        <div class=${css.txReturnLeft}>
+          <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle}>Sent:</div>
+            <div class=${css.txReturnValue}>${date}</div>
+          </div>
+          <div class=${css.txReturnField} onclick=${()=>copy(receipt.transactionHash)}>
+            <div class=${css.txReturnTitle} title="Transaction">Transaction:</div>
+            <div class=${css.txReturnValue}>${shortenHexData(receipt.transactionHash)}</div>
+          </div>
+          <div class=${css.txReturnField} onclick=${()=>copy(receipt.from)}>
+            <div class=${css.txReturnTitle}>Signed by:</div>
+            <div class=${css.txReturnValue}>${shortenHexData(receipt.from)}</div>
+          </div>
+        </div>
+        <div class=${css.txReturnRight} onclick=${()=>copy(transaction.gasPrice._hex)}>
+          <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle}>Gas price:</div>
+            <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
+          </div>
+          <div class=${css.txReturnField} onclick=${()=>copy(receipt.gasUsed._hex)}>
+            <div class=${css.txReturnTitle}>Gas used:</div>
+            <div class=${css.txReturnValue}>${parseInt(receipt.gasUsed._hex)}</div>
+          </div>
+          <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle}>Details:</div>
+            <div class=${css.txReturnValue}><a href=${linkToEtherscan} target="_blank">Link to Etherscan</a></div>
+          </div>
+        </div>
+      </div>`
+    }
+
+    function makeLoadingAnimation () {
+      return bel`<div class=${css.txReturnItem}>Sending ${loadingAnimation(colors)}</div></div>`
+    }
+
+    async function sendTx (fnName, label, e) {
       let element = e.target.parentNode.parentNode.parentNode.parentNode
       let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
-      if (contract) {
-        let fnName = name
+      if (contract) {  // if deployed
         let args = getArgs(element, 'inputContainer')
-        let transaction = await contract.functions[fnName](...args)
-        if (label === 'payable' || label === 'nonpayable') {
-          let receipt = await transaction.wait()
-          let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
-          txReturn.appendChild(bel`
-          <div class=${css.txReturnItem}>
-            <div class=${css.txReturnLeft}>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Sent:</div>
-                <div class=${css.txReturnValue}>${date}</div>
-              </div>
-              <div class=${css.txReturnField} onclick=${()=>copy(receipt.transactionHash)}>
-                <div class=${css.txReturnTitle} title="Transaction">Transaction:</div>
-                <div class=${css.txReturnValue}>${shortenHexData(receipt.transactionHash)}</div>
-              </div>
-              <div class=${css.txReturnField} onclick=${()=>copy(receipt.from)}>
-                <div class=${css.txReturnTitle}>Signed by:</div>
-                <div class=${css.txReturnValue}>${shortenHexData(receipt.from)}</div>
-              </div>
-            </div>
-            <div class=${css.txReturnRight} onclick=${()=>copy(transaction.gasPrice._hex)}>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Gas price:</div>
-                <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
-              </div>
-              <div class=${css.txReturnField} onclick=${()=>copy(receipt.gasUsed._hex)}>
-                <div class=${css.txReturnTitle}>Gas used:</div>
-                <div class=${css.txReturnValue}>${parseInt(receipt.gasUsed._hex)}</div>
-              </div>
-              <div class=${css.txReturnField}>
-                <div class=${css.txReturnTitle}>Details:</div>
-                <div class=${css.txReturnValue}><a href=${linkToEtherscan} target="_blank">Link to Etherscan</a></div>
-              </div>
-            </div>
-          </div>`)
-          element.appendChild(txReturn)
-        }
-        if (label === 'pure' || label === 'view') {
-          txReturn.innerHTML = `
-            <div class=${css.txReturnItem}>
-              <div class=${css.returnJSON}>
-                ${JSON.stringify(transaction, null, 1)}
-              </div>
-            </div>`
-          element.appendChild(txReturn)
-        }
+        let signer = await provider.getSigner()
+        let contractAsCurrentSigner = contract.connect(signer)
+        let transaction = await contractAsCurrentSigner.functions[fnName](...args)
+        // @TODO: what if users cancels a transaction?
+        element.appendChild(txReturn)
+        var loader = makeLoadingAnimation()
+        txReturn.appendChild(loader)
+        if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
+        if (label === 'pure' || label === 'view') var el = await makeReturn(transaction)
+        loader.replaceWith(el)
       } else {
         let deploy = document.querySelector("[class^='deploy']")
-        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 1000)
-        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 1500)
-        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 2000)
-        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 2500)
-        setTimeout(()=>{deploy.style.color = colors.darkSmoke}, 3000)
-        setTimeout(()=>{deploy.style.color = colors.whiteSmoke}, 3500)
+        deploy.classList.add(css.bounce)
+        setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
       }
     }
 
@@ -802,13 +864,15 @@ function displayContractUI(result) {   // compilation result metadata
 
     function deployingNotice() {
       let txReturn = document.querySelector("[class^='txReturn']")
+      let loading = bel`<div class=${css.inProgress}></div>`
       ctor.innerHTML = `
         <div class=${css.deployStats}>
           <div class=${css.statsEl}>
-            <div class=${css.statsElTitle}>Deploying to Ethereum network</div>
-            <div class=${css.inProgress}>...</div>
+            <div class=${css.deployingNotice}>Deploying to Ethereum network</div>
           </div>
         </div>`
+      ctor.appendChild(loading)
+      loading.appendChild(loadingAnimation(colors))
       if (txReturn) txReturn.parentNode.removeChild(txReturn)
     }
 
