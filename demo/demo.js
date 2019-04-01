@@ -17,88 +17,110 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-pragma solidity >=0.5.0;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.4.22 <0.7.0;
 
-contract InvoiceJournal {
+contract Ballot {
 
-  struct Contractor {
-    string name;
-    string email;
-    string pubkey;
-    bool active;
-    bool exists;
-  }
-  struct Invoice {
-    address contractor;
-    uint invoice_id;
-    string storage_url;
-    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
-  }
-
-  address operator;
-  mapping(address => Contractor) contractors;
-  mapping(address => Invoice[]) invoices;
-  address[] contractor_addresses;
-
-  function getAllInvoices () public view returns (Invoice[][] memory) {
-    uint len = contractor_addresses.length;
-  	Invoice[][] memory result = new Invoice[][](len);
-    for (uint i = 0; i < len; i++) {
-      result[i] = invoices[contractor_addresses[i]];
+    struct Voter {
+        uint weight; // weight is accumulated by delegation
+        bool voted;  // if true, that person already voted
+        address delegate; // person delegated to
+        uint vote;   // index of the voted proposal
     }
 
-    return result;
-  }
-  function getAllContractors () public view returns (Contractor[] memory) {
-    uint len = contractor_addresses.length;
-  	Contractor[] memory result = new Contractor[](len);
-    for (uint i = 0; i < len; i++) {
-      result[i] = contractors[contractor_addresses[i]];
+    struct Proposal {
+        bytes32 name;   // short name (up to 32 bytes)
+        uint voteCount; // number of accumulated votes
     }
-    return result;
-  }
-  function getYourInvoices () public view returns (Invoice[] memory) {
-    return invoices[msg.sender];
-  }
-  function activateContractor (address contractor_address) public {
-    require(operator == msg.sender, "Only an authorized operator can add new contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    contractor.active = true;
-    if (!contractor.exists) {
-      contractor.exists = true;
-      contractor_addresses.push(contractor_address);
+
+    address public chairperson;
+
+    mapping(address => Voter) public voters;
+
+    Proposal[] public proposals;
+
+    constructor(bytes32[] memory proposalNames) public {
+        chairperson = msg.sender;
+        voters[chairperson].weight = 1;
+
+        for (uint i = 0; i < proposalNames.length; i++) {
+
+            proposals.push(Proposal({
+                name: proposalNames[i],
+                voteCount: 0
+            }));
+        }
     }
-  }
-  function deactivateContractor (address contractor_address) public {
-    require(operator == msg.sender, "Only an authorized operator can remove contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    if (!contractor.active) return;
-    contractor.active = false;
-  }
-  function updateContractor (string memory name, string memory email, string memory pubkey) public {
-    Contractor storage contractor = contractors[msg.sender];
-    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
-    contractor.name = name;
-    contractor.email = email;
-    contractor.pubkey = pubkey;
-  }
-  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
-    Contractor memory contractor = contractors[msg.sender];
-    require(contractor.exists, "Unknown contractors cannot submit invoices");
-    require(contractor.active, "Unauthorized contractors cannot submit invoices");
-    Invoice[] storage _invoices = invoices[msg.sender];
-    Invoice memory new_invoice = Invoice({
-      contractor: msg.sender,
-      invoice_id: invoice_id,
-      storage_url: storage_url,
-      encrypted_decrypt_keys: keys
-    });
-    _invoices.push(new_invoice);
-    return contractor;
-  }
-  constructor () public {
-    operator = msg.sender;
-  }
+
+    function giveRightToVote(address voter) public {
+
+        require(
+            msg.sender == chairperson,
+            "Only chairperson can give right to vote."
+        );
+        require(
+            !voters[voter].voted,
+            "The voter already voted."
+        );
+        require(voters[voter].weight == 0);
+        voters[voter].weight = 1;
+    }
+
+    function delegate(address to) public {
+        Voter storage sender = voters[msg.sender];
+        require(!sender.voted, "You already voted.");
+
+        require(to != msg.sender, "Self-delegation is disallowed.");
+
+
+        while (voters[to].delegate != address(0)) {
+            to = voters[to].delegate;
+
+            require(to != msg.sender, "Found loop in delegation.");
+        }
+
+
+        sender.voted = true;
+        sender.delegate = to;
+        Voter storage delegate_ = voters[to];
+        if (delegate_.voted) {
+
+            proposals[delegate_.vote].voteCount += sender.weight;
+        } else {
+
+            delegate_.weight += sender.weight;
+        }
+    }
+
+
+    function vote(uint proposal) public {
+        Voter storage sender = voters[msg.sender];
+        require(sender.weight != 0, "Has no right to vote");
+        require(!sender.voted, "Already voted.");
+        sender.voted = true;
+        sender.vote = proposal;
+
+
+        proposals[proposal].voteCount += sender.weight;
+    }
+
+
+    function winningProposal() public view
+            returns (uint winningProposal_)
+    {
+        uint winningVoteCount = 0;
+        for (uint p = 0; p < proposals.length; p++) {
+            if (proposals[p].voteCount > winningVoteCount) {
+                winningVoteCount = proposals[p].voteCount;
+                winningProposal_ = p;
+            }
+        }
+    }
+
+    function winnerName() public view
+            returns (bytes32 winnerName_)
+    {
+        winnerName_ = proposals[winningProposal()].name;
+    }
 }
 `

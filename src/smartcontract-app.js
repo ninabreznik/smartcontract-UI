@@ -13,6 +13,7 @@ const inputArray = require("input-array")
 const inputInteger = require("input-integer")
 const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
+const inputByte = require("input-byte")
 const copy = require('copy-text-to-clipboard')
 
 // Styling variables
@@ -449,6 +450,11 @@ var css = csjs`
       width: 300px;
       justify-content: center;
     }
+    .byteField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
     .addressField {
       display: flex;
       width: 300px;
@@ -672,7 +678,7 @@ function displayContractUI(result) {   // compilation result metadata
         field = inputArray({ theme, type, cb })
       } else {
         if ((type.search(/\buint/) != -1) || (type.search(/\bint/) != -1)) field = inputInteger({ theme, type, cb })
-        if (type.search(/\bbyte/) != -1) field = inputString({ theme, type, cb })
+        if (type.search(/\bbyte/) != -1) field = inputByte({ theme, type, cb })
         if (type.search(/\bstring/) != -1) field = inputString({ theme, type, cb })
         if (type.search(/\bfixed/) != -1) field = inputInteger({ theme, type, cb })
         if (type.search(/\bbool/) != -1) field = inputBoolean({ theme, type, cb })
@@ -854,7 +860,8 @@ function displayContractUI(result) {   // compilation result metadata
       let signer = await provider.getSigner()
       let element = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      let instance = await factory.deploy(getArgs(element, 'inputFields'))
+      let args = getArgs(element, 'inputContainer')
+      let instance = await factory.deploy(...args)
       contract = instance
       deployingNotice()
       let deployed = await contract.deployed()
