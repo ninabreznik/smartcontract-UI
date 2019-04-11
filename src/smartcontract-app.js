@@ -90,7 +90,7 @@ var css = csjs`
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 630px;
+      width: 546px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -181,11 +181,11 @@ var css = csjs`
     }
     .constructorFn {
       padding-top: 18px;
-      width: 650px;
+      width: 600px;
     }
     .functions {
       font-size: 1.3rem;
-      width: 650px;
+      width: 570px;
     }
     .title {
       font-size: 1.3rem;
@@ -305,7 +305,7 @@ var css = csjs`
       position: relative;
       border: 2px dashed ${colors.darkSmoke};
       padding: 20px 0;
-      width: 630px;
+      width: 540px;
       margin: 0 0 5em 20px;
     }
     .statsEl {
