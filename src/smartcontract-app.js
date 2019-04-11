@@ -90,7 +90,7 @@ var css = csjs`
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 546px;
+      width: 550px;
       display: flex;
       justify-content: center;
       align-items: center;
