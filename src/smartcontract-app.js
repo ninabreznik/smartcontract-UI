@@ -649,6 +649,7 @@ function displayContractUI(result) {   // compilation result metadata
         if (sm === 'nonpayable') return 2
         if (sm === 'pure') return 3
         if (sm === 'payable') return 4
+        if (sm === undefined) return 5
       }
     }
 
@@ -719,7 +720,8 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function makeReceipt (transaction) {
-      let receipt = await transaction.wait()
+      if (!transaction.wait) return // check when running function of not defined type
+      let receipt =  await transaction.wait()
       let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
       return bel`<div class=${css.txReturnItem}>
         <div class=${css.txReturnLeft}>
@@ -771,6 +773,7 @@ function displayContractUI(result) {   // compilation result metadata
         txReturn.appendChild(loader)
         if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
         if (label === 'pure' || label === 'view') var el = await makeReturn(transaction)
+        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction)
         loader.replaceWith(el)
       } else {
         let deploy = document.querySelector("[class^='deploy']")

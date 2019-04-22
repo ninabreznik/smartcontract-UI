@@ -16208,11 +16208,32 @@ const smartcontractapp = require('../')
 ;(async () => {
   const select = await solcjs.versions().catch(printError)
   const { releases, nightly, all } = select
-  const version = releases[0]
+  const version = getCompilerVersion(releases, sourcecode)
   const compiler = await solcjs(version).catch(printError)
   const result = await compiler(sourcecode).catch(printError)
   document.body.appendChild(smartcontractapp(result))
 })()
+
+function getCompilerVersion (releases, code) {
+  var regex = /pragma solidity ([><=\^]*)(\d+\.\d+\.\d+)?\s*([><=\^]*)(\d+\.\d+\.\d+)?;/
+  var [ pragma,op1, min, op2, max] = code.match(regex)
+  if (pragma) {
+    if (max) {
+      for (var i = 0, len = releases.length; i < len; i++) {
+        if (releases[i].includes(max)) return releases[i]
+      }
+      return releases[0]
+    } else if (min) {
+      for (var i = 0, len = releases.length; i < len; i++) {
+        if (releases[i].includes(min)) return releases[i]
+      }
+      return releases[0]
+    }
+    return releases[0]
+  } else {
+    return releases[0]
+  }
+}
 
 function printError (e) {
   document.body.innerHTML = `<pre style="color:red">
@@ -16220,110 +16241,45 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-pragma solidity >=0.4.22 <0.7.0;
+pragma solidity ^0.4.11;
 
-contract Ballot {
-
-    struct Voter {
-        uint weight; // weight is accumulated by delegation
-        bool voted;  // if true, that person already voted
-        address delegate; // person delegated to
-        uint vote;   // index of the voted proposal
+contract CrowdFunding {
+    struct Funder {
+        address addr;
+        uint amount;
     }
 
-    struct Proposal {
-        bytes32 name;   // short name (up to 32 bytes)
-        uint voteCount; // number of accumulated votes
+    struct Campaign {
+        address beneficiary;
+        uint fundingGoal;
+        uint numFunders;
+        uint amount;
+        mapping (uint => Funder) funders;
     }
 
-    address public chairperson;
+    uint numCampaigns;
+    mapping (uint => Campaign) public campaigns;
 
-    mapping(address => Voter) public voters;
-
-    Proposal[] public proposals;
-
-    constructor(bytes32[] memory proposalNames) public {
-        chairperson = msg.sender;
-        voters[chairperson].weight = 1;
-
-        for (uint i = 0; i < proposalNames.length; i++) {
-
-            proposals.push(Proposal({
-                name: proposalNames[i],
-                voteCount: 0
-            }));
-        }
+    function newCampaign(address beneficiary, uint goal) public returns (uint campaignID) {
+        campaignID = numCampaigns++;
+        campaigns[campaignID] = Campaign(beneficiary, goal, 0, 0);
     }
 
-    function giveRightToVote(address voter) public {
+    function contribute(uint campaignID) public payable {
+        Campaign storage c = campaigns[campaignID];
 
-        require(
-            msg.sender == chairperson,
-            "Only chairperson can give right to vote."
-        );
-        require(
-            !voters[voter].voted,
-            "The voter already voted."
-        );
-        require(voters[voter].weight == 0);
-        voters[voter].weight = 1;
+        c.funders[c.numFunders++] = Funder({addr: msg.sender, amount: msg.value});
+        c.amount += msg.value;
     }
 
-    function delegate(address to) public {
-        Voter storage sender = voters[msg.sender];
-        require(!sender.voted, "You already voted.");
-
-        require(to != msg.sender, "Self-delegation is disallowed.");
-
-
-        while (voters[to].delegate != address(0)) {
-            to = voters[to].delegate;
-
-            require(to != msg.sender, "Found loop in delegation.");
-        }
-
-
-        sender.voted = true;
-        sender.delegate = to;
-        Voter storage delegate_ = voters[to];
-        if (delegate_.voted) {
-
-            proposals[delegate_.vote].voteCount += sender.weight;
-        } else {
-
-            delegate_.weight += sender.weight;
-        }
-    }
-
-
-    function vote(uint proposal) public {
-        Voter storage sender = voters[msg.sender];
-        require(sender.weight != 0, "Has no right to vote");
-        require(!sender.voted, "Already voted.");
-        sender.voted = true;
-        sender.vote = proposal;
-
-
-        proposals[proposal].voteCount += sender.weight;
-    }
-
-
-    function winningProposal() public view
-            returns (uint winningProposal_)
-    {
-        uint winningVoteCount = 0;
-        for (uint p = 0; p < proposals.length; p++) {
-            if (proposals[p].voteCount > winningVoteCount) {
-                winningVoteCount = proposals[p].voteCount;
-                winningProposal_ = p;
-            }
-        }
-    }
-
-    function winnerName() public view
-            returns (bytes32 winnerName_)
-    {
-        winnerName_ = proposals[winningProposal()].name;
+    function checkGoalReached(uint campaignID) public returns (bool reached) {
+        Campaign storage c = campaigns[campaignID];
+        if (c.amount < c.fundingGoal)
+            return false;
+        uint amount = c.amount;
+        c.amount = 0;
+        c.beneficiary.transfer(amount);
+        return true;
     }
 }
 `
@@ -21314,10 +21270,11 @@ function getDate () {
 module.exports = word => glossary[word]
 
 var glossary = {
-  pure: `PURE FUNCTION - function, that is promised not to modify or read the state.`,
-  view: `VIEW FUNCTION - function, that returns information from the Ethereum network`,
-  payable: `PAYABLE FUNCTION - function, that enables to send ETH while being called `,
-  nonpayable: `NONPAYABLE FUNCTION - function, that changes the state of the contract on the Ethereum network`
+  pure: `This function is a PURE FUNCTION, which doesn't modify nor read the state.`,
+  view: `This function is a VIEW FUNCTION (a call), which returns information from the Ethereum network`,
+  payable: `This function is a PAYABLE FUNCTION, which enables to send ETH while being called `,
+  nonpayable: `This function is a NONPAYABLE FUNCTION, which changes the state of the contract on the Ethereum network`,
+  undefined: `Type of this function is not defined.`
 }
 
 },{}],300:[function(require,module,exports){
@@ -22021,6 +21978,7 @@ function displayContractUI(result) {   // compilation result metadata
         if (sm === 'nonpayable') return 2
         if (sm === 'pure') return 3
         if (sm === 'payable') return 4
+        if (sm === undefined) return 5
       }
     }
 
@@ -22091,7 +22049,8 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function makeReceipt (transaction) {
-      let receipt = await transaction.wait()
+      if (!transaction.wait) return // check when running function of not defined type
+      let receipt =  await transaction.wait()
       let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
       return bel`<div class=${css.txReturnItem}>
         <div class=${css.txReturnLeft}>
@@ -22143,6 +22102,7 @@ function displayContractUI(result) {   // compilation result metadata
         txReturn.appendChild(loader)
         if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
         if (label === 'pure' || label === 'view') var el = await makeReturn(transaction)
+        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction)
         loader.replaceWith(el)
       } else {
         let deploy = document.querySelector("[class^='deploy']")
