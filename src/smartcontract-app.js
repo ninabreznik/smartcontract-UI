@@ -529,7 +529,6 @@ var provider
 var contract
 
 async function getProvider() {
-  debugger
   if (window.web3.currentProvider) {
     try {
       // Acccounts now exposed
@@ -768,6 +767,7 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         let contractAsCurrentSigner = contract.connect(signer)
         let transaction = await contractAsCurrentSigner.functions[fnName](...args)
+        // @TODO if (transaction._ethersType === "BigNumber") transaction = transaction.toString()
         // @TODO: what if users cancels a transaction?
         element.appendChild(txReturn)
         var loader = makeLoadingAnimation()
