@@ -529,12 +529,13 @@ var provider
 var contract
 
 async function getProvider() {
-  if (window.ethereum) {
+  debugger
+  if (window.web3.currentProvider) {
     try {
-      // Request account access if needed
-      await ethereum.enable();
       // Acccounts now exposed
       provider = new ethers.providers.Web3Provider(window.web3.currentProvider)
+      // Request account access if needed
+      await ethereum.enable();
     } catch (error) {
       // User denied account access...
     }
