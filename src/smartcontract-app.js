@@ -712,6 +712,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function makeReturn (transaction) {
+      // @TODO if (transaction._ethersType === "BigNumber") { transaction = transaction.toString() } -> go through transaction recursively
       return bel`<div class=${css.txReturnItem}>
         <div class=${css.returnJSON}>
           ${JSON.stringify(transaction, null, 1)}
@@ -767,7 +768,6 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         let contractAsCurrentSigner = contract.connect(signer)
         let transaction = await contractAsCurrentSigner.functions[fnName](...args)
-        // @TODO if (transaction._ethersType === "BigNumber") transaction = transaction.toString()
         // @TODO: what if users cancels a transaction?
         element.appendChild(txReturn)
         var loader = makeLoadingAnimation()
