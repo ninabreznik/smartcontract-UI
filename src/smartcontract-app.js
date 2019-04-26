@@ -712,7 +712,8 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function makeReturn (transaction) {
-      // @TODO if (transaction._ethersType === "BigNumber") { transaction = transaction.toString() } -> go through transaction recursively
+      if (!transaction.length && transaction._ethersType === "BigNumber") transaction = transaction.toString()
+      // @TODO cover all the types
       return bel`<div class=${css.txReturnItem}>
         <div class=${css.returnJSON}>
           ${JSON.stringify(transaction, null, 1)}
