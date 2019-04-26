@@ -711,13 +711,24 @@ function displayContractUI(result) {   // compilation result metadata
       </div>`
     }
 
+
+    function decodeTxReturn (tx) {
+      ethers
+      debugger
+      if (Array.isArray(tx)) {  // recursive case
+        return tx.map(decodeTxReturn)
+      } else { // atomic case
+        if (tx._ethersType === "BigNumber") return tx.toString()
+        return tx
+      }
+    }
+
     async function makeReturn (transaction) {
-      if (!transaction.length && transaction._ethersType === "BigNumber") transaction = transaction.toString()
+      let decodedTx = decodeTxReturn(transaction)
       // @TODO cover all the types
-      return bel`<div class=${css.txReturnItem}>
+      return bel`
         <div class=${css.returnJSON}>
-          ${JSON.stringify(transaction, null, 1)}
-        </div>
+          ${JSON.stringify(decodedTx, null, 1)}
       </div>`
     }
 
@@ -725,7 +736,7 @@ function displayContractUI(result) {   // compilation result metadata
       if (!transaction.wait) return // check when running function of not defined type
       let receipt =  await transaction.wait()
       let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
-      return bel`<div class=${css.txReturnItem}>
+      return bel`<div>
         <div class=${css.txReturnLeft}>
           <div class=${css.txReturnField}>
             <div class=${css.txReturnTitle}>Sent:</div>
@@ -773,9 +784,15 @@ function displayContractUI(result) {   // compilation result metadata
         element.appendChild(txReturn)
         var loader = makeLoadingAnimation()
         txReturn.appendChild(loader)
-        if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
-        if (label === 'pure' || label === 'view') var el = await makeReturn(transaction)
-        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction)
+        // var receiptEl = await makeReceipt(transaction)
+        // var returnEl = await makeReturn(transaction)
+        // if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction)
+        var el = bel`
+          <div class=${css.txReturnItem}>
+            ${await makeReturn(transaction)}
+            ${await makeReceipt(transaction)}
+          </div>
+        `
         loader.replaceWith(el)
       } else {
         let deploy = document.querySelector("[class^='deploy']")
