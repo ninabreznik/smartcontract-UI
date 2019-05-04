@@ -13444,6 +13444,7 @@ var css = csjs`
       margin: 3%;
       padding: 3%;
       justify-content: space-between;
+      flex-direction: column;
     }
     .returnJSON {
 
@@ -14045,12 +14046,41 @@ function displayContractUI(result) {   // compilation result metadata
       </div>`
     }
 
-    async function makeReturn (transaction) {
-      if (!transaction.length && transaction._ethersType === "BigNumber") transaction = transaction.toString()
-      // @TODO cover all the types
-      return bel`<div class=${css.txReturnItem}>
+    function returnTypes (fnName) {
+      let abi = solcMetadata.output.abi
+      item = []
+      for (var i = 0; i < abi.length; i++) {
+      	let item = abi[i]
+      	if (item.name === fnName) return item.outputs
+      }
+    }
+
+    function decode (tx, output) {
+        if (output.type === ('bytes32')) return ethers.utils.parseBytes32String(tx)
+        else if (output.type.includes('uint')) return tx.toString()
+        else return tx
+    }
+
+    function decodeTxReturn (tx, types) {
+      var result
+      if (Array.isArray(tx)) {  // recursive case
+        result = tx.map((x, i) => decodeTxReturn(x, Array.isArray(types) ? types[i] : types))
+        return result
+      } else { // atomic case
+        decoded = decode(tx, types)
+        return decoded
+      }
+    }
+
+    async function makeReturn (transaction, fnName) {
+      let types = returnTypes(fnName)
+      if (types.length === 1) types = types[0]
+      let decodedTx = decodeTxReturn(transaction, types)
+      // @TODO check all output types (array with one el, array of objects, objects alone...)
+      return bel`
+      <div class=${css.txReturnItem}>
         <div class=${css.returnJSON}>
-          ${JSON.stringify(transaction, null, 1)}
+          ${JSON.stringify(decodedTx, null, 1)}
         </div>
       </div>`
     }
@@ -14108,8 +14138,8 @@ function displayContractUI(result) {   // compilation result metadata
         var loader = makeLoadingAnimation()
         txReturn.appendChild(loader)
         if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
-        if (label === 'pure' || label === 'view') var el = await makeReturn(transaction)
-        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction)
+        if (label === 'pure' || label === 'view') var el = await makeReturn(transaction, fnName)
+        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction, fnName)
         loader.replaceWith(el)
       } else {
         let deploy = document.querySelector("[class^='deploy']")
@@ -14263,7 +14293,7 @@ function displayContractUI(result) {   // compilation result metadata
     var ctor = bel`
     <div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()}>
+      <div class=${css.deploy} onclick=${()=>deployContract()} title="Deploy the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         <div class=${css.deployTitle}>Deploy</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
