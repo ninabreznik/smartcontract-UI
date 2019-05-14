@@ -20,9 +20,9 @@
     "ethers": "^4.0.23",
     "input-address": "^2.1.0",
     "input-array": "^2.1.3",
-    "input-integer": "^3.1.1",
     "input-boolean": "^2.2.1",
     "input-byte": "^0.0.1",
+    "input-integer": "^3.1.1",
     "input-string": "^2.1.0",
     "solc-js": "git+https://github.com/ethereum-play/solc-js.git",
     "solidity-validator": "^0.1.1"

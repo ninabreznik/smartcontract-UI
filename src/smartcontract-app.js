@@ -1,11 +1,11 @@
 const bel = require("bel")
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
-const utils = require('ethers').utils
 const glossary = require('glossary')
 const date = require('getDate')
 const loadingAnimation = require('loadingAnimation')
 const getArgs = require('getArgs')
+const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
 const validator = require('solidity-validator')
 const inputAddress = require("input-address")
@@ -62,7 +62,7 @@ var css = csjs`
       padding: 1em;
     }
     .errorTitle {
-      position: absolute;Deploy
+      position: absolute;
       top: -14px;
       left: 20px;
       background-color: ${colors.dark};
@@ -90,15 +90,15 @@ var css = csjs`
       top: -41px;
       left: 20px;
       min-height: 80px;
-      width: 550px;
+      width: 546px;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
     }
-    .txReturnLeft, .txReturnRight {
-      display: flex;
-      flex-direction: column;
+    .deploying {
+      font-size: 0.7rem;
+      margin-left: 3%;
     }
     .txReturnItem {
       position: relative;
@@ -113,7 +113,8 @@ var css = csjs`
       flex-direction: column;
     }
     .returnJSON {
-
+      font-size: 1.5em;
+      font-weight: bold;
     }
     .txReturnField {
       display:flex;
@@ -122,17 +123,11 @@ var css = csjs`
     .txReturnTitle {
       font-weight: bold;
       margin-right: 5px;
+      width: 50%;
     }
     .txReturnValue {
       color: ${colors.whiteSmoke};
       cursor: pointer;
-    }
-    .txReturnValue a {
-      text-decoration: none;
-      color: ${colors.slateGrey};
-    }
-    .txReturnValue a:hover {
-      opacity: 0.6;
     }
     .contractName {
       cursor: pointer;
@@ -164,6 +159,18 @@ var css = csjs`
       position: absolute;
       top: -16px;
       left: 0;
+    }
+    .infoIcon {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .infoIcon a {
+      font-size: 1.3em;
+      text-decoration: none;
+      color: ${colors.whiteSmoke};
+    }
+    .infoIcon a:hover {
+      opacity: 0.6;
     }
     .name {
       font-size: 0.7em;
@@ -300,7 +307,7 @@ var css = csjs`
       position: relative;
       margin-left: 20px;
     }
-    .ctor {
+    .topContainer {
       display: flex;
       flex-direction: column;
       position: relative;
@@ -309,12 +316,13 @@ var css = csjs`
       width: 540px;
       margin: 0 0 5em 20px;
     }
+    .ctor {}
     .statsEl {
       display:flex;
       justify-content: space-between;
       position: relative;
     }
-    .deployingNotice {
+    .showLoader {
       margin-right: 5px;
       font-weight: bold;
     }
@@ -327,8 +335,6 @@ var css = csjs`
     }
     .statsElValue:hover {
       opacity: 0.6;
-    }
-    .inProgress {
     }
     .deployStats {
       color: ${colors.whiteSmoke};
@@ -537,7 +543,7 @@ async function getProvider() {
       // Request account access if needed
       await ethereum.enable();
     } catch (error) {
-      // User denied account access...
+      console.log(error)
     }
   } else {
     window.open("https://metamask.io/")
@@ -712,101 +718,21 @@ function displayContractUI(result) {   // compilation result metadata
       </div>`
     }
 
-    function returnTypes (fnName) {
-      let abi = solcMetadata.output.abi
-      item = []
-      for (var i = 0; i < abi.length; i++) {
-      	let item = abi[i]
-      	if (item.name === fnName) return item.outputs
-      }
-    }
-
-    function decode (tx, output) {
-        if (output.type === ('bytes32')) return ethers.utils.parseBytes32String(tx)
-        else if (output.type.includes('uint')) return tx.toString()
-        else return tx
-    }
-
-    function decodeTxReturn (tx, types) {
-      var result
-      if (Array.isArray(tx)) {  // recursive case
-        result = tx.map((x, i) => decodeTxReturn(x, Array.isArray(types) ? types[i] : types))
-        return result
-      } else { // atomic case
-        decoded = decode(tx, types)
-        return decoded
-      }
-    }
-
-    async function makeReturn (transaction, fnName) {
-      let types = returnTypes(fnName)
-      if (types.length === 1) types = types[0]
-      let decodedTx = decodeTxReturn(transaction, types)
-      // @TODO check all output types (array with one el, array of objects, objects alone...)
-      return bel`
-      <div class=${css.txReturnItem}>
-        <div class=${css.returnJSON}>
-          ${JSON.stringify(decodedTx, null, 1)}
-        </div>
-      </div>`
-    }
-
-    async function makeReceipt (transaction) {
-      if (!transaction.wait) return // check when running function of not defined type
-      let receipt =  await transaction.wait()
-      let linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + receipt.transactionHash
-      return bel`<div class=${css.txReturnItem}>
-        <div class=${css.txReturnLeft}>
-          <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>Sent:</div>
-            <div class=${css.txReturnValue}>${date()}</div>
-          </div>
-          <div class=${css.txReturnField} onclick=${()=>copy(receipt.transactionHash)}>
-            <div class=${css.txReturnTitle} title="Transaction">Transaction:</div>
-            <div class=${css.txReturnValue}>${shortenHexData(receipt.transactionHash)}</div>
-          </div>
-          <div class=${css.txReturnField} onclick=${()=>copy(receipt.from)}>
-            <div class=${css.txReturnTitle}>Signed by:</div>
-            <div class=${css.txReturnValue}>${shortenHexData(receipt.from)}</div>
-          </div>
-        </div>
-        <div class=${css.txReturnRight} onclick=${()=>copy(transaction.gasPrice._hex)}>
-          <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>Gas price:</div>
-            <div class=${css.txReturnValue}>${parseInt(transaction.gasPrice._hex) || free}</div>
-          </div>
-          <div class=${css.txReturnField} onclick=${()=>copy(receipt.gasUsed._hex)}>
-            <div class=${css.txReturnTitle}>Gas used:</div>
-            <div class=${css.txReturnValue}>${parseInt(receipt.gasUsed._hex)}</div>
-          </div>
-          <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>Details:</div>
-            <div class=${css.txReturnValue}><a href=${linkToEtherscan} target="_blank">Link to Etherscan</a></div>
-          </div>
-        </div>
-      </div>`
-    }
-
-    function makeLoadingAnimation () {
-      return bel`<div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div></div>`
-    }
-
     async function sendTx (fnName, label, e) {
-      let element = e.target.parentNode.parentNode.parentNode.parentNode
-      let txReturn = element.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
+      var loader = bel`<div class=${css.txReturnItem}>Awaiting network confirmation ${loadingAnimation(colors)}</div>`
+      var container = e.target.parentNode.parentNode.parentNode.parentNode
+      var txReturn = container.querySelector("[class^='txReturn']") || bel`<div class=${css.txReturn}></div>`
       if (contract) {  // if deployed
-        let args = getArgs(element, 'inputContainer')
-        let signer = await provider.getSigner()
-        let contractAsCurrentSigner = contract.connect(signer)
-        let transaction = await contractAsCurrentSigner.functions[fnName](...args)
-        // @TODO: what if users cancels a transaction?
-        element.appendChild(txReturn)
-        var loader = makeLoadingAnimation()
+        container.appendChild(txReturn)
         txReturn.appendChild(loader)
-        if (label === 'payable' || label === 'nonpayable') var el = await makeReceipt(transaction)
-        if (label === 'pure' || label === 'view') var el = await makeReturn(transaction, fnName)
-        if (label === undefined) var el = await makeReceipt(transaction) || await makeReturn(transaction, fnName)
-        loader.replaceWith(el)
+        let signer = await provider.getSigner()
+        let args = getArgs(container, 'inputContainer')
+        try {
+          let contractAsCurrentSigner = contract.connect(signer)
+          var transaction = await contractAsCurrentSigner.functions[fnName](...args)
+          let abi = solcMetadata.output.abi
+          loader.replaceWith(await makeReturn(css, solcMetadata, provider, transaction, fnName))
+        } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
         let deploy = document.querySelector("[class^='deploy']")
         deploy.classList.add(css.bounce)
@@ -893,29 +819,21 @@ function displayContractUI(result) {   // compilation result metadata
       let bytecode = opts.metadata.bytecode
       provider =  await getProvider()
       let signer = await provider.getSigner()
-      let element = document.querySelector("[class^='ctor']")
+      var el = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      let args = getArgs(element, 'inputContainer')
-      let instance = await factory.deploy(...args)
-      contract = instance
-      deployingNotice()
-      let deployed = await contract.deployed()
-      createDeployStats(contract)
-      activateSendTx(contract)
-    }
-
-    function deployingNotice() {
-      let txReturn = document.querySelector("[class^='txReturn']")
-      let loading = bel`<div class=${css.inProgress}></div>`
-      ctor.innerHTML = `
-        <div class=${css.deployStats}>
-          <div class=${css.statsEl}>
-            <div class=${css.deployingNotice}>Deploying to Ethereum network</div>
-          </div>
-        </div>`
-      ctor.appendChild(loading)
-      loading.appendChild(loadingAnimation(colors))
-      if (txReturn) txReturn.parentNode.removeChild(txReturn)
+      el.replaceWith(bel`<div class=${css.deploying}>Deploying to Ethereum network ${loadingAnimation(colors)}</div>`)
+      try {
+        let args = getArgs(el, 'inputContainer')
+        let instance = await factory.deploy(...args)
+        contract = instance
+        let deployed = await contract.deployed()
+        topContainer.innerHTML = ''
+        topContainer.appendChild(createDeployStats(contract))
+        activateSendTx(contract)
+      } catch (e) {
+        let loader = document.querySelector("[class^='deploying']")
+        loader.replaceWith(ctor)
+      }
     }
 
     function activateSendTx(instance) {
@@ -929,8 +847,7 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function createDeployStats (contract) {
-      ctor.innerHTML = ''
-      ctor.appendChild(bel`
+      return bel`
         <div class=${css.deployStats}>
           <div class=${css.statsEl}>
             <div class=${css.statsElTitle}>Deployed:</div>
@@ -953,32 +870,29 @@ function displayContractUI(result) {   // compilation result metadata
             <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
           </div>
         </div>
-      `)
+      `
     }
 
-    var ctor = bel`
-    <div class="${css.ctor}">
+    var topContainer = bel`<div class=${css.topContainer}></div>`
+    var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
       <div class=${css.deploy} onclick=${()=>deployContract()} title="Deploy the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         <div class=${css.deployTitle}>Deploy</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
+    topContainer.appendChild(ctor)
 
     return bel`
     <div class=${css.preview}>
-    <div class=${css.constructorFn}>
-      <div class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
-        ${metadata.constructorName}
-        <span class=${css.icon}>
-          <i class="fa fa-plus-circle" title="Expand to see the details"></i>
-        </span>
+      <div class=${css.constructorFn}>
+        <div class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
+          ${metadata.constructorName}
+          <span class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></span>
+        </div>
       </div>
-    </div>
-    ${ctor}
-    <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
-    </div>
-    `
-
+      ${topContainer}
+      <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
+    </div>`
   }
 }
