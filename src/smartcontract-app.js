@@ -97,7 +97,7 @@ var css = csjs`
       flex-direction: column;
     }
     .deploying {
-      font-size: 0.7rem;
+      font-size: 0.8rem;
       margin-left: 3%;
     }
     .txReturnItem {
@@ -113,8 +113,8 @@ var css = csjs`
       flex-direction: column;
     }
     .returnJSON {
-      font-size: 1.5em;
-      font-weight: bold;
+      font-size: 1.1em;
+      color: ${colors.lightGrey};
     }
     .txReturnField {
       display:flex;
@@ -143,17 +143,12 @@ var css = csjs`
       opacity: 0.6;
     }
     .fnName {
+      font-size: 1em;
       display: flex;
       text-decoration: none;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .fnIcon {
-      font-size: 0.7em;
-      position: relative;
-      width: 25px;
-      top: 8px;
     }
     .faIcon {
       position: absolute;
@@ -161,8 +156,10 @@ var css = csjs`
       left: 0;
     }
     .infoIcon {
-      display: flex;
-      justify-content: flex-end;
+      position: absolute;
+      right: 5px;
+      bottom: 0px;
+      color: ${colors.slateGrey};
     }
     .infoIcon a {
       font-size: 1.3em;
@@ -173,7 +170,7 @@ var css = csjs`
       opacity: 0.6;
     }
     .name {
-      font-size: 0.7em;
+      font-size: 0.9em;
     }
     .stateMutability {
       margin-left: 5px;
@@ -200,10 +197,9 @@ var css = csjs`
       display: flex;
       align-items: baseline;
       position: absolute;
-      top: -10px;
+      top: -13px;
       left: 20px;
       background-color: ${colors.dark};
-      padding: 0 5px 0 5px;
     }
     .title:hover {
       cursor: pointer;
@@ -248,55 +244,45 @@ var css = csjs`
       animation: bounceRight 2s infinite;
     }
     @-webkit-keyframes bounceRight {
-      0%,
-      20%,
-      50%,
-      80%,
-      100% {
-        -webkit-transform: translateX(0);
-        transform: translateX(0);
-      }
-      40% {
-        -webkit-transform: translateX(-30px);
-        transform: translateX(-30px);
-      }
-      60% {
-        -webkit-transform: translateX(-15px);
-        transform: translateX(-15px);
-      }
+    0% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    20% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    40% {-webkit-transform: translateX(-30px);
+      transform: translateX(-30px);}
+    50% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    60% {-webkit-transform: translateX(-15px);
+      transform: translateX(-15px);}
+    80% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    100% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
     }
     @-moz-keyframes bounceRight {
-      0%,
-      20%,
-      50%,
-      80%,
-      100% {
-        transform: translateX(0);
-      }
-      40% {
-        transform: translateX(-30px);
-      }
-      60% {
-        transform: translateX(-15px);
-      }
+      0% {transform: translateX(0);}
+      20% {transform: translateX(0);}
+      40% {transform: translateX(-30px);}
+      50% {transform: translateX(0);}
+      60% {transform: translateX(-15px);}
+      80% {transform: translateX(0);}
+      100% {transform: translateX(0);}
     }
     @keyframes bounceRight {
-      0%,
-      20%,
-      50%,
-      80%,
-      100% {
-        -ms-transform: translateX(0);
-        transform: translateX(0);
-      }
-      40% {
-        -ms-transform: translateX(-30px);
-        transform: translateX(-30px);
-      }
-      60% {
-        -ms-transform: translateX(-15px);
-        transform: translateX(-15px);
-      }
+      0% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      20% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      40% {-ms-transform: translateX(-30px);
+        transform: translateX(-30px);}
+      50% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      60% {-ms-transform: translateX(-15px);
+        transform: translateX(-15px);}
+      80% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      100% {-ms-transform: translateX(0);
+        transform: translateX(0);}
     }
     .fnContainer {
       position: relative;
@@ -306,6 +292,8 @@ var css = csjs`
       flex-direction: column;
       position: relative;
       margin-left: 20px;
+      margin-bottom: 10%;
+      border: 2px dashed ${colors.darkSmoke};
     }
     .topContainer {
       display: flex;
@@ -348,7 +336,7 @@ var css = csjs`
     .signature {}
     .date {}
     .pure {
-      color: ${colors.yellow};
+      background-color: ${colors.yellow};
     }
     .view {
       color: ${colors.lavender};
@@ -387,7 +375,7 @@ var css = csjs`
       color: ${colors.whiteSmoke};
     }
     .inputParam {
-      color: ${colors.whiteSmoke};
+      color: ${colors.slateGrey};
       display: flex;
       justify-content: center;
       font-size: 0.8rem;
@@ -697,12 +685,7 @@ function displayContractUI(result) {   // compilation result metadata
 
     function functions (fn) {
       var label = fn.stateMutability
-      var fnIcon = ()=>{
-        if (label ==='payable' || label === 'nonpayable') return bel`<div class=${css.fnIcon}><i class="fa fa-edit ${css.faIcon}"></i></div>`
-        if (label ==='pure') return bel`<div class=${css.fnIcon}><i class="fa fa-cogs ${css.faIcon}"></i></div>`
-        if (label ==='view') return bel`<div class=${css.fnIcon}><i class="fa fa-eye ${css.faIcon}"></i></div>`
-      }
-      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}>${fnIcon()}<div class=${css.name}>${fn.name}</div></a>`
+      var fnName = bel`<a title="${glossary(label)}" class=${css.fnName}><div class=${css.name}>${fn.name}</div></a>`
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
       var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
@@ -710,7 +693,7 @@ function displayContractUI(result) {   // compilation result metadata
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
-          <ul class=${css.hidden}>
+          <ul class=${css.visible}>
             ${fn.inputs}
             ${send}
           </ul>
@@ -731,7 +714,7 @@ function displayContractUI(result) {   // compilation result metadata
           let contractAsCurrentSigner = contract.connect(signer)
           var transaction = await contractAsCurrentSigner.functions[fnName](...args)
           let abi = solcMetadata.output.abi
-          loader.replaceWith(await makeReturn(css, solcMetadata, provider, transaction, fnName))
+          loader.replaceWith(await makeReturn(css, contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
         let deploy = document.querySelector("[class^='deploy']")
@@ -796,7 +779,7 @@ function displayContractUI(result) {   // compilation result metadata
         fn = e.currentTarget.parentNode
         toggleContainer = e.currentTarget.children[1]
       }
-      // TOGGLE input fields in a single function
+      // TOGGLE input fields in a function
       var params = fn.children[1]
       if (params.className === css.visible.toString()) {
         params.classList.remove(css.visible)
@@ -888,7 +871,7 @@ function displayContractUI(result) {   // compilation result metadata
       <div class=${css.constructorFn}>
         <div class=${css.contractName} onclick=${e=>toggleAll(e)} title="Expand to see the details">
           ${metadata.constructorName}
-          <span class=${css.icon}><i class="fa fa-plus-circle" title="Expand to see the details"></i></span>
+          <span class=${css.icon}><i class="fa fa-minus-circle" title="Expand to see the details"></i></span>
         </div>
       </div>
       ${topContainer}

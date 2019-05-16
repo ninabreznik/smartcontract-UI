@@ -77,7 +77,7 @@ contract InvoiceJournal {
   function getYourInvoices () public view returns (Invoice[] memory) {
     return invoices[msg.sender];
   }
-  function activateContractor (address contractor_address) public {
+  function activateContractor (address contractor_address) public returns(uint8 i8) {
     require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
     Contractor storage contractor = contractors[contractor_address];
     contractor.active = true;
@@ -85,6 +85,8 @@ contract InvoiceJournal {
       contractor.exists = true;
       contractor_addresses.push(contractor_address);
     }
+    i8 = 5;
+    return i8;
   }
   function deactivateContractor (address contractor_address) public {
     require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
