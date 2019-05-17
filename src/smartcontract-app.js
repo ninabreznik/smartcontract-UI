@@ -112,22 +112,29 @@ var css = csjs`
       justify-content: space-between;
       flex-direction: column;
     }
-    .returnJSON {
-      font-size: 1.1em;
-      color: ${colors.lightGrey};
+    .txReceipt {
+      display:flex;
+      justify-content: flex-start;
+      flex-direction: column;
     }
     .txReturnField {
       display:flex;
       justify-content: flex-start;
+      flex-direction: column;
+      margin-bottom: 1%;
     }
     .txReturnTitle {
-      font-weight: bold;
+      color: ${colors.lightGrey};
       margin-right: 5px;
       width: 50%;
     }
     .txReturnValue {
-      color: ${colors.whiteSmoke};
+      color: ${colors.slateGrey};
       cursor: pointer;
+    }
+    .txReturnValue:hover {
+      cursor: pointer;
+      opacity: 0.6;
     }
     .contractName {
       cursor: pointer;
@@ -300,39 +307,12 @@ var css = csjs`
       flex-direction: column;
       position: relative;
       border: 2px dashed ${colors.darkSmoke};
-      padding: 20px 0;
+      padding: 20px;
       width: 540px;
       margin: 0 0 5em 20px;
+      font-size: 0.75em;
     }
     .ctor {}
-    .statsEl {
-      display:flex;
-      justify-content: space-between;
-      position: relative;
-    }
-    .showLoader {
-      margin-right: 5px;
-      font-weight: bold;
-    }
-    .statsElTitle {
-      margin-right: 5px;
-      font-weight: bold;
-    }
-    .statsElValue {
-      cursor: pointer;
-    }
-    .statsElValue:hover {
-      opacity: 0.6;
-    }
-    .deployStats {
-      color: ${colors.whiteSmoke};
-      display: flex;
-      justify-content: left;
-      flex-direction: column;
-      font-size: 0.8rem;
-      min-width: 230px;
-      margin: 1% 5%;
-    }
     .signature {}
     .date {}
     .pure {
@@ -831,26 +811,26 @@ function displayContractUI(result) {   // compilation result metadata
 
     function createDeployStats (contract) {
       return bel`
-        <div class=${css.deployStats}>
-          <div class=${css.statsEl}>
-            <div class=${css.statsElTitle}>Deployed:</div>
-            <div class=${css.statsElValue}>${date()}</div>
+        <div class=${css.txReceipt}>
+          <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle}>Deployed:</div>
+            <div class=${css.txReturnValue}>${date()}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
-            <div class=${css.statsElTitle}>Transaction:</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.hash)}</div>
+          <div class=${css.txReturnField} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
+            <div class=${css.txReturnTitle}>Transaction:</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.hash}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.statsElTitle}>Contract address (${provider._network.name}):</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.creates)}</div>
+          <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
+            <div class=${css.txReturnTitle}>Contract address (${provider._network.name}):</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
           </div>
-          <div class=${css.statsEl} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
-            <div class=${css.statsElTitle}>Gas price:</div>
-            <div class=${css.statsElValue}>${contract.deployTransaction.gasPrice.toString()}</div>
+          <div class=${css.txReturnField} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
+            <div class=${css.txReturnTitle}>Gas price:</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.gasPrice.toString()}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.statsElTitle}>Signed by:</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
+          <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
+            <div class=${css.txReturnTitle}>Signed by:</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
           </div>
         </div>
       `
