@@ -1,4 +1,5 @@
 const bel = require("bel")
+const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
@@ -15,6 +16,7 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
 const copy = require('copy-text-to-clipboard')
+const moreInfo = require('moreInfo')
 
 // Styling variables
 
@@ -26,22 +28,6 @@ var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
-
-var colors = {
-  transparent: "transparent",
-  white: "#ffffff", // borders, font on input background
-  dark: "#2c323c", //background dark
-  darkSmoke: '#21252b',  // separators
-  whiteSmoke: "#f5f5f5", // background light
-  slateGrey: "#8a929b", // text
-  lightGrey: "#F1F2EB",
-  violetRed: "#b25068",  // used as red in types (bool etc.)
-  aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
-  turquoise: "#14b9d5",
-  yellow: "#F2CD5D",
-  lavender: "#EDC9FF",
-  androidGreen: "#9BC53D"
-}
 
 var css = csjs`
   @media only screen and (max-width: 3000px) {
@@ -87,7 +73,7 @@ var css = csjs`
       border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
-      top: -41px;
+      top: -55px;
       left: 20px;
       min-height: 80px;
       width: 546px;
@@ -131,6 +117,7 @@ var css = csjs`
     .txReturnValue {
       color: ${colors.slateGrey};
       cursor: pointer;
+      word-break: break-all;
     }
     .txReturnValue:hover {
       cursor: pointer;
@@ -161,20 +148,6 @@ var css = csjs`
       position: absolute;
       top: -16px;
       left: 0;
-    }
-    .infoIcon {
-      position: absolute;
-      right: 5px;
-      bottom: 0px;
-      color: ${colors.slateGrey};
-    }
-    .infoIcon a {
-      font-size: 1.3em;
-      text-decoration: none;
-      color: ${colors.whiteSmoke};
-    }
-    .infoIcon a:hover {
-      opacity: 0.6;
     }
     .name {
       font-size: 0.9em;
@@ -784,14 +757,14 @@ function displayContractUI(result) {   // compilation result metadata
       let signer = await provider.getSigner()
       var el = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      el.replaceWith(bel`<div class=${css.deploying}>Deploying to Ethereum network ${loadingAnimation(colors)}</div>`)
+      el.replaceWith(bel`<div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>`)
       try {
         let args = getArgs(el, 'inputContainer')
         let instance = await factory.deploy(...args)
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(createDeployStats(contract))
+        topContainer.appendChild(makeDeployReceipt(contract))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
@@ -809,38 +782,33 @@ function displayContractUI(result) {   // compilation result metadata
       }
     }
 
-    function createDeployStats (contract) {
-      return bel`
+    function makeDeployReceipt (contract) {
+      var el = bel`
         <div class=${css.txReceipt}>
           <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>Deployed:</div>
+            <div class=${css.txReturnTitle}>published</div>
             <div class=${css.txReturnValue}>${date()}</div>
           </div>
-          <div class=${css.txReturnField} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
-            <div class=${css.txReturnTitle}>Transaction:</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.hash}</div>
-          </div>
           <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.txReturnTitle}>Contract address (${provider._network.name}):</div>
+            <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
             <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
           </div>
-          <div class=${css.txReturnField} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
-            <div class=${css.txReturnTitle}>Gas price:</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.gasPrice.toString()}</div>
-          </div>
           <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.txReturnTitle}>Signed by:</div>
+            <div class=${css.txReturnTitle}>published by</div>
             <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
           </div>
         </div>
       `
+      el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
+      return el
     }
+
 
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()} title="Deploy the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-        <div class=${css.deployTitle}>Deploy</div>
+      <div class=${css.deploy} onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+        <div class=${css.deployTitle}>Publish</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
