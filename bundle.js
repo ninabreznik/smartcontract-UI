@@ -39,34 +39,55 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-pragma solidity >=0.5.0;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
-contract InvoiceJournal {
+
+contract myTest {
+
+  bool b;
+  int8 i8;
+  int256 i256;
+  bytes16[3] seeds;
+  uint j;
   struct Contractor {
     string name;
-    string email;
-    string pubkey;
+    bytes32 email;
+    int id;
     bool active;
-    bool exists;
   }
-  struct Invoice {
-    address contractor;
-    uint invoice_id;
-    string storage_url;
-    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
-  }
-  address accountant;
+
   mapping(address => Contractor) contractors;
-  mapping(address => Invoice[]) invoices;
   address[] contractor_addresses;
-  function getAllInvoices () public view returns (Invoice[][] memory) {
-    uint len = contractor_addresses.length;
-  	Invoice[][] memory result = new Invoice[][](len);
-    for (uint i = 0; i < len; i++) {
-      result[i] = invoices[contractor_addresses[i]];
-    }
-    return result;
+
+  function returnBool (bool _b) public view returns (bool b) {
+    b = _b;
+    return b;
   }
+
+  function returnInt8 (int8 _i8) public view returns (int8 i8) {
+    i8 = _i8;
+    return i8;
+  }
+
+  function returnInt256 (int256 _i256) public view returns (int256 i256) {
+    i256 = _i256;
+    return i256;
+  }
+
+  function returnUint (uint _j) public view returns (uint j) {
+    j = _j;
+    return j;
+  }
+
+  function activateContractor (address contractor_address, int _id, bytes32 _email) public {
+    Contractor storage contractor = contractors[contractor_address];
+    contractor.name = 'myname';
+    contractor.email = _email;
+    contractor.active = true;
+    contractor.id = _id;
+    contractor_addresses.push(contractor_address);
+  }
+
   function getAllContractors () public view returns (Contractor[] memory) {
     uint len = contractor_addresses.length;
   	Contractor[] memory result = new Contractor[](len);
@@ -75,54 +96,12 @@ contract InvoiceJournal {
     }
     return result;
   }
-  function getYourInvoices () public view returns (Invoice[] memory) {
-    return invoices[msg.sender];
-  }
-  function activateContractor (address contractor_address) public returns(uint8 i8) {
-    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    contractor.active = true;
-    if (!contractor.exists) {
-      contractor.exists = true;
-      contractor_addresses.push(contractor_address);
-    }
-    i8 = 5;
-    return i8;
-  }
-  function deactivateContractor (address contractor_address) public {
-    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    if (!contractor.active) return;
-    contractor.active = false;
-  }
-  function updateContractor (string memory name, string memory email, string memory pubkey) public {
-    Contractor storage contractor = contractors[msg.sender];
-    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
-    contractor.name = name;
-    contractor.email = email;
-    contractor.pubkey = pubkey;
-  }
-  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
-    Contractor memory contractor = contractors[msg.sender];
-    require(contractor.exists, "Unknown contractors cannot submit invoices");
-    require(contractor.active, "Unauthorized contractors cannot submit invoices");
-    Invoice[] storage _invoices = invoices[msg.sender];
-    Invoice memory new_invoice = Invoice({
-      contractor: msg.sender,
-      invoice_id: invoice_id,
-      storage_url: storage_url,
-      encrypted_decrypt_keys: keys
-    });
-    _invoices.push(new_invoice);
-    return contractor;
-  }
-  constructor () public {
-    accountant = msg.sender;
-  }
+
 }
+
 `
 
-},{"../":124,"solc-js":67}],2:[function(require,module,exports){
+},{"../":128,"solc-js":67}],2:[function(require,module,exports){
 const kvidb = require('kv-idb');
 const cache = kvidb('store-solcjs');
 
@@ -13248,6 +13227,57 @@ module.exports = {
 };
 
 },{"bn.js":114,"eth-lib/lib/hash":28,"number-to-bn":44,"underscore":112,"utf8":113}],118:[function(require,module,exports){
+const ethers = require('ethers')
+const decodeTxReturn = require('decodeTxReturn')
+
+module.exports = decodeTxCalldata
+
+function decodeTxCalldata (txData, contract, fun, solcMetadata) {
+  var iface = new ethers.utils.Interface(solcMetadata.output.abi);
+
+  var tx = { data: txData }
+
+  var args = iface.parseTransaction(tx).args
+  var fnInputs = contract.interface.functions[fun].inputs
+  var types = []
+  for (var i = 0; i<fnInputs.length; i++) {
+    types.push(fnInputs[i].type)
+    console.log(types)
+  }
+  var decodedArgs = decodeTxReturn(args, types)
+  return decodedArgs
+}
+
+},{"decodeTxReturn":119,"ethers":29}],119:[function(require,module,exports){
+const ethers = require('ethers')
+
+module.exports = decodeTxReturn
+
+function decode (tx, output) {
+  var type = output.type || output
+  if (type.includes('int')) return tx.toString()
+  if (type === ('bytes32')) return ethers.utils.parseBytes32String(tx)
+  else return tx
+}
+
+function decodeTxReturn (tx, types) {
+  var result
+  if (Array.isArray(tx)) {  // recursive case
+    result = tx.map((x, i) => decodeTxReturn(x,getTypes(types, i)))
+    return result
+  } else { // atomic case
+    result = decode(tx, types)
+    return result
+  }
+}
+
+function getTypes (types, i) {
+  if (Array.isArray(types)) return types[i]
+  if (types.components) return types.components
+  return types
+}
+
+},{"ethers":29}],120:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
 
@@ -13316,7 +13346,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":7,"ethers":29}],119:[function(require,module,exports){
+},{"bignumber.js":7,"ethers":29}],121:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -13339,7 +13369,7 @@ function getDate () {
 
 }
 
-},{}],120:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -13350,7 +13380,7 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],121:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -13389,12 +13419,14 @@ function loadingAnimation (colors) {
   return bel`<div class=${css.loader}></div>`
 }
 
-},{"bel":6,"csjs-inject":11}],122:[function(require,module,exports){
+},{"bel":6,"csjs-inject":11}],124:[function(require,module,exports){
 const bel = require("bel")
 const date = require('getDate')
 const shortenHexData = require('shortenHexData')
 const copy = require('copy-text-to-clipboard')
-const ethers = require('ethers')
+const moreInfo = require('moreInfo')
+const decodeTxCalldata = require('decodeTxCalldata')
+const decodeTxReturn = require('decodeTxReturn')
 
 module.exports = makeReturn
 
@@ -13402,26 +13434,28 @@ async function makeReturn (css, contract, solcMetadata, provider, transaction, f
   var types = returnTypes(solcMetadata.output.abi, fnName)
   var decodedTx
   var data
-  debugger
   var el = bel`<div class=${css.txReturnItem}></div>`
-  if (transaction.hash) {
+  if (transaction.hash) {  // nonpayable and payable
     var receipt = await transaction.wait()
-    data = { from: receipt.from, to: receipt.to, hash: transaction.hash }
-    el.appendChild(moreInfo(css, provider, transaction))
-    //var txReceipt = await provider.getTransactionReceipt(transaction.hash)
-  } else {
+    var data = decodeTxCalldata(transaction.data, contract, fnName, solcMetadata)
+    el.appendChild(moreInfo(provider._network.name, transaction.hash))
+  } else { // view and pure
     if (types.length === 0) decodedTx = []
     else if (types.length === 1) decodedTx = decodeTxReturn(transaction, types[0])
     else decodedTx = decodeTxReturn(transaction, types)
-    data = decodedTx
+    var data = decodedTx
   }
-  el.appendChild(bel`<div class=${css.returnJSON}><pre>${JSON.stringify(data, null, 2)}</pre></div>`)
+  el.appendChild(makeTxOutput(css, data))
   return el
 }
 
-function moreInfo (css, provider, transaction) {
-  var linkToEtherscan = "https://" + provider._network.name  + ".etherscan.io/tx/" + transaction.hash
-  return bel`<div class=${css.infoIcon} title="Take me to the Etherscan"><a href=${linkToEtherscan} target="_blank"><i class="fa fa-info-circle"></i></a></div>`
+function makeTxOutput (css, data) {
+  return bel`
+    <div class=${css.txReceipt}>
+        <div class=${css.txReturnField}>
+          <div class=${css.txReturnValue}>${JSON.stringify(data, null, 2)}</div>
+        </div>
+    </div>`
 }
 
 function returnTypes (abi, fnName) {
@@ -13432,41 +13466,97 @@ function returnTypes (abi, fnName) {
   }
 }
 
-function decode (tx, output) {
-  if (output.type.includes('int')) return tx.toString()
-  if (output.type === ('bytes32')) return ethers.utils.parseBytes32String(tx)
-  else return tx
+function makeTxReceipt (css, transaction, receipt, fnName, solcMetadata) {
+  var txData = JSON.stringify(decodeTxCalldata(transaction.data, fnName, solcMetadata), null, 2)
+  return bel`
+  <div class=${css.txReceipt}>
+      <div class=${css.txReturnField}>
+        <div class=${css.txReturnTitle}>status</div>
+        <div class=${css.txReturnValue}>${receipt.status === 1 ? 'success' : 'failed'}</div>
+      </div>
+      <div class=${css.txReturnField}>
+        <div class=${css.txReturnTitle}>timestamp</div>
+        <div class=${css.txReturnValue}>${date()}</div>
+      </div>
+      <div class=${css.txReturnField}>
+        <div class=${css.txReturnTitle}>sent data</div>
+        <div class=${css.txReturnValue} onclick=${()=>copy(txData)}>${txData}</div>
+      </div>
+      <div class=${css.txReturnField}>
+        <div class=${css.txReturnTitle}>transaction address</div>
+        <div class=${css.txReturnValue} onclick=${()=>copy(receipt.transactionHash)}>${shortenHexData(receipt.transactionHash)}</div>
+      </div>
+      <div class=${css.txReturnField} onclick=${()=>copy(receipt.from)}>
+        <div class=${css.txReturnTitle}>signed by</div>
+        <div class=${css.txReturnValue} onclick=${()=>copy(receipt.from)}>${shortenHexData(receipt.from)}</div>
+      </div>
+  </div>`
 }
 
-function decodeTxReturn (tx, types) {
-  var result
-  if (Array.isArray(tx)) {  // recursive case
-    result = tx.map((x, i) => decodeTxReturn(x,getTypes(types, i)))
-    return result
-  } else { // atomic case
-    decoded = decode(tx, types)
-    return decoded
+},{"bel":6,"copy-text-to-clipboard":8,"decodeTxCalldata":118,"decodeTxReturn":119,"getDate":121,"moreInfo":125,"shortenHexData":126}],125:[function(require,module,exports){
+const colors = require('theme')
+const bel = require('bel')
+const csjs = require('csjs-inject')
+
+module.exports = moreInfo
+
+var css = csjs`
+  .infoIcon {
+    position: absolute;
+    right: 5px;
+    bottom: 0px;
+    color: ${colors.slateGrey};
   }
+  .infoIcon a {
+    font-size: 1.3em;
+    text-decoration: none;
+    color: ${colors.whiteSmoke};
+  }
+  .infoIcon a:hover {
+    opacity: 0.6;
+  }
+`
+
+function moreInfo (network, txHash) {
+  var linkToEtherscan = "https://" + network  + ".etherscan.io/tx/" + txHash
+  return bel`<div class=${css.infoIcon} title="Take me to the Etherscan"><a href=${linkToEtherscan} target="_blank"><i class="fa fa-info-circle"></i></a></div>`
 }
 
-function getTypes (types, i) {
-  if (Array.isArray(types)) return types[i]
-  if (types.components) return types.components
-  return types
-}
-
-},{"bel":6,"copy-text-to-clipboard":8,"ethers":29,"getDate":119,"shortenHexData":123}],123:[function(require,module,exports){
+},{"bel":6,"csjs-inject":11,"theme":127}],126:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
   if (!data) return ''
   if (data.length < 5) return data
   var len = data.length
-  return data.slice(0, 8) + '...' + data.slice(len - 8, len)
+  return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],124:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
+module.exports = theme()
+
+function theme () {
+  var colors = {
+    transparent: "transparent",
+    white: "#ffffff", // borders, font on input background
+    dark: "#2c323c", //background dark
+    darkSmoke: '#21252b',  // separators
+    whiteSmoke: "#f5f5f5", // background light
+    slateGrey: "#8a929b", // text
+    lightGrey: "#F1F2EB",
+    violetRed: "#b25068",  // used as red in types (bool etc.)
+    aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
+    turquoise: "#14b9d5",
+    yellow: "#F2CD5D",
+    lavender: "#EDC9FF",
+    androidGreen: "#9BC53D"
+  }
+  return colors
+}
+
+},{}],128:[function(require,module,exports){
 const bel = require("bel")
+const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
@@ -13483,6 +13573,7 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
 const copy = require('copy-text-to-clipboard')
+const moreInfo = require('moreInfo')
 
 // Styling variables
 
@@ -13494,22 +13585,6 @@ var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
-
-var colors = {
-  transparent: "transparent",
-  white: "#ffffff", // borders, font on input background
-  dark: "#2c323c", //background dark
-  darkSmoke: '#21252b',  // separators
-  whiteSmoke: "#f5f5f5", // background light
-  slateGrey: "#8a929b", // text
-  lightGrey: "#F1F2EB",
-  violetRed: "#b25068",  // used as red in types (bool etc.)
-  aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
-  turquoise: "#14b9d5",
-  yellow: "#F2CD5D",
-  lavender: "#EDC9FF",
-  androidGreen: "#9BC53D"
-}
 
 var css = csjs`
   @media only screen and (max-width: 3000px) {
@@ -13555,7 +13630,7 @@ var css = csjs`
       border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
-      top: -41px;
+      top: -55px;
       left: 20px;
       min-height: 80px;
       width: 546px;
@@ -13580,22 +13655,30 @@ var css = csjs`
       justify-content: space-between;
       flex-direction: column;
     }
-    .returnJSON {
-      font-size: 1.1em;
-      color: ${colors.lightGrey};
+    .txReceipt {
+      display:flex;
+      justify-content: flex-start;
+      flex-direction: column;
     }
     .txReturnField {
       display:flex;
       justify-content: flex-start;
+      flex-direction: column;
+      margin-bottom: 1%;
     }
     .txReturnTitle {
-      font-weight: bold;
+      color: ${colors.lightGrey};
       margin-right: 5px;
       width: 50%;
     }
     .txReturnValue {
-      color: ${colors.whiteSmoke};
+      color: ${colors.slateGrey};
       cursor: pointer;
+      word-break: break-all;
+    }
+    .txReturnValue:hover {
+      cursor: pointer;
+      opacity: 0.6;
     }
     .contractName {
       cursor: pointer;
@@ -13622,20 +13705,6 @@ var css = csjs`
       position: absolute;
       top: -16px;
       left: 0;
-    }
-    .infoIcon {
-      position: absolute;
-      right: 5px;
-      bottom: 0px;
-      color: ${colors.slateGrey};
-    }
-    .infoIcon a {
-      font-size: 1.3em;
-      text-decoration: none;
-      color: ${colors.whiteSmoke};
-    }
-    .infoIcon a:hover {
-      opacity: 0.6;
     }
     .name {
       font-size: 0.9em;
@@ -13768,39 +13837,12 @@ var css = csjs`
       flex-direction: column;
       position: relative;
       border: 2px dashed ${colors.darkSmoke};
-      padding: 20px 0;
+      padding: 20px;
       width: 540px;
       margin: 0 0 5em 20px;
+      font-size: 0.75em;
     }
     .ctor {}
-    .statsEl {
-      display:flex;
-      justify-content: space-between;
-      position: relative;
-    }
-    .showLoader {
-      margin-right: 5px;
-      font-weight: bold;
-    }
-    .statsElTitle {
-      margin-right: 5px;
-      font-weight: bold;
-    }
-    .statsElValue {
-      cursor: pointer;
-    }
-    .statsElValue:hover {
-      opacity: 0.6;
-    }
-    .deployStats {
-      color: ${colors.whiteSmoke};
-      display: flex;
-      justify-content: left;
-      flex-direction: column;
-      font-size: 0.8rem;
-      min-width: 230px;
-      margin: 1% 5%;
-    }
     .signature {}
     .date {}
     .pure {
@@ -14272,14 +14314,14 @@ function displayContractUI(result) {   // compilation result metadata
       let signer = await provider.getSigner()
       var el = document.querySelector("[class^='ctor']")
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
-      el.replaceWith(bel`<div class=${css.deploying}>Deploying to Ethereum network ${loadingAnimation(colors)}</div>`)
+      el.replaceWith(bel`<div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>`)
       try {
         let args = getArgs(el, 'inputContainer')
         let instance = await factory.deploy(...args)
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(createDeployStats(contract))
+        topContainer.appendChild(makeDeployReceipt(contract))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
@@ -14297,38 +14339,33 @@ function displayContractUI(result) {   // compilation result metadata
       }
     }
 
-    function createDeployStats (contract) {
-      return bel`
-        <div class=${css.deployStats}>
-          <div class=${css.statsEl}>
-            <div class=${css.statsElTitle}>Deployed:</div>
-            <div class=${css.statsElValue}>${date()}</div>
+    function makeDeployReceipt (contract) {
+      var el = bel`
+        <div class=${css.txReceipt}>
+          <div class=${css.txReturnField}>
+            <div class=${css.txReturnTitle}>published</div>
+            <div class=${css.txReturnValue}>${date()}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.hash}" onclick=${()=>copy(contract.deployTransaction.hash)}>
-            <div class=${css.statsElTitle}>Transaction:</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.hash)}</div>
+          <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
+            <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
           </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.statsElTitle}>Contract address (${provider._network.name}):</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.creates)}</div>
-          </div>
-          <div class=${css.statsEl} onclick=${()=>copy(contract.deployTransaction.gasPrice.toString())}>
-            <div class=${css.statsElTitle}>Gas price:</div>
-            <div class=${css.statsElValue}>${contract.deployTransaction.gasPrice.toString()}</div>
-          </div>
-          <div class=${css.statsEl} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.statsElTitle}>Signed by:</div>
-            <div class=${css.statsElValue}>${shortenHexData(contract.deployTransaction.from)}</div>
+          <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
+            <div class=${css.txReturnTitle}>published by</div>
+            <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
           </div>
         </div>
       `
+      el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
+      return el
     }
+
 
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()} title="Deploy the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
-        <div class=${css.deployTitle}>Deploy</div>
+      <div class=${css.deploy} onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+        <div class=${css.deployTitle}>Publish</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
@@ -14348,4 +14385,4 @@ function displayContractUI(result) {   // compilation result metadata
   }
 }
 
-},{"bel":6,"copy-text-to-clipboard":8,"csjs-inject":11,"ethers":29,"getArgs":118,"getDate":119,"glossary":120,"input-address":34,"input-array":35,"input-boolean":36,"input-byte":37,"input-integer":38,"input-string":39,"loadingAnimation":121,"makeReturn":122,"shortenHexData":123,"solidity-validator":102}]},{},[1]);
+},{"bel":6,"copy-text-to-clipboard":8,"csjs-inject":11,"ethers":29,"getArgs":120,"getDate":121,"glossary":122,"input-address":34,"input-array":35,"input-boolean":36,"input-byte":37,"input-integer":38,"input-string":39,"loadingAnimation":123,"makeReturn":124,"moreInfo":125,"shortenHexData":126,"solidity-validator":102,"theme":127}]},{},[1]);

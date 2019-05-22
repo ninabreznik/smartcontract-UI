@@ -6,6 +6,7 @@ contract myTest {
   bool b;
   int8 i8;
   int256 i256;
+  bytes16[3] seeds;
   uint j;
   struct Contractor {
     string name;
@@ -13,6 +14,7 @@ contract myTest {
     int id;
     bool active;
   }
+
   mapping(address => Contractor) contractors;
   address[] contractor_addresses;
 
