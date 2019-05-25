@@ -39,55 +39,34 @@ function printError (e) {
   </pre>`
 }
 const sourcecode = `
-pragma solidity ^0.5.0;
+pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
-
-contract myTest {
-
-  bool b;
-  int8 i8;
-  int256 i256;
-  bytes16[3] seeds;
-  uint j;
+contract InvoiceJournal {
   struct Contractor {
     string name;
-    bytes32 email;
-    int id;
+    string email;
+    string pubkey;
     bool active;
+    bool exists;
   }
-
+  struct Invoice {
+    address contractor;
+    uint invoice_id;
+    string storage_url;
+    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+  }
+  address accountant;
   mapping(address => Contractor) contractors;
+  mapping(address => Invoice[]) invoices;
   address[] contractor_addresses;
-
-  function returnBool (bool _b) public view returns (bool b) {
-    b = _b;
-    return b;
+  function getAllInvoices () public view returns (Invoice[][] memory) {
+    uint len = contractor_addresses.length;
+  	Invoice[][] memory result = new Invoice[][](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = invoices[contractor_addresses[i]];
+    }
+    return result;
   }
-
-  function returnInt8 (int8 _i8) public view returns (int8 i8) {
-    i8 = _i8;
-    return i8;
-  }
-
-  function returnInt256 (int256 _i256) public view returns (int256 i256) {
-    i256 = _i256;
-    return i256;
-  }
-
-  function returnUint (uint _j) public view returns (uint j) {
-    j = _j;
-    return j;
-  }
-
-  function activateContractor (address contractor_address, int _id, bytes32 _email) public {
-    Contractor storage contractor = contractors[contractor_address];
-    contractor.name = 'myname';
-    contractor.email = _email;
-    contractor.active = true;
-    contractor.id = _id;
-    contractor_addresses.push(contractor_address);
-  }
-
   function getAllContractors () public view returns (Contractor[] memory) {
     uint len = contractor_addresses.length;
   	Contractor[] memory result = new Contractor[](len);
@@ -96,7 +75,48 @@ contract myTest {
     }
     return result;
   }
-
+  function getYourInvoices () public view returns (Invoice[] memory) {
+    return invoices[msg.sender];
+  }
+  function activateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    contractor.active = true;
+    if (!contractor.exists) {
+      contractor.exists = true;
+      contractor_addresses.push(contractor_address);
+    }
+  }
+  function deactivateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    if (!contractor.active) return;
+    contractor.active = false;
+  }
+  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+    Contractor storage contractor = contractors[msg.sender];
+    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
+    contractor.name = name;
+    contractor.email = email;
+    contractor.pubkey = pubkey;
+  }
+  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+    Contractor memory contractor = contractors[msg.sender];
+    require(contractor.exists, "Unknown contractors cannot submit invoices");
+    require(contractor.active, "Unauthorized contractors cannot submit invoices");
+    Invoice[] storage _invoices = invoices[msg.sender];
+    Invoice memory new_invoice = Invoice({
+      contractor: msg.sender,
+      invoice_id: invoice_id,
+      storage_url: storage_url,
+      encrypted_decrypt_keys: keys
+    });
+    _invoices.push(new_invoice);
+    return contractor;
+  }
+  constructor () public {
+    accountant = msg.sender;
+  }
 }
 
 `
@@ -13230,22 +13250,33 @@ module.exports = {
 const ethers = require('ethers')
 const decodeTxReturn = require('decodeTxReturn')
 
-module.exports = decodeTxCalldata
+module.exports = decodeTxData
 
-function decodeTxCalldata (txData, contract, fun, solcMetadata) {
-  var iface = new ethers.utils.Interface(solcMetadata.output.abi);
+function decodeTxData (opts) {
 
-  var tx = { data: txData }
+  var iface = new ethers.utils.Interface(opts.solcMetadata.output.abi)
+  var fun = opts.contract.interface.functions[opts.fnName]
+  var types
+  var result
 
-  var args = iface.parseTransaction(tx).args
-  var fnInputs = contract.interface.functions[fun].inputs
-  var types = []
-  for (var i = 0; i<fnInputs.length; i++) {
-    types.push(fnInputs[i].type)
-    console.log(types)
+  if (opts.tag === 'input') {
+    types =  fun.inputs
+    var tx = { data: opts.data }
+    result = iface.parseTransaction(tx).args
   }
-  var decodedArgs = decodeTxReturn(args, types)
+  else if (opts.tag === 'output') {
+    types =  fun.outputs
+    result = opts.transaction
+  }
+
+  var decodedArgs = decodeTxReturn(result, types)
   return decodedArgs
+}
+
+function getTypes (data) {
+  var types = []
+  for (var i = 0; i<data.length; i++) types.push(fnInputs[i].type)
+  return types
 }
 
 },{"decodeTxReturn":119,"ethers":29}],119:[function(require,module,exports){
@@ -13254,7 +13285,7 @@ const ethers = require('ethers')
 module.exports = decodeTxReturn
 
 function decode (tx, output) {
-  var type = output.type || output
+  var type = output.type || output[0].type || output
   if (type.includes('int')) return tx.toString()
   if (type === ('bytes32')) return ethers.utils.parseBytes32String(tx)
   else return tx
@@ -13264,6 +13295,7 @@ function decodeTxReturn (tx, types) {
   var result
   if (Array.isArray(tx)) {  // recursive case
     result = tx.map((x, i) => decodeTxReturn(x,getTypes(types, i)))
+    console.log('result', result)
     return result
   } else { // atomic case
     result = decode(tx, types)
@@ -13273,7 +13305,7 @@ function decodeTxReturn (tx, types) {
 
 function getTypes (types, i) {
   if (Array.isArray(types)) return types[i]
-  if (types.components) return types.components
+  if (types.components) return types.components[i]
   return types
 }
 
@@ -13425,7 +13457,7 @@ const date = require('getDate')
 const shortenHexData = require('shortenHexData')
 const copy = require('copy-text-to-clipboard')
 const moreInfo = require('moreInfo')
-const decodeTxCalldata = require('decodeTxCalldata')
+const decodeTxData = require('decodeTxData')
 const decodeTxReturn = require('decodeTxReturn')
 
 module.exports = makeReturn
@@ -13434,16 +13466,19 @@ async function makeReturn (css, contract, solcMetadata, provider, transaction, f
   var types = returnTypes(solcMetadata.output.abi, fnName)
   var decodedTx
   var data
+  var opts
   var el = bel`<div class=${css.txReturnItem}></div>`
+  var opts = { contract, fnName, solcMetadata}
   if (transaction.hash) {  // nonpayable and payable
-    var receipt = await transaction.wait()
-    var data = decodeTxCalldata(transaction.data, contract, fnName, solcMetadata)
+    opts.receipt = await transaction.wait()
+    opts.data = transaction.data
+    opts.tag = 'input'
+    data = decodeTxData(opts)
     el.appendChild(moreInfo(provider._network.name, transaction.hash))
   } else { // view and pure
-    if (types.length === 0) decodedTx = []
-    else if (types.length === 1) decodedTx = decodeTxReturn(transaction, types[0])
-    else decodedTx = decodeTxReturn(transaction, types)
-    var data = decodedTx
+    opts.transaction = transaction
+    opts.tag = 'output'
+    data = decodeTxData(opts)
   }
   el.appendChild(makeTxOutput(css, data))
   return el
@@ -13467,7 +13502,7 @@ function returnTypes (abi, fnName) {
 }
 
 function makeTxReceipt (css, transaction, receipt, fnName, solcMetadata) {
-  var txData = JSON.stringify(decodeTxCalldata(transaction.data, fnName, solcMetadata), null, 2)
+  var txData = JSON.stringify(decodeTxData(transaction.data, fnName, solcMetadata), null, 2)
   return bel`
   <div class=${css.txReceipt}>
       <div class=${css.txReturnField}>
@@ -13493,7 +13528,7 @@ function makeTxReceipt (css, transaction, receipt, fnName, solcMetadata) {
   </div>`
 }
 
-},{"bel":6,"copy-text-to-clipboard":8,"decodeTxCalldata":118,"decodeTxReturn":119,"getDate":121,"moreInfo":125,"shortenHexData":126}],125:[function(require,module,exports){
+},{"bel":6,"copy-text-to-clipboard":8,"decodeTxData":118,"decodeTxReturn":119,"getDate":121,"moreInfo":125,"shortenHexData":126}],125:[function(require,module,exports){
 const colors = require('theme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
