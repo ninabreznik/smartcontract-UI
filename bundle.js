@@ -57,15 +57,12 @@ contract myTest {
   uint public ui;
   uint32 public ui32;
 
-
-
-
   int256 i256;
   bytes16[3] seeds;
   uint j;
   struct Contractor {
     string name;
-    bytes32 email;
+    string email;
     int id;
     bool active;
   }
@@ -93,7 +90,7 @@ contract myTest {
     return j_;
   }
 
-  function activateContractor (address contractor_address, int _id, bytes32 _email) public {
+  function activateContractor (address contractor_address, int _id, string memory _email) public {
     Contractor storage contractor = contractors[contractor_address];
     contractor.name = 'myname';
     contractor.email = _email;
@@ -13440,15 +13437,48 @@ function loadingAnimation (colors) {
 
 },{"bel":7,"csjs-inject":12}],125:[function(require,module,exports){
 const bel = require("bel")
-const date = require('getDate')
-const shortenHexData = require('shortenHexData')
-const copy = require('copy-text-to-clipboard')
 const moreInfo = require('moreInfo')
 const getReturnData = require('getReturnData')
+const csjs = require('csjs-inject')
+const colors = require('theme')
 
 module.exports = makeReturn
 
-async function makeReturn (css, contract, solcMetadata, provider, transaction, fnName) {
+var css = csjs`
+.txReturnItem {
+  position: relative;
+  font-size: 0.7rem;
+  display: flex;
+  color: ${colors.whiteSmoke};
+  border: 1px solid ${colors.darkSmoke};
+  width: 87%;
+  margin: 3%;
+  padding: 3%;
+  justify-content: space-between;
+  flex-direction: column;
+}
+.txReceipt {
+  display:flex;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+.txReturnField {
+  display:flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  margin-bottom: 1%;
+}
+.txReturnValue {
+  color: ${colors.slateGrey};
+  cursor: pointer;
+  word-break: break-all;
+}
+.txReturnValue:hover {
+  cursor: pointer;
+  opacity: 0.6;
+}`
+
+async function makeReturn (contract, solcMetadata, provider, transaction, fnName) {
   var decodedTx
   var data
   var opts
@@ -13478,7 +13508,7 @@ function makeTxReturn (css, data) {
     </div>`
 }
 
-},{"bel":7,"copy-text-to-clipboard":9,"getDate":121,"getReturnData":122,"moreInfo":126,"shortenHexData":127}],126:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"getReturnData":122,"moreInfo":126,"theme":128}],126:[function(require,module,exports){
 const colors = require('theme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
@@ -13651,11 +13681,6 @@ var css = csjs`
       flex-direction: column;
       margin-bottom: 1%;
     }
-    .txReturnTitle {
-      color: ${colors.lightGrey};
-      margin-right: 5px;
-      width: 50%;
-    }
     .txReturnValue {
       color: ${colors.slateGrey};
       cursor: pointer;
@@ -13664,6 +13689,11 @@ var css = csjs`
     .txReturnValue:hover {
       cursor: pointer;
       opacity: 0.6;
+    }
+    .txReturnTitle {
+      color: ${colors.lightGrey};
+      margin-right: 5px;
+      width: 50%;
     }
     .contractName {
       cursor: pointer;
@@ -13847,9 +13877,9 @@ var css = csjs`
       font-size: 0.9em;
     }
     .output {
-      font-size: 1rem;
+      font-size: 0.7rem;
       display: flex;
-      align-self: flex-end;
+      align-self: center;
     }
     .valError {
       color: ${colors.violetRed};
@@ -14157,7 +14187,7 @@ function displayContractUI(result) {   // compilation result metadata
       return inputContainer
       function cb (msg) {
         var output = inputContainer.lastChild
-        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation-circle"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check-circle"></i></a>`
+        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></a>`
       }
     }
 
@@ -14209,7 +14239,7 @@ function displayContractUI(result) {   // compilation result metadata
           let contractAsCurrentSigner = contract.connect(signer)
           var transaction = await contractAsCurrentSigner.functions[fnName](...args)
           let abi = solcMetadata.output.abi
-          loader.replaceWith(await makeReturn(css, contract, solcMetadata, provider, transaction, fnName))
+          loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
         let deploy = document.querySelector("[class^='deploy']")

@@ -109,11 +109,6 @@ var css = csjs`
       flex-direction: column;
       margin-bottom: 1%;
     }
-    .txReturnTitle {
-      color: ${colors.lightGrey};
-      margin-right: 5px;
-      width: 50%;
-    }
     .txReturnValue {
       color: ${colors.slateGrey};
       cursor: pointer;
@@ -122,6 +117,11 @@ var css = csjs`
     .txReturnValue:hover {
       cursor: pointer;
       opacity: 0.6;
+    }
+    .txReturnTitle {
+      color: ${colors.lightGrey};
+      margin-right: 5px;
+      width: 50%;
     }
     .contractName {
       cursor: pointer;
@@ -305,9 +305,9 @@ var css = csjs`
       font-size: 0.9em;
     }
     .output {
-      font-size: 1rem;
+      font-size: 0.7rem;
       display: flex;
-      align-self: flex-end;
+      align-self: center;
     }
     .valError {
       color: ${colors.violetRed};
@@ -615,7 +615,7 @@ function displayContractUI(result) {   // compilation result metadata
       return inputContainer
       function cb (msg) {
         var output = inputContainer.lastChild
-        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation-circle"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check-circle"></i></a>`
+        output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></a>`
       }
     }
 
@@ -667,7 +667,7 @@ function displayContractUI(result) {   // compilation result metadata
           let contractAsCurrentSigner = contract.connect(signer)
           var transaction = await contractAsCurrentSigner.functions[fnName](...args)
           let abi = solcMetadata.output.abi
-          loader.replaceWith(await makeReturn(css, contract, solcMetadata, provider, transaction, fnName))
+          loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
       } else {
         let deploy = document.querySelector("[class^='deploy']")

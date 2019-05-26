@@ -14,15 +14,12 @@ contract myTest {
   uint public ui;
   uint32 public ui32;
 
-
-
-
   int256 i256;
   bytes16[3] seeds;
   uint j;
   struct Contractor {
     string name;
-    bytes32 email;
+    string email;
     int id;
     bool active;
   }
@@ -50,7 +47,7 @@ contract myTest {
     return j_;
   }
 
-  function activateContractor (address contractor_address, int _id, bytes32 _email) public {
+  function activateContractor (address contractor_address, int _id, string memory _email) public {
     Contractor storage contractor = contractors[contractor_address];
     contractor.name = 'myname';
     contractor.email = _email;
