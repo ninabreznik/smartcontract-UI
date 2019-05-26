@@ -1,4 +1,4 @@
-pragma solidity >=0.5.0;
+module.exports = `pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
 contract InvoiceJournal {
   struct Contractor {
@@ -76,4 +76,4 @@ contract InvoiceJournal {
   constructor () public {
     accountant = msg.sender;
   }
-}
+}`
