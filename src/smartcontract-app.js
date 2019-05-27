@@ -3,8 +3,8 @@ const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
-const date = require('getDate')
 const loadingAnimation = require('loadingAnimation')
+const makeDeployReceipt = require('makeDeployReceipt')
 const getArgs = require('getArgs')
 const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
@@ -16,7 +16,6 @@ const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
 const copy = require('copy-text-to-clipboard')
-const moreInfo = require('moreInfo')
 
 // Styling variables
 
@@ -97,31 +96,6 @@ var css = csjs`
       padding: 3%;
       justify-content: space-between;
       flex-direction: column;
-    }
-    .txReceipt {
-      display:flex;
-      justify-content: flex-start;
-      flex-direction: column;
-    }
-    .txReturnField {
-      display:flex;
-      justify-content: flex-start;
-      flex-direction: column;
-      margin-bottom: 2%;
-    }
-    .txReturnValue {
-      color: ${colors.slateGrey};
-      cursor: pointer;
-      word-break: break-all;
-    }
-    .txReturnValue:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .txReturnTitle {
-      color: ${colors.lightGrey};
-      margin-right: 5px;
-      width: 50%;
     }
     .contractName {
       cursor: pointer;
@@ -287,7 +261,6 @@ var css = csjs`
     }
     .ctor {}
     .signature {}
-    .date {}
     .pure {
       background-color: ${colors.yellow};
     }
@@ -764,7 +737,7 @@ function displayContractUI(result) {   // compilation result metadata
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(contract))
+        topContainer.appendChild(makeDeployReceipt(provider, contract))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
@@ -781,28 +754,6 @@ function displayContractUI(result) {   // compilation result metadata
         sendButtons[i].style.color = colors.whiteSmoke
       }
     }
-
-    function makeDeployReceipt (contract) {
-      var el = bel`
-        <div class=${css.txReceipt}>
-          <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>published</div>
-            <div class=${css.txReturnValue}>${date()}</div>
-          </div>
-          <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
-          </div>
-          <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.txReturnTitle}>published by</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
-          </div>
-        </div>
-      `
-      el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
-      return el
-    }
-
 
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
