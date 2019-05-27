@@ -73,7 +73,7 @@ var css = csjs`
       border: 2px dashed ${colors.darkSmoke};
       border-top: none;
       min-width: 230px;
-      top: -55px;
+      top: -41px;
       left: 20px;
       min-height: 80px;
       width: 546px;
@@ -107,7 +107,7 @@ var css = csjs`
       display:flex;
       justify-content: flex-start;
       flex-direction: column;
-      margin-bottom: 1%;
+      margin-bottom: 2%;
     }
     .txReturnValue {
       color: ${colors.slateGrey};
@@ -209,7 +209,7 @@ var css = csjs`
       display: flex;
       align-items: baseline;
       bottom: -16px;
-      right: 22px;
+      right: 13px;
       font-size: 2rem;
       position: absolute;
       background-color: ${colors.dark};
@@ -311,12 +311,12 @@ var css = csjs`
     }
     .valError {
       color: ${colors.violetRed};
-      padding-left: 20px;
+      padding-left: 13px;
       cursor: pointer;
     }
     .valSuccess {
       color: ${colors.aquaMarine};
-      padding-left: 20px;
+      padding-left: 10px;
       cursor: pointer;
     }
     .inputContainer {
