@@ -15,432 +15,18 @@ const inputInteger = require("input-integer")
 const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
+const inputPayable = require("input-payable")
 const copy = require('copy-text-to-clipboard')
 
 // Styling variables
 
-var fonts = [
-  "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-  'https://fonts.googleapis.com/css?family=Overpass+Mono'
-]
+var css
+var fonts = [ "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
+  'https://fonts.googleapis.com/css?family=Overpass+Mono']
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
-
-var css = csjs`
-  @media only screen and (max-width: 3000px) {
-    .preview {
-      padding: 1% 2%;
-      min-width: 350px;
-      min-height: 100vh;
-      font-family: 'Overpass Mono', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: ${colors.dark};
-      color: ${colors.whiteSmoke};
-    }
-    .error {
-      border: 1px solid ${colors.violetRed};
-      position: relative;
-      padding: 1em;
-    }
-    .errorTitle {
-      position: absolute;
-      top: -14px;
-      left: 20px;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 5px;
-      font-size: 1.3rem;
-      color: ${colors.violetRed};
-    }
-    .errorIcon {
-      font-size: 1.3rem;
-    }
-    .visible {
-      visibility: visible;
-      height: 100%;
-      padding: 0;
-    }
-    .hidden {
-      visibility: hidden;
-      height: 0;
-    }
-    .txReturn {
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      border-top: none;
-      min-width: 230px;
-      top: -41px;
-      left: 20px;
-      min-height: 80px;
-      width: 546px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-    .deploying {
-      font-size: 0.8rem;
-      margin-left: 3%;
-    }
-    .txReturnItem {
-      position: relative;
-      font-size: 0.7rem;
-      display: flex;
-      color: ${colors.whiteSmoke};
-      border: 1px solid ${colors.darkSmoke};
-      width: 87%;
-      margin: 3%;
-      padding: 3%;
-      justify-content: space-between;
-      flex-direction: column;
-    }
-    .contractName {
-      cursor: pointer;
-      font-size: 2rem;
-      font-weight: bold;
-      color: ${colors.whiteSmoke};
-      margin: 10px 0 20px 10px;
-      display: flex;
-      align-items: end;
-    }
-    .contractName:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .fnName {
-      font-size: 1em;
-      display: flex;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .faIcon {
-      position: absolute;
-      top: -16px;
-      left: 0;
-    }
-    .name {
-      font-size: 0.9em;
-    }
-    .stateMutability {
-      margin-left: 5px;
-      color: ${colors.whiteSmoke};
-      border-radius: 20px;
-      border: 1px solid;
-      padding: 1px;
-      font-size: 1rem;
-      width: 65px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .constructorFn {
-      padding-top: 18px;
-      width: 600px;
-    }
-    .functions {
-      font-size: 1.3rem;
-      width: 570px;
-    }
-    .title {
-      font-size: 1.3rem;
-      display: flex;
-      align-items: baseline;
-      position: absolute;
-      top: -13px;
-      left: 20px;
-      background-color: ${colors.dark};
-    }
-    .title:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .deployTitle {
-      font-size: 1.3rem;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 0;
-      font-weight: 800;
-    }
-    .deploy {
-      color: ${colors.whiteSmoke};
-      display: flex;
-      align-items: center;
-      bottom: -15px;
-      right: -12px;
-      font-size: 1.8rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      cursor: pointer;
-    }
-    .deploy:hover {
-      opacity: 0.6;
-    }
-    .send {
-      display: flex;
-      align-items: baseline;
-      bottom: -16px;
-      right: 13px;
-      font-size: 2rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      color: ${colors.darkSmoke};
-      padding-right: 5px;
-    }
-    .send:hover {
-      opacity: 0.6;
-      cursor: pointer;
-    }
-    .bounce {
-      animation: bounceRight 2s infinite;
-    }
-    @-webkit-keyframes bounceRight {
-    0% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    20% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    40% {-webkit-transform: translateX(-30px);
-      transform: translateX(-30px);}
-    50% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    60% {-webkit-transform: translateX(-15px);
-      transform: translateX(-15px);}
-    80% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    100% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    }
-    @-moz-keyframes bounceRight {
-      0% {transform: translateX(0);}
-      20% {transform: translateX(0);}
-      40% {transform: translateX(-30px);}
-      50% {transform: translateX(0);}
-      60% {transform: translateX(-15px);}
-      80% {transform: translateX(0);}
-      100% {transform: translateX(0);}
-    }
-    @keyframes bounceRight {
-      0% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      20% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      40% {-ms-transform: translateX(-30px);
-        transform: translateX(-30px);}
-      50% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      60% {-ms-transform: translateX(-15px);
-        transform: translateX(-15px);}
-      80% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      100% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-    }
-    .fnContainer {
-      position: relative;
-    }
-    .function {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      margin-left: 20px;
-      margin-bottom: 10%;
-      border: 2px dashed ${colors.darkSmoke};
-    }
-    .topContainer {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      padding: 20px;
-      width: 540px;
-      margin: 0 0 5em 20px;
-      font-size: 0.75em;
-    }
-    .ctor {}
-    .signature {}
-    .pure {
-      background-color: ${colors.yellow};
-    }
-    .view {
-      color: ${colors.lavender};
-    }
-    .nonpayable {
-      color: ${colors.turquoise};
-    }
-    .payable {
-      color: ${colors.violetRed};
-    }
-    .icon {
-      margin-left: 5px;
-      font-size: 0.9em;
-    }
-    .output {
-      font-size: 0.7rem;
-      display: flex;
-      align-self: center;
-    }
-    .valError {
-      color: ${colors.violetRed};
-      padding-left: 13px;
-      cursor: pointer;
-    }
-    .valSuccess {
-      color: ${colors.aquaMarine};
-      padding-left: 10px;
-      cursor: pointer;
-    }
-    .inputContainer {
-      font-family: 'Overpass Mono', sans-serif;
-      margin: 15px 0 15px 0;
-      display: flex;
-      align-items: center;
-      font-size: 1rem;
-      color: ${colors.whiteSmoke};
-    }
-    .inputParam {
-      color: ${colors.slateGrey};
-      display: flex;
-      justify-content: center;
-      font-size: 0.8rem;
-      display: flex;
-      min-width: 200px;
-    }
-    .inputFields {
-    }
-    .inputType {
-    }
-    .inputField {
-      ${inputStyle()}
-      font-size: 0.8rem;
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
-      text-align: center;
-      display: flex;
-      width: 100%;
-    }
-    .inputField::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerValue {
-      ${inputStyle()}
-      font-size: 1rem;
-      color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
-      display: flex;
-      text-align: center;
-      width: 25%;
-    }
-    .integerValue::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerSlider {
-      width: 75%;
-      border: 1px solid ${colors.whiteSmoke};
-      -webkit-appearance: none;
-      height: 0.2px;
-    }
-    .integerSlider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      border: 1px solid ${colors.whiteSmoke};
-      height: 22px;
-      width: 10px;
-      background: ${colors.darkSmoke};
-      cursor: pointer;
-    }
-    .integerField {
-      display: flex;
-      width: 300px;
-      align-items: center;
-    }
-    .booleanField {
-      display: flex;
-      width: 300px;
-      align-items: baseline;
-      font-size: 0.8rem;
-    }
-    .stringField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .byteField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .addressField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .keyField {
-      ${inputStyle()}
-      border-right: none;
-      background-color: ${colors.aquaMarine};
-      border-color: ${colors.whiteSmoke};
-    }
-    .false {
-      ${inputStyle()}
-      border-right: none;
-      background-color: ${colors.violetRed};
-      color: ${colors.whiteSmoke};
-      width: 50%;
-      text-align: center;
-      border-color: ${colors.whiteSmoke};
-      cursor: pointer;
-    }
-    .true {
-      ${inputStyle()}
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.whiteSmoke};
-      width: 50%;
-      text-align: center;
-      cursor: pointer;
-    }
-    .arrayContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-    .arrayPlusMinus {
-      margin: 10px;
-    }
-    .arrayPlus {
-      cursor: pointer;
-    }
-    .arrayMinus {
-      cursor: pointer;
-    }
-  }
-  @media only screen and (max-device-width: 480px) {
-    html {
-      font-size: 30px;
-    }
-    .constructorFn, .functions {
-      width: 80%;
-    }
-    .title {
-      top: -30px;
-    }
-  }
-`
-
-function inputStyle() {
-  return `
-    border: 1px solid ${colors.whiteSmoke};
-    background-color: ${colors.dark};
-    padding: 5px;
-  `
-}
 
 /******************************************************************************
   ETHERS
@@ -615,7 +201,7 @@ function displayContractUI(result) {   // compilation result metadata
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
       var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
-      return bel`
+      var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
@@ -625,6 +211,8 @@ function displayContractUI(result) {   // compilation result metadata
           </ul>
         </div>
       </div>`
+      if (label === 'payable')  send.parentNode.prepend(inputPayable(label))
+      return el
     }
 
     async function sendTx (fnName, label, e) {
@@ -777,4 +365,429 @@ function displayContractUI(result) {   // compilation result metadata
       <div class=${css.functions}>${sorted.map(fn => { return functions(fn)})}</div>
     </div>`
   }
+}
+
+/******************************************************************************
+  CSS
+******************************************************************************/
+
+css = csjs`
+  @media only screen and (max-width: 3000px) {
+    .preview {
+      padding: 1% 2%;
+      min-width: 350px;
+      min-height: 100vh;
+      font-family: 'Overpass Mono', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: ${colors.dark};
+      color: ${colors.whiteSmoke};
+    }
+    .error {
+      border: 1px solid ${colors.violetRed};
+      position: relative;
+      padding: 1em;
+    }
+    .errorTitle {
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+      font-size: 1.3rem;
+      color: ${colors.violetRed};
+    }
+    .errorIcon {
+      font-size: 1.3rem;
+    }
+    .visible {
+      visibility: visible;
+      height: 100%;
+      padding: 0;
+    }
+    .hidden {
+      visibility: hidden;
+      height: 0;
+    }
+    .txReturn {
+      position: relative;
+      border: 2px dashed ${colors.darkSmoke};
+      border-top: none;
+      min-width: 230px;
+      top: -41px;
+      left: 20px;
+      min-height: 80px;
+      width: 546px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .deploying {
+      font-size: 0.9rem;
+      margin-left: 3%;
+    }
+    .txReturnItem {
+      position: relative;
+      font-size: 0.7rem;
+      display: flex;
+      color: ${colors.whiteSmoke};
+      border: 1px solid ${colors.darkSmoke};
+      width: 87%;
+      margin: 3%;
+      padding: 3%;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+    .contractName {
+      cursor: pointer;
+      font-size: 2rem;
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+      margin: 10px 0 20px 10px;
+      display: flex;
+      align-items: end;
+    }
+    .contractName:hover {
+      ${hover()}
+    }
+    .fnName {
+      font-size: 1em;
+      display: flex;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .faIcon {
+      position: absolute;
+      top: -16px;
+      left: 0;
+    }
+    .name {
+      font-size: 0.9em;
+    }
+    .stateMutability {
+      margin-left: 5px;
+      color: ${colors.whiteSmoke};
+      border-radius: 20px;
+      border: 1px solid;
+      padding: 1px;
+      font-size: 0.9rem;
+      width: 65px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .constructorFn {
+      padding-top: 18px;
+      width: 600px;
+    }
+    .functions {
+      font-size: 1.3rem;
+      width: 570px;
+    }
+    .title {
+      font-size: 1.3rem;
+      display: flex;
+      align-items: baseline;
+      position: absolute;
+      top: -13px;
+      left: 20px;
+      background-color: ${colors.dark};
+    }
+    .title:hover {
+      ${hover()}
+    }
+    .deployTitle {
+      font-size: 1.3rem;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 0;
+      font-weight: 800;
+    }
+    .deploy {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      align-items: center;
+      bottom: -15px;
+      right: -12px;
+      font-size: 1.8rem;
+      position: absolute;
+      background-color: ${colors.dark};
+      cursor: pointer;
+    }
+    .deploy:hover {
+      ${hover()}
+    }
+    .send {
+      display: flex;
+      align-items: baseline;
+      bottom: -16px;
+      right: 13px;
+      font-size: 2rem;
+      position: absolute;
+      background-color: ${colors.dark};
+      color: ${colors.darkSmoke};
+      padding-right: 5px;
+    }
+    .send:hover {
+      ${hover()}
+    }
+    .bounce {
+      animation: bounceRight 2s infinite;
+    }
+    @-webkit-keyframes bounceRight {
+    0% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    20% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    40% {-webkit-transform: translateX(-30px);
+      transform: translateX(-30px);}
+    50% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    60% {-webkit-transform: translateX(-15px);
+      transform: translateX(-15px);}
+    80% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    100% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    }
+    @-moz-keyframes bounceRight {
+      0% {transform: translateX(0);}
+      20% {transform: translateX(0);}
+      40% {transform: translateX(-30px);}
+      50% {transform: translateX(0);}
+      60% {transform: translateX(-15px);}
+      80% {transform: translateX(0);}
+      100% {transform: translateX(0);}
+    }
+    @keyframes bounceRight {
+      0% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      20% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      40% {-ms-transform: translateX(-30px);
+        transform: translateX(-30px);}
+      50% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      60% {-ms-transform: translateX(-15px);
+        transform: translateX(-15px);}
+      80% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      100% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+    }
+    .fnContainer {
+      position: relative;
+    }
+    .function {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      margin-left: 20px;
+      margin-bottom: 10%;
+      border: 2px dashed ${colors.darkSmoke};
+    }
+    .topContainer {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 2px dashed ${colors.darkSmoke};
+      padding: 2em 2em 3em 2em;
+      width: 540px;
+      margin: 0 0 5em 20px;
+      font-size: 0.75em;
+    }
+    .ctor {}
+    .signature {}
+    .pure {
+      background-color: ${colors.yellow};
+    }
+    .view {
+      color: ${colors.lavender};
+    }
+    .nonpayable {
+      color: ${colors.turquoise};
+    }
+    .payable {
+      color: ${colors.violetRed};
+    }
+    .icon {
+      margin-left: 5px;
+      font-size: 0.9em;
+    }
+    .output {
+      font-size: 0.7rem;
+      display: flex;
+      align-self: center;
+    }
+    .valError {
+      color: ${colors.violetRed};
+      padding-left: 13px;
+      cursor: pointer;
+    }
+    .valSuccess {
+      color: ${colors.aquaMarine};
+      padding-left: 10px;
+    }
+    .inputContainer {
+      font-family: 'Overpass Mono', sans-serif;
+      margin: 15px 0 15px 0;
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+    }
+    .inputParam {
+      color: ${colors.slateGrey};
+      display: flex;
+      justify-content: center;
+      font-size: 0.9rem;
+      display: flex;
+      min-width: 200px;
+    }
+    .inputFields {
+    }
+    .inputType {
+    }
+    .inputField {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.slateGrey};
+      border-radius: 0.2em;
+      background-color: ${colors.darkSmoke};
+      text-align: center;
+      display: flex;
+      width: 100%;
+    }
+    .inputField::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerValue {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      border-radius: 0.2em;
+      display: flex;
+      text-align: center;
+      width: 60%;
+    }
+    .integerValue::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerSlider {
+      width: 40%;
+      border: 1px solid ${colors.slateGrey};
+      background: ${colors.darkSmoke};
+      -webkit-appearance: none;
+      height: 1px;
+    }
+    .integerSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      border: 1px solid ${colors.slateGrey};
+      border-radius: 0.2em;
+      height: 22px;
+      width: 10px;
+      background: ${colors.darkSmoke};
+      cursor: pointer;
+    }
+    .integerField {
+      display: flex;
+      width: 300px;
+      align-items: center;
+    }
+    .booleanField {
+      display: flex;
+      width: 300px;
+      align-items: baseline;
+      font-size: 0.9rem;
+    }
+    .stringField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .byteField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .addressField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .keyField {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.aquaMarine};
+      border-color: ${colors.whiteSmoke};
+    }
+    .false {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.violetRed};
+      color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      border-color: ${colors.whiteSmoke};
+      cursor: pointer;
+    }
+    .true {
+      ${inputStyle()}
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      cursor: pointer;
+    }
+    .arrayContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .arrayPlusMinus {
+      margin: 10px;
+    }
+    .arrayPlus {
+      cursor: pointer;
+    }
+    .arrayMinus {
+      cursor: pointer;
+    }
+  }
+  @media only screen and (max-device-width: 480px) {
+    html {
+      font-size: 30px;
+    }
+    .constructorFn, .functions {
+      width: 80%;
+    }
+    .title {
+      top: -30px;
+    }
+  }
+`
+
+function inputStyle() {
+  return `
+    border: 1px solid ${colors.slateGrey};
+    background-color: ${colors.dark};
+    padding: 5px;
+  `
+}
+
+function hover () {
+  return `
+    cursor: pointer;
+    opacity: 0.6;
+  `
 }

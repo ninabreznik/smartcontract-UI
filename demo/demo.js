@@ -37,4 +37,4 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/Test.sol')
+const sourcecode = require('./sampleContracts/InvoiceJournal.sol')

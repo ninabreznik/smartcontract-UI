@@ -38,68 +38,38 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/Test.sol')
+const sourcecode = require('./sampleContracts/InvoiceJournal.sol')
 
-},{"../":129,"./sampleContracts/Test.sol":2,"solc-js":68}],2:[function(require,module,exports){
-module.exports = `
-pragma solidity ^0.5.0;
+},{"../":132,"./sampleContracts/InvoiceJournal.sol":2,"solc-js":69}],2:[function(require,module,exports){
+module.exports = `pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
-
-contract myTest {
-
-  bool public b;
-
-  int8 public i8;
-  int public I;
-
-  uint8 public ui8;
-  uint16 public ui16;
-  uint public ui;
-  uint32 public ui32;
-
-  int256 i256;
-  bytes16[3] seeds;
-  uint j;
+contract InvoiceJournal {
   struct Contractor {
     string name;
     string email;
-    int id;
+    string pubkey;
     bool active;
+    bool exists;
   }
-
+  struct Invoice {
+    address contractor;
+    uint invoice_id;
+    string storage_url;
+    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
+  }
+  address accountant;
   mapping(address => Contractor) contractors;
+  mapping(address => Invoice[]) invoices;
   address[] contractor_addresses;
-
-  function returnBool (bool _b) public returns (bool b_) {
-    b = _b;
-    return b_;
+  function getAllInvoices () public view returns (Invoice[][] memory) {
+    uint len = contractor_addresses.length;
+  	Invoice[][] memory result = new Invoice[][](len);
+    for (uint i = 0; i < len; i++) {
+      result[i] = invoices[contractor_addresses[i]];
+    }
+    return result;
   }
-
-  function returnInt8 (int8 _i8) public returns (int8 i8_) {
-    i8 = _i8;
-    return i8_;
-  }
-
-  function returnInt256 (int256 _i256) public returns (int256 i256_) {
-    i256 = _i256;
-    return i256_;
-  }
-
-  function returnUint (uint _j) public returns (uint j_) {
-    j = _j;
-    return j_;
-  }
-
-  function activateContractor (address contractor_address, int _id, string memory _email) public {
-    Contractor storage contractor = contractors[contractor_address];
-    contractor.name = 'myname';
-    contractor.email = _email;
-    contractor.active = true;
-    contractor.id = _id;
-    contractor_addresses.push(contractor_address);
-  }
-
-  function getAllContractors () public returns (Contractor[] memory) {
+  function getAllContractors () public view returns (Contractor[] memory) {
     uint len = contractor_addresses.length;
   	Contractor[] memory result = new Contractor[](len);
     for (uint i = 0; i < len; i++) {
@@ -107,7 +77,48 @@ contract myTest {
     }
     return result;
   }
-
+  function getYourInvoices () public view returns (Invoice[] memory) {
+    return invoices[msg.sender];
+  }
+  function activateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    contractor.active = true;
+    if (!contractor.exists) {
+      contractor.exists = true;
+      contractor_addresses.push(contractor_address);
+    }
+  }
+  function deactivateContractor (address contractor_address) public {
+    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
+    Contractor storage contractor = contractors[contractor_address];
+    if (!contractor.active) return;
+    contractor.active = false;
+  }
+  function updateContractor (string memory name, string memory email, string memory pubkey) public {
+    Contractor storage contractor = contractors[msg.sender];
+    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
+    contractor.name = name;
+    contractor.email = email;
+    contractor.pubkey = pubkey;
+  }
+  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
+    Contractor memory contractor = contractors[msg.sender];
+    require(contractor.exists, "Unknown contractors cannot submit invoices");
+    require(contractor.active, "Unauthorized contractors cannot submit invoices");
+    Invoice[] storage _invoices = invoices[msg.sender];
+    Invoice memory new_invoice = Invoice({
+      contractor: msg.sender,
+      invoice_id: invoice_id,
+      storage_url: storage_url,
+      encrypted_decrypt_keys: keys
+    });
+    _invoices.push(new_invoice);
+    return contractor;
+  }
+  constructor () public {
+    accountant = msg.sender;
+  }
 }`
 
 },{}],3:[function(require,module,exports){
@@ -192,7 +203,7 @@ function setCacheTime(caching, url) {
     window.localStorage[url] = timestamp;
   }
 }
-},{"kv-idb":43}],4:[function(require,module,exports){
+},{"kv-idb":44}],4:[function(require,module,exports){
 module.exports = {
   promiseAjax: require('./promiseAjax')
 };
@@ -3422,7 +3433,7 @@ function csjsInserter() {
 module.exports = csjsInserter;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"csjs":15,"insert-css":41}],11:[function(require,module,exports){
+},{"csjs":15,"insert-css":42}],11:[function(require,module,exports){
 'use strict';
 
 module.exports = require('csjs/get-css');
@@ -4414,7 +4425,7 @@ module.exports = {
   fromWei: fromWei,
   toWei: toWei
 };
-},{"bn.js":32,"number-to-bn":45}],32:[function(require,module,exports){
+},{"bn.js":32,"number-to-bn":46}],32:[function(require,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -8178,7 +8189,22 @@ function displayAddressInput ({ theme: { classes: css }, cb }) {
   }
 }
 
-},{"bel":7,"csjs-inject":12,"solidity-validator":103}],36:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"solidity-validator":104}],36:[function(require,module,exports){
+const bel = require('bel')
+const csjs = require('csjs-inject')
+const validator = require('solidity-validator')
+
+module.exports = displayByteInput
+
+function displayByteInput ({ theme: { classes: css }, cb }) {
+  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type="byte" oninput=${validate} placeholder='xyz'> </div>`
+  function validate (e) {
+    let value = e.target.value
+    cb(validator.getMessage('byte', value), value)
+  }
+}
+
+},{"bel":7,"csjs-inject":12,"solidity-validator":104}],37:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const inputAddress = require("input-address")
@@ -8242,7 +8268,7 @@ function getParsedArray (type) {
   return arr.reverse()
 }
 
-},{"bel":7,"csjs-inject":12,"input-address":35,"input-boolean":37,"input-byte":38,"input-integer":39,"input-string":40,"solidity-validator":103}],37:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"input-address":35,"input-boolean":38,"input-byte":36,"input-integer":40,"input-string":41,"solidity-validator":104}],38:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -8278,7 +8304,7 @@ function displayBooleanInput ({ theme: { classes: css, colors }, cb }) {
   }
 }
 
-},{"bel":7,"csjs-inject":12,"solidity-validator":103}],38:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"solidity-validator":104}],39:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -8286,14 +8312,14 @@ const validator = require('solidity-validator')
 module.exports = displayByteInput
 
 function displayByteInput ({ theme: { classes: css }, cb }) {
-  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type="byte" oninput=${validate} placeholder='xyz'> </div>`
+  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type="byte" oninput=${validate} placeholder='0x...'> </div>`
   function validate (e) {
     let value = e.target.value
     cb(validator.getMessage('byte', value), value)
   }
 }
 
-},{"bel":7,"csjs-inject":12,"solidity-validator":103}],39:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"solidity-validator":104}],40:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -8341,7 +8367,7 @@ function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
   }
 }
 
-},{"bel":7,"bignumber.js":8,"csjs-inject":12,"solidity-validator":103}],40:[function(require,module,exports){
+},{"bel":7,"bignumber.js":8,"csjs-inject":12,"solidity-validator":104}],41:[function(require,module,exports){
 const bel = require('bel')
 const csjs = require('csjs-inject')
 const validator = require('solidity-validator')
@@ -8359,7 +8385,7 @@ function displayStringInput ({ theme: { classes: css }, cb }) {
   }
 }
 
-},{"bel":7,"csjs-inject":12,"solidity-validator":103}],41:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"solidity-validator":104}],42:[function(require,module,exports){
 var inserted = {};
 
 module.exports = function (css, options) {
@@ -8383,7 +8409,7 @@ module.exports = function (css, options) {
     }
 };
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 /**
  * Returns a `Boolean` on whether or not the a `String` starts with '0x'
  * @param {String} str the string input value
@@ -8398,7 +8424,7 @@ module.exports = function isHexPrefixed(str) {
   return str.slice(0, 2) === '0x';
 }
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 const indexedDB = window.indexedDB
 const console = window.console
 
@@ -8482,9 +8508,9 @@ function kvidb (opts) {
   return api
 }
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 arguments[4][32][0].apply(exports,arguments)
-},{"dup":32}],45:[function(require,module,exports){
+},{"dup":32}],46:[function(require,module,exports){
 var BN = require('bn.js');
 var stripHexPrefix = require('strip-hex-prefix');
 
@@ -8524,11 +8550,11 @@ module.exports = function numberToBN(arg) {
   throw new Error('[number-to-bn] while converting number ' + JSON.stringify(arg) + ' to BN.js instance, error: invalid number value. Value must be an integer, hex string, BN or BigNumber instance. Note, decimals are not supported.');
 }
 
-},{"bn.js":44,"strip-hex-prefix":112}],46:[function(require,module,exports){
+},{"bn.js":45,"strip-hex-prefix":113}],47:[function(require,module,exports){
 module.exports = window.crypto;
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = require('crypto');
-},{"crypto":46}],48:[function(require,module,exports){
+},{"crypto":47}],49:[function(require,module,exports){
 var randomHex = function(size, callback) {
     var crypto = require('./crypto.js');
     var isCallback = (typeof callback === 'function');
@@ -8594,14 +8620,14 @@ var randomHex = function(size, callback) {
 
 module.exports = randomHex;
 
-},{"./crypto.js":47}],49:[function(require,module,exports){
+},{"./crypto.js":48}],50:[function(require,module,exports){
 module.exports = {
   type: 'github',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(https?:\/\/)?(www.)?github.com\/([^/]*\/[^/]*)\/(.*)/
 };
-},{"./parser":50,"./resolver":51}],50:[function(require,module,exports){
+},{"./parser":51,"./resolver":52}],51:[function(require,module,exports){
 const replaceContent = require('solc-import').replaceContent;
 const resolver = require('./resolver');
 // https://github.com/<owner>/<repo>/<path_to_the_file>
@@ -8640,7 +8666,7 @@ module.exports = async function (importPath) {
 //     throw error;
 //   }
 // }
-},{"./index":49,"./resolver":51,"solc-import":64}],51:[function(require,module,exports){
+},{"./index":50,"./resolver":52,"solc-import":65}],52:[function(require,module,exports){
 module.exports = function (content, from, subImportPath) {
   let newContent = content;
   let url = new window.URL(subImportPath, from);
@@ -8649,7 +8675,7 @@ module.exports = function (content, from, subImportPath) {
   newContent = newContent.replace(`import "${subImportPath}"`, `import "${fixedPath}"`);
   return newContent;
 };
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 module.exports = {
   type: 'http',
   parser: require('./parser'),
@@ -8658,7 +8684,7 @@ module.exports = {
 };
 
 // const match = /^(http?:\/\/?(.*))$/;
-},{"./parser":53,"./resolver":54}],53:[function(require,module,exports){
+},{"./parser":54,"./resolver":55}],54:[function(require,module,exports){
 const replaceContent = require('solc-import').replaceContent;
 const resolver = require('./resolver');
 
@@ -8674,16 +8700,16 @@ module.exports = async function (importPath) {
     throw error;
   }
 };
-},{"./index":52,"./resolver":54,"solc-import":64}],54:[function(require,module,exports){
-arguments[4][51][0].apply(exports,arguments)
-},{"dup":51}],55:[function(require,module,exports){
+},{"./index":53,"./resolver":55,"solc-import":65}],55:[function(require,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"dup":52}],56:[function(require,module,exports){
 module.exports = {
   type: 'ipfs',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(ipfs:\/\/?.+)/
 };
-},{"./parser":56,"./resolver":57}],56:[function(require,module,exports){
+},{"./parser":57,"./resolver":58}],57:[function(require,module,exports){
 module.exports = async function (importPath) {
   let [, url] = require('./index').match.exec(importPath);
   // replace ipfs:// with /ipfs/
@@ -8699,16 +8725,16 @@ module.exports = async function (importPath) {
     throw error;
   }
 };
-},{"./index":55}],57:[function(require,module,exports){
-arguments[4][51][0].apply(exports,arguments)
-},{"dup":51}],58:[function(require,module,exports){
+},{"./index":56}],58:[function(require,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"dup":52}],59:[function(require,module,exports){
 module.exports = {
   type: 'swarm',
   parser: require('./parser'),
   resolver: require('./resolver'),
   match: /^(bzz[ri]?:\/\/?(.*))$/
 };
-},{"./parser":59,"./resolver":60}],59:[function(require,module,exports){
+},{"./parser":60,"./resolver":61}],60:[function(require,module,exports){
 module.exports = async function (importPath) {
   const [, url,] = require('./index').match.exec(importPath);
   try {
@@ -8751,9 +8777,9 @@ function swarmgwMaker(opts) {
   };
 }
 
-},{"./index":58}],60:[function(require,module,exports){
-arguments[4][51][0].apply(exports,arguments)
-},{"dup":51}],61:[function(require,module,exports){
+},{"./index":59}],61:[function(require,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"dup":52}],62:[function(require,module,exports){
 const getImports = require('./getImports');
 const isExistImport = require('./isExistImport');
 
@@ -8804,7 +8830,7 @@ async function getMergeSubImportMap(allSubImportPath, sourceMap, getImportConten
   }
   return sourceMap;
 }
-},{"./getImports":62,"./isExistImport":65}],62:[function(require,module,exports){
+},{"./getImports":63,"./isExistImport":66}],63:[function(require,module,exports){
 module.exports = getImports;
 
 function getImports(source) {
@@ -8816,7 +8842,7 @@ function getImports(source) {
   }
   return matches;
 }
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 const combineSource = require('./combineSource');
 
 module.exports = getReadCallback;
@@ -8834,7 +8860,7 @@ async function getReadCallback(sourceCode, getImportContent) {
   }
   return readCallback;
 }
-},{"./combineSource":61}],64:[function(require,module,exports){
+},{"./combineSource":62}],65:[function(require,module,exports){
 module.exports = {
   combineSource: require('./combineSource'),
   getImports: require('./getImports'),
@@ -8842,7 +8868,7 @@ module.exports = {
   isExistImport: require('./isExistImport'),
   replaceContent: require('./replaceContent')
 };
-},{"./combineSource":61,"./getImports":62,"./getReadCallback":63,"./isExistImport":65,"./replaceContent":66}],65:[function(require,module,exports){
+},{"./combineSource":62,"./getImports":63,"./getReadCallback":64,"./isExistImport":66,"./replaceContent":67}],66:[function(require,module,exports){
 const getImports = require('./getImports');
 
 module.exports = isExistImport;
@@ -8851,7 +8877,7 @@ function isExistImport(sourcecode) {
   const allImportPath = getImports(sourcecode);
   return allImportPath.length != 0;
 }
-},{"./getImports":62}],66:[function(require,module,exports){
+},{"./getImports":63}],67:[function(require,module,exports){
 const getImports = require('./getImports');
 const isExistImport = require('./isExistImport');
 
@@ -8873,7 +8899,7 @@ function replaceContent(content, from, resolver) {
 function isExplicitlyRelative(importPath) {
   return importPath.indexOf('.') === 0;
 }
-},{"./getImports":62,"./isExistImport":65}],67:[function(require,module,exports){
+},{"./getImports":63,"./isExistImport":66}],68:[function(require,module,exports){
 const solcImport = require('solc-import');
 const solcResolver = require('solc-resolver');
 const solcjsCore = require('solcjs-core');
@@ -8927,7 +8953,7 @@ function getContent() {
   return getImportContent;
 }
 
-},{"resolve-github":49,"resolve-http":52,"resolve-ipfs":55,"resolve-swarm":58,"solc-import":64,"solc-resolver":70,"solcjs-core":90}],68:[function(require,module,exports){
+},{"resolve-github":50,"resolve-http":53,"resolve-ipfs":56,"resolve-swarm":59,"solc-import":65,"solc-resolver":71,"solcjs-core":91}],69:[function(require,module,exports){
 
 let solcjs = require('./solc');
 const solcVersion = require('solc-version');
@@ -8937,7 +8963,7 @@ module.exports = solcjs;
 solcjs.versions = solcVersion.versions;
 solcjs.versionsSkipVersion5 = solcVersion.versionsSkipVersion5;
 solcjs.version2url = solcVersion.version2url;
-},{"./solc":69,"solc-version":74}],69:[function(require,module,exports){
+},{"./solc":70,"solc-version":75}],70:[function(require,module,exports){
 const solcVersion = require('solc-version');
 const getCompile = require('./getCompile');
 const solcjsCore = require('solcjs-core');
@@ -8980,11 +9006,11 @@ function solcjs(_version) {
 }
 
 module.exports = solcjs;
-},{"./getCompile":67,"solc-version":74,"solcjs-core":90}],70:[function(require,module,exports){
+},{"./getCompile":68,"solc-version":75,"solcjs-core":91}],71:[function(require,module,exports){
 module.exports = {
   resolverEngine: require('./resolverEngine')
 };
-},{"./resolverEngine":71}],71:[function(require,module,exports){
+},{"./resolverEngine":72}],72:[function(require,module,exports){
 module.exports = class ResolverEngine {
   constructor() {
     this.resolvers = [];
@@ -9057,7 +9083,7 @@ module.exports = class ResolverEngine {
     return !found;
   }
 };
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 const baseURL = 'https://solc-bin.ethereum.org/bin';
 
 const ajaxCaching = require('ajax-caching');
@@ -9080,7 +9106,7 @@ async function getlist() {
     throw error;
   }
 }
-},{"ajax-caching":4}],73:[function(require,module,exports){
+},{"ajax-caching":4}],74:[function(require,module,exports){
 module.exports = groupByVersion;
 
 function removeAllZeroPointFiveVersion(select) {
@@ -9098,13 +9124,13 @@ function groupByVersion(data, skip5 = true) {
   if (skip5) removeAllZeroPointFiveVersion(select);
   return select;
 }
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 module.exports = {
   version2url: require('./version2url'),
   versions: require('./versions'),
   versionsSkipVersion5: require('./versionsSkipVersion5')
 };
-},{"./version2url":76,"./versions":77,"./versionsSkipVersion5":78}],75:[function(require,module,exports){
+},{"./version2url":77,"./versions":78,"./versionsSkipVersion5":79}],76:[function(require,module,exports){
 module.exports = processList;
 
 function processList(json) {
@@ -9156,7 +9182,7 @@ function processList(json) {
   lists.all = all.reduce((o, x) => ((o[x[0]] = x[1]), o), {});
   return lists;
 }
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 const baseURL = 'https://solc-bin.ethereum.org/bin';
 
 const processList = require('./processList');
@@ -9180,7 +9206,7 @@ function version2url(version, list) {
     }
   });
 }
-},{"./getlist":72,"./processList":75}],77:[function(require,module,exports){
+},{"./getlist":73,"./processList":76}],78:[function(require,module,exports){
 const processList = require('./processList');
 const getlist = require('./getlist');
 const groupByVersion = require('./groupByVersion');
@@ -9198,7 +9224,7 @@ function versions(list) {
     }
   });
 }
-},{"./getlist":72,"./groupByVersion":73,"./processList":75}],78:[function(require,module,exports){
+},{"./getlist":73,"./groupByVersion":74,"./processList":76}],79:[function(require,module,exports){
 const processList = require('./processList');
 const getlist = require('./getlist');
 const groupByVersion = require('./groupByVersion');
@@ -9216,22 +9242,22 @@ function versionsSkipVersion5() {
     }
   });
 }
-},{"./getlist":72,"./groupByVersion":73,"./processList":75}],79:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./getImports":80,"./isExistImport":83,"dup":61}],80:[function(require,module,exports){
+},{"./getlist":73,"./groupByVersion":74,"./processList":76}],80:[function(require,module,exports){
 arguments[4][62][0].apply(exports,arguments)
-},{"dup":62}],81:[function(require,module,exports){
+},{"./getImports":81,"./isExistImport":84,"dup":62}],81:[function(require,module,exports){
 arguments[4][63][0].apply(exports,arguments)
-},{"./combineSource":79,"dup":63}],82:[function(require,module,exports){
+},{"dup":63}],82:[function(require,module,exports){
+arguments[4][64][0].apply(exports,arguments)
+},{"./combineSource":80,"dup":64}],83:[function(require,module,exports){
 module.exports = {
   combineSource: require('./combineSource'),
   getImports: require('./getImports'),
   getReadCallback: require('./getReadCallback'),
   isExistImport: require('./isExistImport')
 };
-},{"./combineSource":79,"./getImports":80,"./getReadCallback":81,"./isExistImport":83}],83:[function(require,module,exports){
-arguments[4][65][0].apply(exports,arguments)
-},{"./getImports":80,"dup":65}],84:[function(require,module,exports){
+},{"./combineSource":80,"./getImports":81,"./getReadCallback":82,"./isExistImport":84}],84:[function(require,module,exports){
+arguments[4][66][0].apply(exports,arguments)
+},{"./getImports":81,"dup":66}],85:[function(require,module,exports){
 const solcImport = require('solc-import');
 const getReadCallback = require('./getReadCallback');
 const wrapperCompile = require('./wrapperCompile');
@@ -9258,7 +9284,7 @@ function getCompile(oldSolc) {
   return compile;
 }
 
-},{"./getReadCallback":87,"./wrapperCompile":102,"solc-import":82}],85:[function(require,module,exports){
+},{"./getReadCallback":88,"./wrapperCompile":103,"solc-import":83}],86:[function(require,module,exports){
 const solcImport = require('solc-import');
 
 module.exports = getCompileOutput;
@@ -9273,7 +9299,7 @@ function getCompileOutput(oldSolc, sourcecode, readCallback) {
   }
   return output;
 }
-},{"solc-import":82}],86:[function(require,module,exports){
+},{"solc-import":83}],87:[function(require,module,exports){
 const ajaxCaching = require('ajax-caching');
 const promiseAjax = ajaxCaching.promiseAjax;
 
@@ -9296,7 +9322,7 @@ async function getCompilersource(compilerURL) {
     throw error;
   }
 }
-},{"ajax-caching":4}],87:[function(require,module,exports){
+},{"ajax-caching":4}],88:[function(require,module,exports){
 const solcImport = require('solc-import');
 
 module.exports = getReadCallback;
@@ -9305,7 +9331,7 @@ async function getReadCallback(sourcecode, getImportContent) {
   if (!solcImport.isExistImport(sourcecode)) return;
   return await solcImport.getReadCallback(sourcecode, getImportContent);
 }
-},{"solc-import":82}],88:[function(require,module,exports){
+},{"solc-import":83}],89:[function(require,module,exports){
 module.exports = getStandardError;
 
 function getStandardError(errors) {
@@ -9320,7 +9346,7 @@ function getStandardError(errors) {
   }
   return result;
 }
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 const solcVersion = require('solc-version');
 
 module.exports = getVersion;
@@ -9337,7 +9363,7 @@ async function getVersion(_version) {
   }
   return select.releases[0];
 }
-},{"solc-version":74}],90:[function(require,module,exports){
+},{"solc-version":75}],91:[function(require,module,exports){
 module.exports = {
   getCompilersource: require('./getCompilersource'),
   getReadCallback: require('./getReadCallback'),
@@ -9349,7 +9375,7 @@ module.exports = {
   solc: require('./solc'),
   solcWrapper: require('./solc-wrapper')
 };
-},{"./getCompile":84,"./getCompilersource":86,"./getReadCallback":87,"./getVersion":89,"./loadModule":91,"./pretest":92,"./solc":101,"./solc-wrapper":94,"./wrapperCompile":102}],91:[function(require,module,exports){
+},{"./getCompile":85,"./getCompilersource":87,"./getReadCallback":88,"./getVersion":90,"./loadModule":92,"./pretest":93,"./solc":102,"./solc-wrapper":95,"./wrapperCompile":103}],92:[function(require,module,exports){
 module.exports = loadModule;
 
 // HELPER
@@ -9388,7 +9414,7 @@ function loadModule(sourcecode) {
 //   }
 //   return compiler;
 // }
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 module.exports = pretest;
 
 async function pretest(compile) {
@@ -9403,7 +9429,7 @@ async function pretest(compile) {
     throw error;
   }
 }
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 // from: sindresorhus/semver-regex
 var semverRegex = /\bv?(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-z-]+(?:\.[\da-z-]+)*)?(?:\+[\da-z-]+(?:\.[\da-z-]+)*)?\b/ig;
 
@@ -9492,14 +9518,14 @@ module.exports = {
   update: update
 };
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 module.exports = {
   linker: require('./linker'),
   wrapper: require('./wrapper'),
   abi: require('./abi'),
   translate: require('./translate')
 };
-},{"./abi":93,"./linker":95,"./translate":96,"./wrapper":100}],95:[function(require,module,exports){
+},{"./abi":94,"./linker":96,"./translate":97,"./wrapper":101}],96:[function(require,module,exports){
 module.exports = { linkBytecode, findLinkReferences };
 
 function linkBytecode (bytecode, libraries) {
@@ -9566,13 +9592,13 @@ function findLinkReferences (bytecode) {
   return linkReferences;
 }
 
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 module.exports = {
   standardTranslateJsonCompilerOutput: require('./standardTranslateJsonCompilerOutput'),
   prettyPrintLegacyAssemblyJSON: require('./prettyPrintLegacyAssemblyJSON'),
   versionToSemver: require('./versionToSemver')
 };
-},{"./prettyPrintLegacyAssemblyJSON":97,"./standardTranslateJsonCompilerOutput":98,"./versionToSemver":99}],97:[function(require,module,exports){
+},{"./prettyPrintLegacyAssemblyJSON":98,"./standardTranslateJsonCompilerOutput":99,"./versionToSemver":100}],98:[function(require,module,exports){
 module.exports = prettyPrintLegacyAssemblyJSON;
 
 function prettyPrintLegacyAssemblyJSON(assembly, source) {
@@ -9614,7 +9640,7 @@ function escapeString(text) {
     .replace(/\r/g, '\\r')
     .replace(/\t/g, '\\t');
 }
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 // https://solidity.readthedocs.io/en/v0.5.1/using-the-compiler.html?highlight=legacyAST#output-description
 
 module.exports = standardTranslateJsonCompilerOutput;
@@ -9916,7 +9942,7 @@ function isMatchVersion(version, ...match) {
   }
   return false;
 }
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 module.exports = versionToSemver;
 
 /// Translate old style version numbers to semver.
@@ -9939,7 +9965,7 @@ function versionToSemver(version) {
   // assume it is already semver compatible
   return version;
 }
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 const linker = require('./linker.js');
 const translate = require('./translate');
 let soljson;
@@ -10108,7 +10134,7 @@ function wrapper(_soljson) {
     linkBytecode: linker.linkBytecode
   };
 }
-},{"./linker.js":95,"./translate":96}],101:[function(require,module,exports){
+},{"./linker.js":96,"./translate":97}],102:[function(require,module,exports){
 const solcVersion = require('solc-version');
 const getCompile = require('./getCompile');
 const getVersion = require('./getVersion');
@@ -10154,7 +10180,7 @@ function solcjs(_version) {
 }
 
 module.exports = solcjs;
-},{"./getCompile":84,"./getCompilersource":86,"./getVersion":89,"./loadModule":91,"./pretest":92,"./solc-wrapper/wrapper":100,"solc-version":74}],102:[function(require,module,exports){
+},{"./getCompile":85,"./getCompilersource":87,"./getVersion":90,"./loadModule":92,"./pretest":93,"./solc-wrapper/wrapper":101,"solc-version":75}],103:[function(require,module,exports){
 const translateJsonCompilerOutput = require('./solc-wrapper/translate/standardTranslateJsonCompilerOutput');
 const getCompileOutput = require('./getCompileOutput');
 const getStandardError = require('./getStandardError');
@@ -10177,7 +10203,7 @@ function wrapperCompile(oldSolc, sourcecode, readCallback) {
     return !output.contracts || Object.keys(output.contracts).length == 0;
   }
 }
-},{"./getCompileOutput":85,"./getStandardError":88,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":98}],103:[function(require,module,exports){
+},{"./getCompileOutput":86,"./getStandardError":89,"./solc-wrapper/translate/standardTranslateJsonCompilerOutput":99}],104:[function(require,module,exports){
 const getMessage = require('./lib/getMessage');
 const getRange = require('./lib/getRange');
 const isAddress = require('./lib/isAddress');
@@ -10199,7 +10225,7 @@ const validator = {
 };
 
 module.exports = validator;
-},{"./lib/getMessage":104,"./lib/getRange":105,"./lib/isAddress":106,"./lib/isBoolean":107,"./lib/isInt":108,"./lib/isUint":109,"./lib/isValid":110}],104:[function(require,module,exports){
+},{"./lib/getMessage":105,"./lib/getRange":106,"./lib/isAddress":107,"./lib/isBoolean":108,"./lib/isInt":109,"./lib/isUint":110,"./lib/isValid":111}],105:[function(require,module,exports){
 const assertString = require('./util/assertString');
 const isValid = require('./isValid');
 
@@ -10213,7 +10239,7 @@ function getMessage(type, str) {
   if (type.search(/\bbool/) != -1) return 'The value is not a boolean.';
   if (type.search(/\baddress/) != -1) return 'The value is not a valid address.';
 }
-},{"./isValid":110,"./util/assertString":111}],105:[function(require,module,exports){
+},{"./isValid":111,"./util/assertString":112}],106:[function(require,module,exports){
 const bigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
 
@@ -10251,7 +10277,7 @@ function getIntRange(type) {
     return range;
   }
 }
-},{"./util/assertString":111,"bignumber.js":8}],106:[function(require,module,exports){
+},{"./util/assertString":112,"bignumber.js":8}],107:[function(require,module,exports){
 const assertString = require('./util/assertString');
 var Web3Utils = require('web3-utils');
 
@@ -10261,7 +10287,7 @@ function isAddress(str) {
   assertString(str);
   return Web3Utils.isAddress(str);
 }
-},{"./util/assertString":111,"web3-utils":116}],107:[function(require,module,exports){
+},{"./util/assertString":112,"web3-utils":117}],108:[function(require,module,exports){
 const assertString = require('./util/assertString');
 
 module.exports = isBoolean;
@@ -10270,7 +10296,7 @@ function isBoolean(str) {
   assertString(str);
   return (['true', 'false'].indexOf(str) >= 0);
 }
-},{"./util/assertString":111}],108:[function(require,module,exports){
+},{"./util/assertString":112}],109:[function(require,module,exports){
 // 帶符號整型
 const BigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
@@ -10282,7 +10308,7 @@ function isInt(str, exponent) {
   let num = new BigNumber(str);
   return num.isInteger() && num.gte(-(Math.pow(2, exponent) / 2)) && num.lte((Math.pow(2, exponent) / 2) - 1);
 }
-},{"./util/assertString":111,"bignumber.js":8}],109:[function(require,module,exports){
+},{"./util/assertString":112,"bignumber.js":8}],110:[function(require,module,exports){
 // 不帶符號整型
 const bigNumber = require('bignumber.js');
 const assertString = require('./util/assertString');
@@ -10294,7 +10320,7 @@ function isUint(str, exponent) {
   let num = bigNumber(str);
   return num.isInteger() && num.gte(0) && num.lte(Math.pow(2, exponent) - 1);
 }
-},{"./util/assertString":111,"bignumber.js":8}],110:[function(require,module,exports){
+},{"./util/assertString":112,"bignumber.js":8}],111:[function(require,module,exports){
 const assertString = require('./util/assertString');
 const isAddress = require('./isAddress');
 const isBoolean = require('./isBoolean');
@@ -10312,7 +10338,7 @@ function isValid(type, value) {
   if (type.search(/\baddress/) != -1) return isAddress(value);
   return true;
 }
-},{"./isAddress":106,"./isBoolean":107,"./isInt":108,"./isUint":109,"./util/assertString":111}],111:[function(require,module,exports){
+},{"./isAddress":107,"./isBoolean":108,"./isInt":109,"./isUint":110,"./util/assertString":112}],112:[function(require,module,exports){
 module.exports = assertString;
 
 function assertString(input) {
@@ -10333,7 +10359,7 @@ function assertString(input) {
     throw new TypeError(`Expected string but received ${invalidType}.`);
   }
 }
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 var isHexPrefixed = require('is-hex-prefixed');
 
 /**
@@ -10349,7 +10375,7 @@ module.exports = function stripHexPrefix(str) {
   return isHexPrefixed(str) ? str.slice(2) : str;
 }
 
-},{"is-hex-prefixed":42}],113:[function(require,module,exports){
+},{"is-hex-prefixed":43}],114:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -11899,7 +11925,7 @@ module.exports = function stripHexPrefix(str) {
   }
 }.call(this));
 
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -12147,9 +12173,9 @@ module.exports = function stripHexPrefix(str) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 arguments[4][32][0].apply(exports,arguments)
-},{"dup":32}],116:[function(require,module,exports){
+},{"dup":32}],117:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -12515,7 +12541,7 @@ module.exports = {
 };
 
 
-},{"./soliditySha3.js":117,"./utils.js":118,"ethjs-unit":31,"randomhex":48,"underscore":113}],117:[function(require,module,exports){
+},{"./soliditySha3.js":118,"./utils.js":119,"ethjs-unit":31,"randomhex":49,"underscore":114}],118:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -12762,7 +12788,7 @@ var soliditySha3 = function () {
 
 module.exports = soliditySha3;
 
-},{"./utils.js":118,"bn.js":115,"underscore":113}],118:[function(require,module,exports){
+},{"./utils.js":119,"bn.js":116,"underscore":114}],119:[function(require,module,exports){
 /*
  This file is part of web3.js.
 
@@ -13235,7 +13261,7 @@ module.exports = {
     sha3: sha3
 };
 
-},{"bn.js":115,"eth-lib/lib/hash":29,"number-to-bn":45,"underscore":113,"utf8":114}],119:[function(require,module,exports){
+},{"bn.js":116,"eth-lib/lib/hash":29,"number-to-bn":46,"underscore":114,"utf8":115}],120:[function(require,module,exports){
 const ethers = require('ethers')
 
 module.exports = decodeReturnData
@@ -13267,24 +13293,28 @@ function getTypes(types, i) {
   return types
 }
 
-},{"ethers":30}],120:[function(require,module,exports){
+},{"ethers":30}],121:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
 
 module.exports = getArgs
 
 function getArgs( element, selector ) {
+  debugger
   var args = []
   var fields = element.querySelectorAll(`[class^=${selector}]`)
-
-  fields.forEach(x => {
+  for (var i=0; i<fields.length; i++) {
+    var x = fields[i]
     let title = x.children[0].title
-    if (title.includes('[')) {  // if type is an array
-      var argumentsInArr = []
-      if (title.includes('bool')) {  // if it's an array of booleans
+    if (title === 'payable') {
+      console.log ('Payable functionality - work in progress!')
+    } else {
+      if (title.includes('[')) {  // if type is an array
+        var argumentsInArr = []
+        if (title.includes('bool')) {  // if it's an array of booleans
         let inputs = x.querySelectorAll("[class^='booleanField']")
         inputs.forEach(y => {
-            argumentsInArr.push(getBool(y))
+          argumentsInArr.push(getBool(y))
         })
       } else { // in any other type of array
         var inputs = x.querySelectorAll('input')
@@ -13295,17 +13325,19 @@ function getArgs( element, selector ) {
         })
       }
       args.push(argumentsInArr)
+      }
+      else if (title.includes('bool')) { // if not an array, but boolean
+        var boolField = x.querySelector("[class^='booleanField']")
+        args.push(getBool(boolField))
+      }
+      else { // not an array (inputs.length = 1) and not a boolean
+        let el = title.includes('int') ? x.querySelectorAll('input')[1] : x.querySelector('input')
+        let val = el.value
+        args.push(getArgument(el, val))
+      }
     }
-    else if (title.includes('bool')) { // if not an array, but boolean
-      var boolField = x.querySelector("[class^='booleanField']")
-      args.push(getBool(boolField))
-    }
-    else { // not an array (inputs.length = 1) and not a boolean
-      let el = title.includes('int') ? x.querySelectorAll('input')[1] : x.querySelector('input')
-      let val = el.value
-      args.push(getArgument(el, val))
-    }
-  })
+
+  }
   return args
 }
 
@@ -13336,7 +13368,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":8,"ethers":30}],121:[function(require,module,exports){
+},{"bignumber.js":8,"ethers":30}],122:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -13359,7 +13391,7 @@ function getDate () {
 
 }
 
-},{}],122:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 const ethers = require('ethers')
 const decodeReturnData = require('decodeReturnData')
 
@@ -13385,7 +13417,7 @@ function getReturnData (opts) {
   return decodedData
 }
 
-},{"decodeReturnData":119,"ethers":30}],123:[function(require,module,exports){
+},{"decodeReturnData":120,"ethers":30}],124:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -13396,7 +13428,92 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],124:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
+const bel = require("bel")
+const colors = require('theme')
+const csjs = require("csjs-inject")
+var css
+
+module.exports = inputPayable
+
+function inputPayable (label) {
+
+  return bel`
+    <div class=${css.inputContainer}>
+      <div class=${css.title} title="data type: ${label}">value</div>
+      <div class=${css.inputArea}>
+        <input class=${css.input} placeholder="123">
+        ${currencySelector()}
+      </div>
+      <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
+    </div>`
+}
+
+function currencySelector () {
+  var button = bel`
+    <select class=${css.currency} onclick=${(e) => exchangeCurrency(e)}>
+      <option value="wei">wei</option>
+      <option value="babbage">babbage</option>
+      <option value="lovelace">lovelace</option>
+      <option value="shannon">shannon</option>
+      <option value="szabo">szabo</option>
+      <option value="finney">finney</option>
+      <option value="ether">ether</option>
+    </select>`
+  return button
+}
+
+function exchangeCurrency (e) {
+  console.log(e.target.value)
+}
+
+css = csjs`
+.inputContainer {
+  display: flex;
+  align-items: center;
+  margin: 15px 0 15px 0;
+}
+.title {
+  justify-content: center;
+  color: ${colors.slateGrey};
+  font-size: 0.9rem;
+  display: flex;
+  min-width: 200px;
+}
+.inputArea {
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+}
+.input {
+  width: 194px;
+  background-color: ${colors.darkSmoke};
+  border-radius: 0.2em;
+  color: ${colors.whiteSmoke};
+  border: 1px solid ${colors.slateGrey};
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 5px;
+  margin-right: 5px;
+}
+.currency {
+  width: 88px;
+  border-radius: 0.2em;
+  border: 1px solid ${colors.slateGrey};
+  padding: 5px 7px;
+  color: ${colors.slateGrey};
+  background-color: ${colors.darkSmoke};
+}
+.ethIcon {
+  color: ${colors.violetRed};
+  font-size: 1.2rem;
+  display: flex;
+  align-self: center;
+  padding-left: 10px;
+}
+`
+
+},{"bel":7,"csjs-inject":12,"theme":131}],126:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -13435,7 +13552,67 @@ function loadingAnimation (colors) {
   return bel`<div class=${css.loader}></div>`
 }
 
-},{"bel":7,"csjs-inject":12}],125:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12}],127:[function(require,module,exports){
+const bel = require("bel")
+const csjs = require('csjs-inject')
+const colors = require('theme')
+const date = require('getDate')
+const copy = require('copy-text-to-clipboard')
+const moreInfo = require('moreInfo')
+
+module.exports = makeDeployReceipt
+
+var css = csjs`
+.txReceipt {
+  display:flex;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+.txReturnField {
+  display:flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  margin-bottom: 2%;
+}
+.txReturnTitle {
+  color: ${colors.lightGrey};
+  margin-right: 5px;
+  width: 50%;
+}
+.txReturnValue {
+  color: ${colors.slateGrey};
+  cursor: pointer;
+  word-break: break-all;
+}
+.txReturnValue:hover {
+  cursor: pointer;
+  opacity: 0.6;
+}
+.date {}
+`
+
+function makeDeployReceipt (provider, contract) {
+  var el = bel`
+    <div class=${css.txReceipt}>
+      <div class=${css.txReturnField}>
+        <div class=${css.txReturnTitle}>published</div>
+        <div class=${css.txReturnValue}>${date()}</div>
+      </div>
+      <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
+        <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
+        <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
+      </div>
+      <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
+        <div class=${css.txReturnTitle}>published by</div>
+        <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
+      </div>
+    </div>
+  `
+  el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
+  return el
+}
+
+},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"getDate":122,"moreInfo":129,"theme":131}],128:[function(require,module,exports){
 const bel = require("bel")
 const moreInfo = require('moreInfo')
 const getReturnData = require('getReturnData')
@@ -13508,7 +13685,7 @@ function makeTxReturn (css, data) {
     </div>`
 }
 
-},{"bel":7,"csjs-inject":12,"getReturnData":122,"moreInfo":126,"theme":128}],126:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"getReturnData":123,"moreInfo":129,"theme":131}],129:[function(require,module,exports){
 const colors = require('theme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
@@ -13537,7 +13714,7 @@ function moreInfo (network, txHash) {
   return bel`<div class=${css.infoIcon} title="Take me to the Etherscan"><a href=${linkToEtherscan} target="_blank"><i class="fa fa-info-circle"></i></a></div>`
 }
 
-},{"bel":7,"csjs-inject":12,"theme":128}],127:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"theme":131}],130:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -13547,7 +13724,7 @@ function shortenHexData (data) {
   return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],128:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 module.exports = theme()
 
 function theme () {
@@ -13556,27 +13733,27 @@ function theme () {
     white: "#ffffff", // borders, font on input background
     dark: "#2c323c", //background dark
     darkSmoke: '#21252b',  // separators
-    whiteSmoke: "#f5f5f5", // background light
+    whiteSmoke: "#dcd7d7", // background light
     slateGrey: "#8a929b", // text
     lightGrey: "#F1F2EB",
-    violetRed: "#b25068",  // used as red in types (bool etc.)
+    violetRed: "#fd547d",  // used as red in types (bool etc.)
     aquaMarine: "#90FCF9",  // used as green in types (bool etc.)
     turquoise: "#14b9d5",
     yellow: "#F2CD5D",
-    lavender: "#EDC9FF",
+    lavender: "#db94ff",
     androidGreen: "#9BC53D"
   }
   return colors
 }
 
-},{}],129:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 const bel = require("bel")
 const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
-const date = require('getDate')
 const loadingAnimation = require('loadingAnimation')
+const makeDeployReceipt = require('makeDeployReceipt')
 const getArgs = require('getArgs')
 const makeReturn = require('makeReturn')
 const shortenHexData = require('shortenHexData')
@@ -13587,459 +13764,18 @@ const inputInteger = require("input-integer")
 const inputBoolean = require("input-boolean")
 const inputString = require("input-string")
 const inputByte = require("input-byte")
+const inputPayable = require("input-payable")
 const copy = require('copy-text-to-clipboard')
-const moreInfo = require('moreInfo')
 
 // Styling variables
 
-var fonts = [
-  "https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-  'https://fonts.googleapis.com/css?family=Overpass+Mono'
-]
+var css
+var fonts = [ "https://use.fontawesome.com/releases/v5.8.2/css/all.css",
+  'https://fonts.googleapis.com/css?family=Overpass+Mono']
 var fontAwesome = bel`<link href=${fonts[0]} rel='stylesheet' type='text/css'>`
 var overpassMono = bel`<link href=${fonts[1]} rel='stylesheet' type='text/css'>`
 document.head.appendChild(fontAwesome)
 document.head.appendChild(overpassMono)
-
-var css = csjs`
-  @media only screen and (max-width: 3000px) {
-    .preview {
-      padding: 1% 2%;
-      min-width: 350px;
-      min-height: 100vh;
-      font-family: 'Overpass Mono', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: ${colors.dark};
-      color: ${colors.whiteSmoke};
-    }
-    .error {
-      border: 1px solid ${colors.violetRed};
-      position: relative;
-      padding: 1em;
-    }
-    .errorTitle {
-      position: absolute;
-      top: -14px;
-      left: 20px;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 5px;
-      font-size: 1.3rem;
-      color: ${colors.violetRed};
-    }
-    .errorIcon {
-      font-size: 1.3rem;
-    }
-    .visible {
-      visibility: visible;
-      height: 100%;
-      padding: 0;
-    }
-    .hidden {
-      visibility: hidden;
-      height: 0;
-    }
-    .txReturn {
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      border-top: none;
-      min-width: 230px;
-      top: -41px;
-      left: 20px;
-      min-height: 80px;
-      width: 546px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-    .deploying {
-      font-size: 0.8rem;
-      margin-left: 3%;
-    }
-    .txReturnItem {
-      position: relative;
-      font-size: 0.7rem;
-      display: flex;
-      color: ${colors.whiteSmoke};
-      border: 1px solid ${colors.darkSmoke};
-      width: 87%;
-      margin: 3%;
-      padding: 3%;
-      justify-content: space-between;
-      flex-direction: column;
-    }
-    .txReceipt {
-      display:flex;
-      justify-content: flex-start;
-      flex-direction: column;
-    }
-    .txReturnField {
-      display:flex;
-      justify-content: flex-start;
-      flex-direction: column;
-      margin-bottom: 2%;
-    }
-    .txReturnValue {
-      color: ${colors.slateGrey};
-      cursor: pointer;
-      word-break: break-all;
-    }
-    .txReturnValue:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .txReturnTitle {
-      color: ${colors.lightGrey};
-      margin-right: 5px;
-      width: 50%;
-    }
-    .contractName {
-      cursor: pointer;
-      font-size: 2rem;
-      font-weight: bold;
-      color: ${colors.whiteSmoke};
-      margin: 10px 0 20px 10px;
-      display: flex;
-      align-items: end;
-    }
-    .contractName:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .fnName {
-      font-size: 1em;
-      display: flex;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .faIcon {
-      position: absolute;
-      top: -16px;
-      left: 0;
-    }
-    .name {
-      font-size: 0.9em;
-    }
-    .stateMutability {
-      margin-left: 5px;
-      color: ${colors.whiteSmoke};
-      border-radius: 20px;
-      border: 1px solid;
-      padding: 1px;
-      font-size: 1rem;
-      width: 65px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .constructorFn {
-      padding-top: 18px;
-      width: 600px;
-    }
-    .functions {
-      font-size: 1.3rem;
-      width: 570px;
-    }
-    .title {
-      font-size: 1.3rem;
-      display: flex;
-      align-items: baseline;
-      position: absolute;
-      top: -13px;
-      left: 20px;
-      background-color: ${colors.dark};
-    }
-    .title:hover {
-      cursor: pointer;
-      opacity: 0.6;
-    }
-    .deployTitle {
-      font-size: 1.3rem;
-      background-color: ${colors.dark};
-      padding: 0 5px 0 0;
-      font-weight: 800;
-    }
-    .deploy {
-      color: ${colors.whiteSmoke};
-      display: flex;
-      align-items: center;
-      bottom: -15px;
-      right: -12px;
-      font-size: 1.8rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      cursor: pointer;
-    }
-    .deploy:hover {
-      opacity: 0.6;
-    }
-    .send {
-      display: flex;
-      align-items: baseline;
-      bottom: -16px;
-      right: 13px;
-      font-size: 2rem;
-      position: absolute;
-      background-color: ${colors.dark};
-      color: ${colors.darkSmoke};
-      padding-right: 5px;
-    }
-    .send:hover {
-      opacity: 0.6;
-      cursor: pointer;
-    }
-    .bounce {
-      animation: bounceRight 2s infinite;
-    }
-    @-webkit-keyframes bounceRight {
-    0% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    20% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    40% {-webkit-transform: translateX(-30px);
-      transform: translateX(-30px);}
-    50% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    60% {-webkit-transform: translateX(-15px);
-      transform: translateX(-15px);}
-    80% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    100% {-webkit-transform: translateX(0);
-      transform: translateX(0);}
-    }
-    @-moz-keyframes bounceRight {
-      0% {transform: translateX(0);}
-      20% {transform: translateX(0);}
-      40% {transform: translateX(-30px);}
-      50% {transform: translateX(0);}
-      60% {transform: translateX(-15px);}
-      80% {transform: translateX(0);}
-      100% {transform: translateX(0);}
-    }
-    @keyframes bounceRight {
-      0% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      20% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      40% {-ms-transform: translateX(-30px);
-        transform: translateX(-30px);}
-      50% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      60% {-ms-transform: translateX(-15px);
-        transform: translateX(-15px);}
-      80% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-      100% {-ms-transform: translateX(0);
-        transform: translateX(0);}
-    }
-    .fnContainer {
-      position: relative;
-    }
-    .function {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      margin-left: 20px;
-      margin-bottom: 10%;
-      border: 2px dashed ${colors.darkSmoke};
-    }
-    .topContainer {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      border: 2px dashed ${colors.darkSmoke};
-      padding: 20px;
-      width: 540px;
-      margin: 0 0 5em 20px;
-      font-size: 0.75em;
-    }
-    .ctor {}
-    .signature {}
-    .date {}
-    .pure {
-      background-color: ${colors.yellow};
-    }
-    .view {
-      color: ${colors.lavender};
-    }
-    .nonpayable {
-      color: ${colors.turquoise};
-    }
-    .payable {
-      color: ${colors.violetRed};
-    }
-    .icon {
-      margin-left: 5px;
-      font-size: 0.9em;
-    }
-    .output {
-      font-size: 0.7rem;
-      display: flex;
-      align-self: center;
-    }
-    .valError {
-      color: ${colors.violetRed};
-      padding-left: 13px;
-      cursor: pointer;
-    }
-    .valSuccess {
-      color: ${colors.aquaMarine};
-      padding-left: 10px;
-      cursor: pointer;
-    }
-    .inputContainer {
-      font-family: 'Overpass Mono', sans-serif;
-      margin: 15px 0 15px 0;
-      display: flex;
-      align-items: center;
-      font-size: 1rem;
-      color: ${colors.whiteSmoke};
-    }
-    .inputParam {
-      color: ${colors.slateGrey};
-      display: flex;
-      justify-content: center;
-      font-size: 0.8rem;
-      display: flex;
-      min-width: 200px;
-    }
-    .inputFields {
-    }
-    .inputType {
-    }
-    .inputField {
-      ${inputStyle()}
-      font-size: 0.8rem;
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
-      text-align: center;
-      display: flex;
-      width: 100%;
-    }
-    .inputField::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerValue {
-      ${inputStyle()}
-      font-size: 1rem;
-      color: ${colors.whiteSmoke};
-      background-color: ${colors.darkSmoke};
-      display: flex;
-      text-align: center;
-      width: 25%;
-    }
-    .integerValue::placeholder {
-      color: ${colors.whiteSmoke};
-      text-align: center;
-      opacity: 0.5;
-    }
-    .integerSlider {
-      width: 75%;
-      border: 1px solid ${colors.whiteSmoke};
-      -webkit-appearance: none;
-      height: 0.2px;
-    }
-    .integerSlider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      border: 1px solid ${colors.whiteSmoke};
-      height: 22px;
-      width: 10px;
-      background: ${colors.darkSmoke};
-      cursor: pointer;
-    }
-    .integerField {
-      display: flex;
-      width: 300px;
-      align-items: center;
-    }
-    .booleanField {
-      display: flex;
-      width: 300px;
-      align-items: baseline;
-      font-size: 0.8rem;
-    }
-    .stringField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .byteField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .addressField {
-      display: flex;
-      width: 300px;
-      justify-content: center;
-    }
-    .keyField {
-      ${inputStyle()}
-      border-right: none;
-      background-color: ${colors.aquaMarine};
-      border-color: ${colors.whiteSmoke};
-    }
-    .false {
-      ${inputStyle()}
-      border-right: none;
-      background-color: ${colors.violetRed};
-      color: ${colors.whiteSmoke};
-      width: 50%;
-      text-align: center;
-      border-color: ${colors.whiteSmoke};
-      cursor: pointer;
-    }
-    .true {
-      ${inputStyle()}
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.whiteSmoke};
-      width: 50%;
-      text-align: center;
-      cursor: pointer;
-    }
-    .arrayContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-    .arrayPlusMinus {
-      margin: 10px;
-    }
-    .arrayPlus {
-      cursor: pointer;
-    }
-    .arrayMinus {
-      cursor: pointer;
-    }
-  }
-  @media only screen and (max-device-width: 480px) {
-    html {
-      font-size: 30px;
-    }
-    .constructorFn, .functions {
-      width: 80%;
-    }
-    .title {
-      top: -30px;
-    }
-  }
-`
-
-function inputStyle() {
-  return `
-    border: 1px solid ${colors.whiteSmoke};
-    background-color: ${colors.dark};
-    padding: 5px;
-  `
-}
 
 /******************************************************************************
   ETHERS
@@ -14214,7 +13950,7 @@ function displayContractUI(result) {   // compilation result metadata
       var title = bel`<div class=${css.title} onclick=${e=>toggle(e, null, null)}>${fnName}</div>`
       var send = bel`<div class=${css.send} onclick=${e => sendTx(fn.name, label, e)}><i class="${css.icon} fa fa-arrow-circle-right"></i></div>`
       var functionClass = css[label]
-      return bel`
+      var el = bel`
       <div class=${css.fnContainer}>
         <div class="${functionClass} ${css.function}">
           ${title}
@@ -14224,6 +13960,8 @@ function displayContractUI(result) {   // compilation result metadata
           </ul>
         </div>
       </div>`
+      if (label === 'payable')  send.parentNode.prepend(inputPayable(label))
+      return el
     }
 
     async function sendTx (fnName, label, e) {
@@ -14336,7 +14074,7 @@ function displayContractUI(result) {   // compilation result metadata
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(contract))
+        topContainer.appendChild(makeDeployReceipt(provider, contract))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
@@ -14353,28 +14091,6 @@ function displayContractUI(result) {   // compilation result metadata
         sendButtons[i].style.color = colors.whiteSmoke
       }
     }
-
-    function makeDeployReceipt (contract) {
-      var el = bel`
-        <div class=${css.txReceipt}>
-          <div class=${css.txReturnField}>
-            <div class=${css.txReturnTitle}>published</div>
-            <div class=${css.txReturnValue}>${date()}</div>
-          </div>
-          <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
-            <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
-          </div>
-          <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
-            <div class=${css.txReturnTitle}>published by</div>
-            <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
-          </div>
-        </div>
-      `
-      el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
-      return el
-    }
-
 
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
@@ -14400,4 +14116,429 @@ function displayContractUI(result) {   // compilation result metadata
   }
 }
 
-},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"ethers":30,"getArgs":120,"getDate":121,"glossary":123,"input-address":35,"input-array":36,"input-boolean":37,"input-byte":38,"input-integer":39,"input-string":40,"loadingAnimation":124,"makeReturn":125,"moreInfo":126,"shortenHexData":127,"solidity-validator":103,"theme":128}]},{},[1]);
+/******************************************************************************
+  CSS
+******************************************************************************/
+
+css = csjs`
+  @media only screen and (max-width: 3000px) {
+    .preview {
+      padding: 1% 2%;
+      min-width: 350px;
+      min-height: 100vh;
+      font-family: 'Overpass Mono', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: ${colors.dark};
+      color: ${colors.whiteSmoke};
+    }
+    .error {
+      border: 1px solid ${colors.violetRed};
+      position: relative;
+      padding: 1em;
+    }
+    .errorTitle {
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 5px;
+      font-size: 1.3rem;
+      color: ${colors.violetRed};
+    }
+    .errorIcon {
+      font-size: 1.3rem;
+    }
+    .visible {
+      visibility: visible;
+      height: 100%;
+      padding: 0;
+    }
+    .hidden {
+      visibility: hidden;
+      height: 0;
+    }
+    .txReturn {
+      position: relative;
+      border: 2px dashed ${colors.darkSmoke};
+      border-top: none;
+      min-width: 230px;
+      top: -41px;
+      left: 20px;
+      min-height: 80px;
+      width: 546px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .deploying {
+      font-size: 0.9rem;
+      margin-left: 3%;
+    }
+    .txReturnItem {
+      position: relative;
+      font-size: 0.7rem;
+      display: flex;
+      color: ${colors.whiteSmoke};
+      border: 1px solid ${colors.darkSmoke};
+      width: 87%;
+      margin: 3%;
+      padding: 3%;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+    .contractName {
+      cursor: pointer;
+      font-size: 2rem;
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+      margin: 10px 0 20px 10px;
+      display: flex;
+      align-items: end;
+    }
+    .contractName:hover {
+      ${hover()}
+    }
+    .fnName {
+      font-size: 1em;
+      display: flex;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .faIcon {
+      position: absolute;
+      top: -16px;
+      left: 0;
+    }
+    .name {
+      font-size: 0.9em;
+    }
+    .stateMutability {
+      margin-left: 5px;
+      color: ${colors.whiteSmoke};
+      border-radius: 20px;
+      border: 1px solid;
+      padding: 1px;
+      font-size: 0.9rem;
+      width: 65px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .constructorFn {
+      padding-top: 18px;
+      width: 600px;
+    }
+    .functions {
+      font-size: 1.3rem;
+      width: 570px;
+    }
+    .title {
+      font-size: 1.3rem;
+      display: flex;
+      align-items: baseline;
+      position: absolute;
+      top: -13px;
+      left: 20px;
+      background-color: ${colors.dark};
+    }
+    .title:hover {
+      ${hover()}
+    }
+    .deployTitle {
+      font-size: 1.3rem;
+      background-color: ${colors.dark};
+      padding: 0 5px 0 0;
+      font-weight: 800;
+    }
+    .deploy {
+      color: ${colors.whiteSmoke};
+      display: flex;
+      align-items: center;
+      bottom: -15px;
+      right: -12px;
+      font-size: 1.8rem;
+      position: absolute;
+      background-color: ${colors.dark};
+      cursor: pointer;
+    }
+    .deploy:hover {
+      ${hover()}
+    }
+    .send {
+      display: flex;
+      align-items: baseline;
+      bottom: -16px;
+      right: 13px;
+      font-size: 2rem;
+      position: absolute;
+      background-color: ${colors.dark};
+      color: ${colors.darkSmoke};
+      padding-right: 5px;
+    }
+    .send:hover {
+      ${hover()}
+    }
+    .bounce {
+      animation: bounceRight 2s infinite;
+    }
+    @-webkit-keyframes bounceRight {
+    0% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    20% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    40% {-webkit-transform: translateX(-30px);
+      transform: translateX(-30px);}
+    50% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    60% {-webkit-transform: translateX(-15px);
+      transform: translateX(-15px);}
+    80% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    100% {-webkit-transform: translateX(0);
+      transform: translateX(0);}
+    }
+    @-moz-keyframes bounceRight {
+      0% {transform: translateX(0);}
+      20% {transform: translateX(0);}
+      40% {transform: translateX(-30px);}
+      50% {transform: translateX(0);}
+      60% {transform: translateX(-15px);}
+      80% {transform: translateX(0);}
+      100% {transform: translateX(0);}
+    }
+    @keyframes bounceRight {
+      0% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      20% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      40% {-ms-transform: translateX(-30px);
+        transform: translateX(-30px);}
+      50% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      60% {-ms-transform: translateX(-15px);
+        transform: translateX(-15px);}
+      80% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+      100% {-ms-transform: translateX(0);
+        transform: translateX(0);}
+    }
+    .fnContainer {
+      position: relative;
+    }
+    .function {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      margin-left: 20px;
+      margin-bottom: 10%;
+      border: 2px dashed ${colors.darkSmoke};
+    }
+    .topContainer {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 2px dashed ${colors.darkSmoke};
+      padding: 2em 2em 3em 2em;
+      width: 540px;
+      margin: 0 0 5em 20px;
+      font-size: 0.75em;
+    }
+    .ctor {}
+    .signature {}
+    .pure {
+      background-color: ${colors.yellow};
+    }
+    .view {
+      color: ${colors.lavender};
+    }
+    .nonpayable {
+      color: ${colors.turquoise};
+    }
+    .payable {
+      color: ${colors.violetRed};
+    }
+    .icon {
+      margin-left: 5px;
+      font-size: 0.9em;
+    }
+    .output {
+      font-size: 0.7rem;
+      display: flex;
+      align-self: center;
+    }
+    .valError {
+      color: ${colors.violetRed};
+      padding-left: 13px;
+      cursor: pointer;
+    }
+    .valSuccess {
+      color: ${colors.aquaMarine};
+      padding-left: 10px;
+    }
+    .inputContainer {
+      font-family: 'Overpass Mono', sans-serif;
+      margin: 15px 0 15px 0;
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+    }
+    .inputParam {
+      color: ${colors.slateGrey};
+      display: flex;
+      justify-content: center;
+      font-size: 0.9rem;
+      display: flex;
+      min-width: 200px;
+    }
+    .inputFields {
+    }
+    .inputType {
+    }
+    .inputField {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.slateGrey};
+      border-radius: 0.2em;
+      background-color: ${colors.darkSmoke};
+      text-align: center;
+      display: flex;
+      width: 100%;
+    }
+    .inputField::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerValue {
+      ${inputStyle()}
+      font-size: 0.9rem;
+      color: ${colors.whiteSmoke};
+      background-color: ${colors.darkSmoke};
+      border-radius: 0.2em;
+      display: flex;
+      text-align: center;
+      width: 60%;
+    }
+    .integerValue::placeholder {
+      color: ${colors.whiteSmoke};
+      text-align: center;
+      opacity: 0.5;
+    }
+    .integerSlider {
+      width: 40%;
+      border: 1px solid ${colors.slateGrey};
+      background: ${colors.darkSmoke};
+      -webkit-appearance: none;
+      height: 1px;
+    }
+    .integerSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      border: 1px solid ${colors.slateGrey};
+      border-radius: 0.2em;
+      height: 22px;
+      width: 10px;
+      background: ${colors.darkSmoke};
+      cursor: pointer;
+    }
+    .integerField {
+      display: flex;
+      width: 300px;
+      align-items: center;
+    }
+    .booleanField {
+      display: flex;
+      width: 300px;
+      align-items: baseline;
+      font-size: 0.9rem;
+    }
+    .stringField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .byteField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .addressField {
+      display: flex;
+      width: 300px;
+      justify-content: center;
+    }
+    .keyField {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.aquaMarine};
+      border-color: ${colors.whiteSmoke};
+    }
+    .false {
+      ${inputStyle()}
+      border-right: none;
+      background-color: ${colors.violetRed};
+      color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      border-color: ${colors.whiteSmoke};
+      cursor: pointer;
+    }
+    .true {
+      ${inputStyle()}
+      color: ${colors.whiteSmoke};
+      border-color: ${colors.whiteSmoke};
+      width: 50%;
+      text-align: center;
+      cursor: pointer;
+    }
+    .arrayContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .arrayPlusMinus {
+      margin: 10px;
+    }
+    .arrayPlus {
+      cursor: pointer;
+    }
+    .arrayMinus {
+      cursor: pointer;
+    }
+  }
+  @media only screen and (max-device-width: 480px) {
+    html {
+      font-size: 30px;
+    }
+    .constructorFn, .functions {
+      width: 80%;
+    }
+    .title {
+      top: -30px;
+    }
+  }
+`
+
+function inputStyle() {
+  return `
+    border: 1px solid ${colors.slateGrey};
+    background-color: ${colors.dark};
+    padding: 5px;
+  `
+}
+
+function hover () {
+  return `
+    cursor: pointer;
+    opacity: 0.6;
+  `
+}
+
+},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"ethers":30,"getArgs":121,"glossary":124,"input-address":35,"input-array":37,"input-boolean":38,"input-byte":39,"input-integer":40,"input-payable":125,"input-string":41,"loadingAnimation":126,"makeDeployReceipt":127,"makeReturn":128,"shortenHexData":130,"solidity-validator":104,"theme":131}]},{},[1]);
