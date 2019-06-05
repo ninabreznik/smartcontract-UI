@@ -38,88 +38,401 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/InvoiceJournal.sol')
+const sourcecode = require('./sampleContracts/GasPriceOracle.sol')
 
-},{"../":132,"./sampleContracts/InvoiceJournal.sol":2,"solc-js":69}],2:[function(require,module,exports){
-module.exports = `pragma solidity >=0.5.0;
-pragma experimental ABIEncoderV2;
-contract InvoiceJournal {
-  struct Contractor {
-    string name;
-    string email;
-    string pubkey;
-    bool active;
-    bool exists;
-  }
-  struct Invoice {
-    address contractor;
-    uint invoice_id;
-    string storage_url;
-    string[] encrypted_decrypt_keys; // @TODO: not in use yet :-)
-  }
-  address accountant;
-  mapping(address => Contractor) contractors;
-  mapping(address => Invoice[]) invoices;
-  address[] contractor_addresses;
-  function getAllInvoices () public view returns (Invoice[][] memory) {
-    uint len = contractor_addresses.length;
-  	Invoice[][] memory result = new Invoice[][](len);
-    for (uint i = 0; i < len; i++) {
-      result[i] = invoices[contractor_addresses[i]];
+},{"../":133,"./sampleContracts/GasPriceOracle.sol":2,"solc-js":69}],2:[function(require,module,exports){
+module.exports = `
+pragma solidity 0.4.24;
+
+import "https://raw.githubusercontent.com/oraclize/ethereum-examples/master/solidity/gas-price-oracle/contracts/imported/strings.sol";
+import "https://raw.githubusercontent.com/oraclize/ethereum-examples/master/solidity/gas-price-oracle/contracts/imported/usingOraclize.sol";
+
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
+    /**
+     * @notice Multiplies two numbers, throws on overflow.
+     *
+     */
+    function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+        // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (_a == 0) return 0;
+        c = _a * _b;
+        require(c / _a == _b, 'SafeMath multiplication threw!');
+        return c;
     }
-    return result;
-  }
-  function getAllContractors () public view returns (Contractor[] memory) {
-    uint len = contractor_addresses.length;
-  	Contractor[] memory result = new Contractor[](len);
-    for (uint i = 0; i < len; i++) {
-      result[i] = contractors[contractor_addresses[i]];
+    /**
+     * @notice Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+     *
+     */
+    function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {
+        require(_b <= _a, 'SafeMath subtraction threw!');
+        return _a - _b;
     }
-    return result;
-  }
-  function getYourInvoices () public view returns (Invoice[] memory) {
-    return invoices[msg.sender];
-  }
-  function activateContractor (address contractor_address) public {
-    require(accountant == msg.sender, "Only an authorized accountant can add new contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    contractor.active = true;
-    if (!contractor.exists) {
-      contractor.exists = true;
-      contractor_addresses.push(contractor_address);
+}
+
+contract GasPriceOracle is usingOraclize {
+    using strings for *;
+    using SafeMath for *;
+
+    uint    constant public interval = 6;
+    uint    constant public gasLimit = 187000;
+    uint    constant public gasLimitRec = 200000;
+    uint    constant public conversionFactor = 100000000;
+    string  constant public queryString = "json(https://ethgasstation.info/json/ethgasAPI.json).[safeLow,average,fast]";
+
+    GasStationPrices public gasStationPrices;
+
+    struct GasStationPrices { // 100 mwei prices inherited from ethgasstation
+        uint64 safeLow;       // gas price * 100 mwei for a transaction time < 30 minutes
+        uint64 standard;      // gas price * 100 mwei for a transaction time <  5 minutes
+        uint64 fast;          // gas price * 100 mwei for a transaction time <  2 minutes
+        uint64 timeUpdated;   // timestamp of when the current prices were last updated.
     }
-  }
-  function deactivateContractor (address contractor_address) public {
-    require(accountant == msg.sender, "Only an authorized accountant can remove contractors");
-    Contractor storage contractor = contractors[contractor_address];
-    if (!contractor.active) return;
-    contractor.active = false;
-  }
-  function updateContractor (string memory name, string memory email, string memory pubkey) public {
-    Contractor storage contractor = contractors[msg.sender];
-    require(contractor.active, "Unauthorized contractors cannot set their pubkeys");
-    contractor.name = name;
-    contractor.email = email;
-    contractor.pubkey = pubkey;
-  }
-  function addInvoice (uint invoice_id, string memory storage_url, string[] memory keys) public returns (Contractor memory) {
-    Contractor memory contractor = contractors[msg.sender];
-    require(contractor.exists, "Unknown contractors cannot submit invoices");
-    require(contractor.active, "Unauthorized contractors cannot submit invoices");
-    Invoice[] storage _invoices = invoices[msg.sender];
-    Invoice memory new_invoice = Invoice({
-      contractor: msg.sender,
-      invoice_id: invoice_id,
-      storage_url: storage_url,
-      encrypted_decrypt_keys: keys
-    });
-    _invoices.push(new_invoice);
-    return contractor;
-  }
-  constructor () public {
-    accountant = msg.sender;
-  }
-}`
+
+    mapping(bytes32 => QueryIDs) public queryIDs;
+
+    struct QueryIDs {
+        bool isManual;
+        bool isProcessed;
+        bool isRevival;
+        uint64 dueAt;
+        uint128 gasPriceUsed;
+    }
+
+    bytes32 public nextRecursiveQuery;
+
+    event LogInsufficientBalance();
+    event LogGasPricesUpdated(uint64 safeLowPrice, uint64 standardPrice, uint64 fastPrice, bytes32 queryID, bytes IPFSMultihash);
+    /**
+     * @notice  Constructor. Sets the Oraclize proof type, and
+     *          initializes the gas price struct with dummy
+     *          values. This standardises the gas cost of the
+     *          __callback function.
+     *
+     * @param   _gasPrice   Desired gas price for first recursive
+     *                      Oraclize call.
+     *
+     */
+    constructor(uint _gasPrice) public payable {
+        oraclize_setProof(proofType_TLSNotary | proofStorage_IPFS);
+        nextRecursiveQuery = keccak256('Oraclize Gas Price Oracle');
+        gasStationPrices   = GasStationPrices({
+            safeLow:     uint64(1234),
+            standard:    uint64(1234),
+            fast:        uint64(1234),
+            timeUpdated: uint64(1)
+        });
+        recursivelyUpdateGasPrices(0, _gasPrice);
+    }
+    /**
+     * @notice  Allows anyone to update the gas prices stored in
+     *          this contract at any time. Caller must provide
+     *          enough ETH to cover the cost of the Oraclize query.
+     *          If the recursive queries have gone stale the query
+     *          made here will automatically begin the recursion
+     *          anew if the fast gas price in the gas prices struct
+     *          is sufficient. The function refunds any excess ETH
+     *          above the price of the Oraclize query to the sender.
+     *
+     */
+    function updateGasPrices() public payable {
+        updateGasPrices(0);
+    }
+    /**
+     * @notice  Allows anyone to update the gas prices stored in
+     *          this contract at any time, with a delay of their
+     *          choosing. Caller must provide enough ETH to cover
+     *          the cost of the Oraclize query. Any extra ETH over
+     *          the price of the query is refunded. If the recursive
+     *          queries have gone stale, any query sent with a 0
+     *          delay may become eligible to restart the recursion
+     *          if the fast gas price in the gas prices struct is
+     *          sufficient. This function refunds any excess ETH
+     *          above the price of the Oraclize query to the sender.
+     *
+     * @param   _delay  The time the callback of the query is desired.
+     *                  Can either be a UTC timestamp, or an offset
+     *                  in seconds from now. Delays cannot exceed a
+     *                  maximum of 60 days.
+     *
+     */
+    function updateGasPrices(uint _delay) public payable {
+        updateGasPrices(_delay, getFastPrice());
+    }
+    /**
+     * @notice  Allows anyone to update the gas prices stored in
+     *          this contract at any time, with a delay of their
+     *          choosing and a gas price of their choosing. Caller
+     *          must provide enough ETH to cover the cost of the
+     *          Oraclize query. If the recursive queries have gone
+     *          stale, any query sent with a 0 delay and a gas price
+     *          higher than the gas price used in the previous
+     *          recursive query will restart the recursive queries.
+     *          This function returns any exccess ETH above the price
+     *          of the Oraclize query to the sender.
+     *
+     * @param   _delay  The time the callback of the query is desired.
+     *                  Can either be a UTC timestamp, or an offset
+     *                  in seconds from now. Delays cannot exceed a
+     *                  maximum of 60 days.
+     *
+     * @param   _gasPrice   Sets a custom gas price desired for the
+     *                      query, in Wei.
+     *
+     */
+    function updateGasPrices(uint _delay, uint _gasPrice) public payable {
+        if (
+            _delay == 0 &&
+            isRecursiveStale() &&
+            _gasPrice >= queryIDs[nextRecursiveQuery].gasPriceUsed + (1 * 10 ** 9) &&
+            getQueryPrice(gasLimitRec, _gasPrice) <= msg.value
+        ) {
+            bool successful = recursivelyUpdateGasPrices(_delay, _gasPrice); // query usable to restart stale recursive ones
+            if (successful) {
+              queryIDs[nextRecursiveQuery].isRevival = true;
+              msg.sender.transfer(msg.value.sub(getQueryPrice(gasLimitRec)));
+            }
+        } else {
+            oraclize_setCustomGasPrice(_gasPrice);
+            bytes32 qID = oraclize_query(
+              _delay,
+              "computation",
+              [
+                "json(QmdKK319Veha83h6AYgQqhx9YRsJ9MJE7y33oCXyZ4MqHE).[safeLow,average,fast]",
+                "GET",
+                "https://ethgasstation.info/json/ethgasAPI.json"
+              ],
+              gasLimit
+            );
+            queryIDs[qID].isManual = true;
+            queryIDs[qID].dueAt = _delay > now
+                ? uint64(_delay)
+                : uint64(now + _delay);
+            msg.sender.transfer(msg.value.sub(getQueryPrice(gasLimit)));
+        }
+    }
+    /**
+     * @notice  Allows the contract to automatically update the gas prices
+     *          stored herein. Contract balance must be sufficient to
+     *          cover the cost of the Oraclize query.
+     *
+     * @param   _delay  The time the callback of the query is desired.
+     *                  Can either be a UTC timestamp, or an offset
+     *                  in seconds from now. Delays cannot exceed a
+     *                  maximum of 60 days.
+     *
+     * @param   _gasPrice   Sets a custom gas price desired for the
+     *                      query, in Wei.
+     *
+     * @return  bool    Whether the function call was successful or not.
+     *
+     */
+    function recursivelyUpdateGasPrices(uint _delay, uint _gasPrice) private returns (bool) {
+        oraclize_setCustomGasPrice(_gasPrice);
+        uint cost = getQueryPrice(gasLimitRec);
+        if (address(this).balance < cost && msg.value < cost) {
+          emit LogInsufficientBalance();
+          return;
+        }
+        bytes32 qID = oraclize_query(
+          _delay,
+          "computation",
+          [
+            "json(QmdKK319Veha83h6AYgQqhx9YRsJ9MJE7y33oCXyZ4MqHE).[safeLow,average,fast]",
+            "GET",
+            "https://ethgasstation.info/json/ethgasAPI.json"
+          ],
+          gasLimitRec
+        );
+        nextRecursiveQuery = qID;
+        queryIDs[qID].dueAt = uint64(now + _delay);
+        queryIDs[qID].gasPriceUsed = uint128(_gasPrice);
+        return true;
+    }
+    /**
+     * @notice  Allows both users and this contract to discover the
+     *          price of the Oraclize query before making it, in
+     *          order to supply the call with the correct amount of ETH.
+     *
+     * @param   _limit  Gas limit required for the __callback function.
+     *
+     * @return  uint    The cost of the Oraclize query in Wei.
+     *
+     */
+    function getQueryPrice(uint _limit) public view returns (uint) {
+        return oraclize_getPrice("computation", _limit);
+    }
+    /**
+     * @notice  Allows both users and this contract to discover the
+     *          price of the Oraclize query before making it, in
+     *          order to supply the call with the correct amount of ETH.
+     *
+     * @param   _limit  Gas limit required for the __callback function.
+     *
+     * @param   _price  Custom gas price for the Oraclize query.
+     *
+     * @return  uint    The cost of the Oraclize query in Wei.
+     *
+     */
+    function getQueryPrice(uint _limit, uint _price) public view returns (uint) {
+        oraclize_setCustomGasPrice(_price);
+        return oraclize_getPrice("computation", _limit);
+    }
+    /**
+     * @notice  Checks whether the currently pending recursive Oraclize
+     *          query is past due by greater than 45 minutes or not.
+     *          Should recursion have lapsed, zero delay user queries
+     *          are used to restart the recursion. Such cases are considered
+     *          instantly stale allowing subsequent, higher gas priced
+     *          queries to take priority in restarting recursion.
+     *
+     * @return  bool    Whether or not the current recursive query is
+     *                  past due or replacable.
+     *
+     */
+    function isRecursiveStale() public view returns (bool) {
+        return now > queryIDs[nextRecursiveQuery].dueAt + 2700 ||
+               queryIDs[nextRecursiveQuery].isRevival;
+    }
+    /**
+     * @notice  Oraclize callback function. Only callable by the
+     *          Oraclize address(es). Parses API call result and
+     *          stores it into struct. If query was made manually,
+     *          no further recursive queries are triggered.
+     *
+     * @param   _myid   Bytes32 ID of the Oraclize query.
+     *
+     * @param   _result String of the result of the Oraclize query.
+     *
+     * @param   _proof  Bytes of the proof of the Oraclize query.
+     *
+     */
+    function __callback(bytes32 _myid, string _result, bytes _proof) public {
+        require(msg.sender == oraclize_cbAddress(), 'Caller is not Oraclize address!');
+        require(!queryIDs[_myid].isProcessed, 'Query has already been processed!');
+        if (queryIDs[_myid].dueAt > gasStationPrices.timeUpdated)
+            processUpdate(_myid, _result, _proof);
+        queryIDs[_myid].isProcessed = true;
+        if (!queryIDs[_myid].isManual && _myid == nextRecursiveQuery)
+            recursivelyUpdateGasPrices(getDelayToNextInterval(), getFastPrice());
+    }
+    /**
+     * @notice  Function processes the result string of the Oraclize
+     *          query. Splices string into its constituent parts and
+     *          parses the gas prices into the desired uints.
+     *
+     *
+     * @dev     The vars are returning struct types from the strings
+     *          library. They give deprecation warnings but we have
+     *          no other option. Note also the mutable nature of
+     *          split().
+     *
+     * @param   _myid   Bytes32 ID of the Oraclize query.
+     *
+     * @param   _result String of the result of the Oraclize query.
+     *
+     * @param   _proof  Bytes of the proof of the Oraclize query.
+     *
+     */
+    function processUpdate(bytes32 _myid, string _result, bytes _proof) private {
+        var delim = ",".toSlice();
+        var stringToParse = _result.toSlice();
+        uint64 l = uint64(parseInt(stringToParse.split(delim).toString()));
+        uint64 s = uint64(parseInt(stringToParse.split(delim).toString()));
+        uint64 f = uint64(parseInt(stringToParse.split(delim).toString()));
+        gasStationPrices = GasStationPrices({
+            safeLow: l,
+            standard: s,
+            fast: f,
+            timeUpdated: queryIDs[_myid].dueAt
+        });
+        emit LogGasPricesUpdated(l, s, f, _myid, _proof);
+    }
+    /**
+     * @notice  Get the safe low gas price in Wei.
+     *
+     * @return  uint
+     *
+     */
+    function getSafeLowPrice() public view returns (uint) {
+        return gasStationPrices.safeLow.mul(conversionFactor);
+    }
+    /**
+     * @notice  Get the standard gas price in Wei.
+     *
+     * @return  uint
+     *
+     */
+    function getStandardPrice() public view returns (uint) {
+        return gasStationPrices.standard.mul(conversionFactor);
+    }
+    /**
+     * @notice  Get the fast gas price in Wei.
+     *
+     * @return  uint
+     *
+     */
+    function getFastPrice() public view returns (uint) {
+        return gasStationPrices.fast.mul(conversionFactor);
+    }
+    /**
+     * @notice  Returns the time the gas prices were last updated,
+     *          as a UTC timestamp.
+     *
+     */
+    function getLastUpdated() public view returns (uint) {
+        return gasStationPrices.timeUpdated;
+    }
+    /**
+     * @notice  Returns all three gas prices, ordered slowest to
+     *          fastest, plus the time at which they were updated.
+     *
+     * @return  uint    The safe low gas price in Wei.
+     *          uint    The standard gas price in Wei.
+     *          uint    The fast gas price in Wei.
+     *          uint    Timestamp of last update
+     *
+     */
+    function getGasPrices() public view returns (uint, uint, uint, uint) {
+        return (
+            getSafeLowPrice(),
+            getStandardPrice(),
+            getFastPrice(),
+            getLastUpdated()
+        );
+    }
+    /**
+     * @notice  Calculates the delay in seconds to the next occuring
+     *          sixth hour. If delay is fewer than 600 seconds, the
+     *          delay until the subsequent 6th hour mark is used instead.
+     *
+     * @return  uint    Time in seconds to next sixth hour.
+     *
+     */
+    function getDelayToNextInterval() public view returns (uint) {
+        uint secs         = now % 60;
+        uint mins         = (now / 60) % 60;
+        uint hour         = (now / 60 / 60) % 24;
+        uint secsElapsed  = ((hour * 60 * 60) + (mins * 60) + secs);
+        uint secsInPeriod = (((hour / interval) + 1) * interval) * 60 * 60;
+        uint remaining    = secsInPeriod - secsElapsed;
+        return remaining > 600
+            ? remaining
+            : remaining + (interval * 60 * 60);
+    }
+    /**
+     * @notice  Fallback function allowing ETH addition by
+     *          anyone.
+     *
+     */
+     function () public payable {}
+}
+`
 
 },{}],3:[function(require,module,exports){
 const kvidb = require('kv-idb');
@@ -13263,6 +13576,33 @@ module.exports = {
 
 },{"bn.js":116,"eth-lib/lib/hash":29,"number-to-bn":46,"underscore":114,"utf8":115}],120:[function(require,module,exports){
 const ethers = require('ethers')
+const bigNumber = require('bignumber.js')
+
+module.exports = convertToEther
+
+function convertToEther (currency, amount) {
+  var amount = getAmount(currency, amount).toFormat().split(',').join('')
+  amount = ethers.utils.formatEther(amount)
+  return ethers.utils.parseEther(amount)
+}
+
+function getAmount (currency, amount) {
+  var base = new bigNumber(1000)
+  if (currency === 't-ether') return base.exponentiatedBy(10).multipliedBy(amount)
+  if (currency === 'g-ether') return base.exponentiatedBy(9).multipliedBy(amount)
+  if (currency === 'm-ether') return base.exponentiatedBy(8).multipliedBy(amount)
+  if (currency === 'k-ether') return base.exponentiatedBy(7).multipliedBy(amount)
+  if (currency === 'ether')   return base.exponentiatedBy(6).multipliedBy(amount)
+  if (currency === 'milli')   return base.exponentiatedBy(5).multipliedBy(amount)
+  if (currency === 'micro')   return base.exponentiatedBy(4).multipliedBy(amount)
+  if (currency === 'g-wei')   return base.exponentiatedBy(3).multipliedBy(amount)
+  if (currency === 'm-wei')   return base.exponentiatedBy(2).multipliedBy(amount)
+  if (currency === 'k-wei')   return base.exponentiatedBy(1).multipliedBy(amount)
+  if (currency === 'wei')     return amount
+}
+
+},{"bignumber.js":8,"ethers":30}],121:[function(require,module,exports){
+const ethers = require('ethers')
 
 module.exports = decodeReturnData
 
@@ -13293,21 +13633,27 @@ function getTypes(types, i) {
   return types
 }
 
-},{"ethers":30}],121:[function(require,module,exports){
+},{"ethers":30}],122:[function(require,module,exports){
 const bigNumber = require('bignumber.js')
 const ethers = require('ethers')
+const convertToEther = require('convertToEther')
 
 module.exports = getArgs
 
 function getArgs( element, selector ) {
-  debugger
   var args = []
+  var overrides = {}
   var fields = element.querySelectorAll(`[class^=${selector}]`)
   for (var i=0; i<fields.length; i++) {
     var x = fields[i]
     let title = x.children[0].title
-    if (title === 'payable') {
-      console.log ('Payable functionality - work in progress!')
+    if (title.includes('payable')) {
+      var inputs = x.querySelector("[class^='inputArea']").children
+      var amount = inputs[0].value
+      var currency = inputs[1].value
+      // The amount to send with the transaction (i.e. msg.value)
+      overrides.gasLimit = 750000
+      overrides.value = convertToEther(currency, amount)
     } else {
       if (title.includes('[')) {  // if type is an array
         var argumentsInArr = []
@@ -13338,7 +13684,7 @@ function getArgs( element, selector ) {
     }
 
   }
-  return args
+  return {args, overrides}
 }
 
 function getBool (boolField) {
@@ -13368,7 +13714,7 @@ function getArgument(el, val) {
   return argument
 }
 
-},{"bignumber.js":8,"ethers":30}],122:[function(require,module,exports){
+},{"bignumber.js":8,"convertToEther":120,"ethers":30}],123:[function(require,module,exports){
 module.exports = getDate
 
 function getDate () {
@@ -13391,7 +13737,7 @@ function getDate () {
 
 }
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 const ethers = require('ethers')
 const decodeReturnData = require('decodeReturnData')
 
@@ -13417,7 +13763,7 @@ function getReturnData (opts) {
   return decodedData
 }
 
-},{"decodeReturnData":120,"ethers":30}],124:[function(require,module,exports){
+},{"decodeReturnData":121,"ethers":30}],125:[function(require,module,exports){
 module.exports = word => glossary[word]
 
 var glossary = {
@@ -13428,10 +13774,11 @@ var glossary = {
   undefined: `Type of this function is not defined.`
 }
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 const bel = require("bel")
 const colors = require('theme')
 const csjs = require("csjs-inject")
+const ethers = require('ethers')
 var css
 
 module.exports = inputPayable
@@ -13442,29 +13789,33 @@ function inputPayable (label) {
     <div class=${css.inputContainer}>
       <div class=${css.title} title="data type: ${label}">value</div>
       <div class=${css.inputArea}>
-        <input class=${css.input} placeholder="123">
+        <input class=${css.input} placeholder="123" oninput=${validate}>
         ${currencySelector()}
       </div>
       <div class=${css.ethIcon} title="Select amount you want to send with this function!"><i class="fab fa-ethereum"></i></div>
     </div>`
 }
 
+  function validate (e) {
+    // @TODO
+  }
+
 function currencySelector () {
   var button = bel`
-    <select class=${css.currency} onclick=${(e) => exchangeCurrency(e)}>
+    <select class=${css.currency}>
       <option value="wei">wei</option>
-      <option value="babbage">babbage</option>
-      <option value="lovelace">lovelace</option>
-      <option value="shannon">shannon</option>
-      <option value="szabo">szabo</option>
-      <option value="finney">finney</option>
+      <option value="m-wei">m-wei</option>
+      <option value="k-wei">k-wei</option>
+      <option value="g-wei">g-wei</option>
+      <option value="micro">micro</option>
+      <option value="milli">milli</option>
       <option value="ether">ether</option>
+      <option value="k-ether">k-ether</option>
+      <option value="m-ether">m-ether</option>
+      <option value="g-ether">g-ether</option>
+      <option value="t-ether">t-ether</option>
     </select>`
   return button
-}
-
-function exchangeCurrency (e) {
-  console.log(e.target.value)
 }
 
 css = csjs`
@@ -13513,7 +13864,7 @@ css = csjs`
 }
 `
 
-},{"bel":7,"csjs-inject":12,"theme":131}],126:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"ethers":30,"theme":132}],127:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require("csjs-inject")
 
@@ -13552,7 +13903,7 @@ function loadingAnimation (colors) {
   return bel`<div class=${css.loader}></div>`
 }
 
-},{"bel":7,"csjs-inject":12}],127:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12}],128:[function(require,module,exports){
 const bel = require("bel")
 const csjs = require('csjs-inject')
 const colors = require('theme')
@@ -13612,7 +13963,7 @@ function makeDeployReceipt (provider, contract) {
   return el
 }
 
-},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"getDate":122,"moreInfo":129,"theme":131}],128:[function(require,module,exports){
+},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"getDate":123,"moreInfo":130,"theme":132}],129:[function(require,module,exports){
 const bel = require("bel")
 const moreInfo = require('moreInfo')
 const getReturnData = require('getReturnData')
@@ -13685,7 +14036,7 @@ function makeTxReturn (css, data) {
     </div>`
 }
 
-},{"bel":7,"csjs-inject":12,"getReturnData":123,"moreInfo":129,"theme":131}],129:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"getReturnData":124,"moreInfo":130,"theme":132}],130:[function(require,module,exports){
 const colors = require('theme')
 const bel = require('bel')
 const csjs = require('csjs-inject')
@@ -13714,7 +14065,7 @@ function moreInfo (network, txHash) {
   return bel`<div class=${css.infoIcon} title="Take me to the Etherscan"><a href=${linkToEtherscan} target="_blank"><i class="fa fa-info-circle"></i></a></div>`
 }
 
-},{"bel":7,"csjs-inject":12,"theme":131}],130:[function(require,module,exports){
+},{"bel":7,"csjs-inject":12,"theme":132}],131:[function(require,module,exports){
 module.exports = shortenHexData
 
 function shortenHexData (data) {
@@ -13724,7 +14075,7 @@ function shortenHexData (data) {
   return data.slice(0, 10) + '...' + data.slice(len - 10, len)
 }
 
-},{}],131:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 module.exports = theme()
 
 function theme () {
@@ -13746,7 +14097,7 @@ function theme () {
   return colors
 }
 
-},{}],132:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 const bel = require("bel")
 const colors = require('theme')
 const csjs = require("csjs-inject")
@@ -13972,10 +14323,13 @@ function displayContractUI(result) {   // compilation result metadata
         container.appendChild(txReturn)
         txReturn.appendChild(loader)
         let signer = await provider.getSigner()
-        let args = getArgs(container, 'inputContainer')
+        var allArgs = getArgs(container, 'inputContainer')
+        var args = allArgs.args
         try {
           let contractAsCurrentSigner = contract.connect(signer)
-          var transaction = await contractAsCurrentSigner.functions[fnName](...args)
+          var transaction
+          if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+          else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
           let abi = solcMetadata.output.abi
           loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
@@ -14069,7 +14423,8 @@ function displayContractUI(result) {   // compilation result metadata
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       el.replaceWith(bel`<div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>`)
       try {
-        let args = getArgs(el, 'inputContainer')
+        var allArgs = getArgs(el, 'inputContainer')
+        let args = allArgs.args
         let instance = await factory.deploy(...args)
         contract = instance
         let deployed = await contract.deployed()
@@ -14541,4 +14896,4 @@ function hover () {
   `
 }
 
-},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"ethers":30,"getArgs":121,"glossary":124,"input-address":35,"input-array":37,"input-boolean":38,"input-byte":39,"input-integer":40,"input-payable":125,"input-string":41,"loadingAnimation":126,"makeDeployReceipt":127,"makeReturn":128,"shortenHexData":130,"solidity-validator":104,"theme":131}]},{},[1]);
+},{"bel":7,"copy-text-to-clipboard":9,"csjs-inject":12,"ethers":30,"getArgs":122,"glossary":125,"input-address":35,"input-array":37,"input-boolean":38,"input-byte":39,"input-integer":40,"input-payable":126,"input-string":41,"loadingAnimation":127,"makeDeployReceipt":128,"makeReturn":129,"shortenHexData":131,"solidity-validator":104,"theme":132}]},{},[1]);

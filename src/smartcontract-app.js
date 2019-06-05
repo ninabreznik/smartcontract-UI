@@ -223,10 +223,13 @@ function displayContractUI(result) {   // compilation result metadata
         container.appendChild(txReturn)
         txReturn.appendChild(loader)
         let signer = await provider.getSigner()
-        let args = getArgs(container, 'inputContainer')
+        var allArgs = getArgs(container, 'inputContainer')
+        var args = allArgs.args
         try {
           let contractAsCurrentSigner = contract.connect(signer)
-          var transaction = await contractAsCurrentSigner.functions[fnName](...args)
+          var transaction
+          if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+          else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
           let abi = solcMetadata.output.abi
           loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
         } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
@@ -320,7 +323,8 @@ function displayContractUI(result) {   // compilation result metadata
       let factory = await new ethers.ContractFactory(abi, bytecode, signer)
       el.replaceWith(bel`<div class=${css.deploying}>Publishing to Ethereum network ${loadingAnimation(colors)}</div>`)
       try {
-        let args = getArgs(el, 'inputContainer')
+        var allArgs = getArgs(el, 'inputContainer')
+        let args = allArgs.args
         let instance = await factory.deploy(...args)
         contract = instance
         let deployed = await contract.deployed()
