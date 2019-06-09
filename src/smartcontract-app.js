@@ -96,11 +96,15 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     function getConstructorInput() {
-      return solcMetadata.output.abi.map(fn => {
+      var payable = false
+      var inputs = solcMetadata.output.abi.map(fn => {
         if (fn.type === "constructor") {
+          if (fn.stateMutability === 'payable') payable = true
           return treeForm(fn.inputs)
         }
       })
+      if (payable === true) inputs.unshift(inputPayable('payable'))
+      return inputs
     }
 
     function getContractFunctions() {
@@ -325,7 +329,10 @@ function displayContractUI(result) {   // compilation result metadata
       try {
         var allArgs = getArgs(el, 'inputContainer')
         let args = allArgs.args
-        let instance = await factory.deploy(...args)
+        var instance
+        if (allArgs.overrides) { instance = await factory.deploy(...args, allArgs.overrides) }
+        else { instance = await factory.deploy(...args) }
+        // instance = await factory.deploy(...args)
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''

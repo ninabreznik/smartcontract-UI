@@ -1,3 +1,4 @@
+module.exports = `
 pragma solidity >=0.4.22 <0.7.0;
 
 contract Ballot {
@@ -107,3 +108,4 @@ contract Ballot {
         winnerName_ = proposals[winningProposal()].name;
     }
 }
+`
