@@ -38,62 +38,138 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/Escrow.sol')
+const sourcecode = require('./sampleContracts/PaymentSplitter.sol')
 
-},{"../":133,"./sampleContracts/Escrow.sol":2,"solc-js":69}],2:[function(require,module,exports){
+},{"../":133,"./sampleContracts/PaymentSplitter.sol":2,"solc-js":69}],2:[function(require,module,exports){
 module.exports = `
-pragma solidity ^0.5.0;
 
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/math/SafeMath.sol";
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/ownership/Secondary.sol";
+pragma solidity ^0.5.2;
 
- /**
-  * @title Escrow
-  * @dev Base escrow contract, holds funds designated for a payee until they
-  * withdraw them.
-  * @dev Intended usage: This contract (and derived escrow contracts) should be a
-  * standalone contract, that only interacts with the contract that instantiated
-  * it. That way, it is guaranteed that all Ether will be handled according to
-  * the Escrow rules, and there is no need to check for payable functions or
-  * transfers in the inheritance tree. The contract that uses the escrow as its
-  * payment method should be its primary, and provide public methods redirecting
-  * to the escrow's deposit and withdraw.
-  */
-contract Escrow is Secondary {
+import "https://gist.githubusercontent.com/ninabreznik/a66bdae5fa18c7618b445b24fe97cce0/raw/f4df88ce6d58d959b854188a6a2daa49ba641e4f/SafeMath";
+
+/**
+ * @title PaymentSplitter
+ * @dev This contract allows to split Ether payments among a group of accounts. The sender does not need to be aware
+ * that the Ether will be split in this way, since it is handled transparently by the contract.
+ *
+ * The split can be in equal parts or in any other arbitrary proportion. The way this is specified is by assigning each
+ * account to a number of shares. Of all the Ether that this contract receives, each account will then be able to claim
+ * an amount proportional to the percentage of total shares they were assigned.
+ *
+ * PaymentSplitter follows a _pull payment_ model. This means that payments are not automatically forwarded to the
+ * accounts but kept in this contract, and the actual transfer is triggered as a separate step by calling the release
+ * function.
+ */
+contract PaymentSplitter {
     using SafeMath for uint256;
 
-    event Deposited(address indexed payee, uint256 weiAmount);
-    event Withdrawn(address indexed payee, uint256 weiAmount);
+    event PayeeAdded(address account, uint256 shares);
+    event PaymentReleased(address to, uint256 amount);
+    event PaymentReceived(address from, uint256 amount);
 
-    mapping(address => uint256) private _deposits;
+    uint256 private _totalShares;
+    uint256 private _totalReleased;
 
-    function depositsOf(address payee) public view returns (uint256) {
-        return _deposits[payee];
+    mapping(address => uint256) private _shares;
+    mapping(address => uint256) private _released;
+    address[] private _payees;
+
+    /**
+     * @dev Creates an instance of PaymentSplitter where each account in payees is assigned the number of shares at
+     * the matching position in the shares array.
+     *
+     * All addresses in payees must be non-zero. Both arrays must have the same non-zero length, and there must be no
+     * duplicates in payees.
+     */
+    constructor (address[] memory payees, uint256[] memory shares) public payable {
+        // solhint-disable-next-line max-line-length
+        require(payees.length == shares.length, "PaymentSplitter: payees and shares length mismatch");
+        require(payees.length > 0, "PaymentSplitter: no payees");
+
+        for (uint256 i = 0; i < payees.length; i++) {
+            _addPayee(payees[i], shares[i]);
+        }
     }
 
     /**
-     * @dev Stores the sent amount as credit to be withdrawn.
-     * @param payee The destination address of the funds.
+     * @dev The Ether received will be logged with PaymentReceived events. Note that these events are not fully
+     * reliable: it's possible for a contract to receive Ether without triggering this function. This only affects the
+     * reliability of the events, and not the actual splitting of Ether.
+     *
+     * To learn more about this see the Solidity documentation for [fallback functions].
+     *
+     * [fallback functions]: https://solidity.readthedocs.io/en/latest/contracts.html#fallback-function
      */
-    function deposit(address payee) public onlyPrimary payable {
-        uint256 amount = msg.value;
-        _deposits[payee] = _deposits[payee].add(amount);
-
-        emit Deposited(payee, amount);
+    function () external payable {
+        emit PaymentReceived(msg.sender, msg.value);
     }
 
     /**
-     * @dev Withdraw accumulated balance for a payee.
-     * @param payee The address whose funds will be withdrawn and transferred to.
+     * @dev Getter for the total shares held by payees.
      */
-    function withdraw(address payable payee) public onlyPrimary {
-        uint256 payment = _deposits[payee];
+    function totalShares() public view returns (uint256) {
+        return _totalShares;
+    }
 
-        _deposits[payee] = 0;
+    /**
+     * @dev Getter for the total amount of Ether already released.
+     */
+    function totalReleased() public view returns (uint256) {
+        return _totalReleased;
+    }
 
-        payee.transfer(payment);
+    /**
+     * @dev Getter for the amount of shares held by an account.
+     */
+    function shares(address account) public view returns (uint256) {
+        return _shares[account];
+    }
 
-        emit Withdrawn(payee, payment);
+    /**
+     * @dev Getter for the amount of Ether already released to a payee.
+     */
+    function released(address account) public view returns (uint256) {
+        return _released[account];
+    }
+
+    /**
+     * @dev Getter for the address of the payee number index.
+     */
+    function payee(uint256 index) public view returns (address) {
+        return _payees[index];
+    }
+
+    /**
+     * @dev Triggers a transfer to account of the amount of Ether they are owed, according to their percentage of the
+    function release(address payable account) public {
+        require(_shares[account] > 0, "PaymentSplitter: account has no shares");
+
+        uint256 totalReceived = address(this).balance.add(_totalReleased);
+        uint256 payment = totalReceived.mul(_shares[account]).div(_totalShares).sub(_released[account]);
+
+        require(payment != 0, "PaymentSplitter: account is not due payment");
+
+        _released[account] = _released[account].add(payment);
+        _totalReleased = _totalReleased.add(payment);
+
+        account.transfer(payment);
+        emit PaymentReleased(account, payment);
+    }
+
+    /**
+     * @dev Add a new payee to the contract.
+     * @param account The address of the payee to add.
+     * @param shares_ The number of shares owned by the payee.
+     */
+    function _addPayee(address account, uint256 shares_) private {
+        require(account != address(0), "PaymentSplitter: account is the zero address");
+        require(shares_ > 0, "PaymentSplitter: shares are 0");
+        require(_shares[account] == 0, "PaymentSplitter: account already has shares");
+
+        _payees.push(account);
+        _shares[account] = shares_;
+        _totalShares = _totalShares.add(shares_);
+        emit PayeeAdded(account, shares_);
     }
 }
 `
@@ -8321,7 +8397,7 @@ function displayIntegerInput ({ theme: { classes: css }, type, cb }) {
   }
   function validate (e, splitType) {
     const value = e.target.value
-    cb(validator.getMessage(type, value), value)
+    cb(validator.getMessage(splitType, value), value)
   }
   function keysUpdating (e, splitType) {
     const key = e.which
@@ -13321,7 +13397,7 @@ function getArgs( element, selector ) {
       var amount = inputs[0].value
       var currency = inputs[1].value
       // The amount to send with the transaction (i.e. msg.value)
-      overrides.gasLimit = 750000
+      overrides.gasLimit = 3000000
       overrides.value = convertToEther(currency, amount)
     } else {
       if (title.includes('[')) {  // if type is an array
@@ -13330,6 +13406,12 @@ function getArgs( element, selector ) {
         let inputs = x.querySelectorAll("[class^='booleanField']")
         inputs.forEach(y => {
           argumentsInArr.push(getBool(y))
+        })
+      }
+      else if (title.includes('int')) {
+        let inputs = x.querySelectorAll("[class^='integerValue']")
+        inputs.forEach(y => {
+          argumentsInArr.push(getArgument(y, y.value))
         })
       } else { // in any other type of array
         var inputs = x.querySelectorAll('input')
