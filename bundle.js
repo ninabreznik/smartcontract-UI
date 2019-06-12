@@ -38,138 +38,151 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/PaymentSplitter.sol')
+const sourcecode = require('./sampleContracts/BlindAuction.sol')
 
-},{"../":133,"./sampleContracts/PaymentSplitter.sol":2,"solc-js":69}],2:[function(require,module,exports){
+},{"../":133,"./sampleContracts/BlindAuction.sol":2,"solc-js":69}],2:[function(require,module,exports){
 module.exports = `
+pragma solidity >0.4.23 <0.7.0;
 
-pragma solidity ^0.5.2;
+contract BlindAuction {
+    struct Bid {
+        bytes32 blindedBid;
+        uint deposit;
+    }
 
-import "https://gist.githubusercontent.com/ninabreznik/a66bdae5fa18c7618b445b24fe97cce0/raw/f4df88ce6d58d959b854188a6a2daa49ba641e4f/SafeMath";
+    address payable public beneficiary;
+    uint public biddingEnd;
+    uint public revealEnd;
+    bool public ended;
 
-/**
- * @title PaymentSplitter
- * @dev This contract allows to split Ether payments among a group of accounts. The sender does not need to be aware
- * that the Ether will be split in this way, since it is handled transparently by the contract.
- *
- * The split can be in equal parts or in any other arbitrary proportion. The way this is specified is by assigning each
- * account to a number of shares. Of all the Ether that this contract receives, each account will then be able to claim
- * an amount proportional to the percentage of total shares they were assigned.
- *
- * PaymentSplitter follows a _pull payment_ model. This means that payments are not automatically forwarded to the
- * accounts but kept in this contract, and the actual transfer is triggered as a separate step by calling the release
- * function.
- */
-contract PaymentSplitter {
-    using SafeMath for uint256;
+    mapping(address => Bid[]) public bids;
 
-    event PayeeAdded(address account, uint256 shares);
-    event PaymentReleased(address to, uint256 amount);
-    event PaymentReceived(address from, uint256 amount);
+    address public highestBidder;
+    uint public highestBid;
 
-    uint256 private _totalShares;
-    uint256 private _totalReleased;
+    // Allowed withdrawals of previous bids
+    mapping(address => uint) pendingReturns;
 
-    mapping(address => uint256) private _shares;
-    mapping(address => uint256) private _released;
-    address[] private _payees;
+    event AuctionEnded(address winner, uint highestBid);
 
-    /**
-     * @dev Creates an instance of PaymentSplitter where each account in payees is assigned the number of shares at
-     * the matching position in the shares array.
-     *
-     * All addresses in payees must be non-zero. Both arrays must have the same non-zero length, and there must be no
-     * duplicates in payees.
-     */
-    constructor (address[] memory payees, uint256[] memory shares) public payable {
-        // solhint-disable-next-line max-line-length
-        require(payees.length == shares.length, "PaymentSplitter: payees and shares length mismatch");
-        require(payees.length > 0, "PaymentSplitter: no payees");
+    /// Modifiers are a convenient way to validate inputs to
+    /// functions. onlyBefore is applied to bid below:
+    /// The new function body is the modifier's body where
+    /// _ is replaced by the old function body.
+    modifier onlyBefore(uint _time) { require(now < _time); _; }
+    modifier onlyAfter(uint _time) { require(now > _time); _; }
 
-        for (uint256 i = 0; i < payees.length; i++) {
-            _addPayee(payees[i], shares[i]);
+    constructor(
+        uint _biddingTime,
+        uint _revealTime,
+        address payable _beneficiary
+    ) public {
+        beneficiary = _beneficiary;
+        biddingEnd = now + _biddingTime;
+        revealEnd = biddingEnd + _revealTime;
+    }
+
+    /// Place a blinded bid with _blindedBid =
+    /// keccak256(abi.encodePacked(value, fake, secret)).
+    /// The sent ether is only refunded if the bid is correctly
+    /// revealed in the revealing phase. The bid is valid if the
+    /// ether sent together with the bid is at least "value" and
+    /// "fake" is not true. Setting "fake" to true and sending
+    /// not the exact amount are ways to hide the real bid but
+    /// still make the required deposit. The same address can
+    /// place multiple bids.
+    function bid(bytes32 _blindedBid)
+        public
+        payable
+        onlyBefore(biddingEnd)
+    {
+        bids[msg.sender].push(Bid({
+            blindedBid: _blindedBid,
+            deposit: msg.value
+        }));
+    }
+
+    /// Reveal your blinded bids. You will get a refund for all
+    /// correctly blinded invalid bids and for all bids except for
+    /// the totally highest.
+    function reveal(
+        uint[] memory _values,
+        bool[] memory _fake,
+        bytes32[] memory _secret
+    )
+        public
+        onlyAfter(biddingEnd)
+        onlyBefore(revealEnd)
+    {
+        uint length = bids[msg.sender].length;
+        require(_values.length == length);
+        require(_fake.length == length);
+        require(_secret.length == length);
+
+        uint refund;
+        for (uint i = 0; i < length; i++) {
+            Bid storage bidToCheck = bids[msg.sender][i];
+            (uint value, bool fake, bytes32 secret) =
+                    (_values[i], _fake[i], _secret[i]);
+            if (bidToCheck.blindedBid != keccak256(abi.encodePacked(value, fake, secret))) {
+                // Bid was not actually revealed.
+                // Do not refund deposit.
+                continue;
+            }
+            refund += bidToCheck.deposit;
+            if (!fake && bidToCheck.deposit >= value) {
+                if (placeBid(msg.sender, value))
+                    refund -= value;
+            }
+            // Make it impossible for the sender to re-claim
+            // the same deposit.
+            bidToCheck.blindedBid = bytes32(0);
+        }
+        msg.sender.transfer(refund);
+    }
+
+    // This is an "internal" function which means that it
+    // can only be called from the contract itself (or from
+    // derived contracts).
+    function placeBid(address bidder, uint value) internal
+            returns (bool success)
+    {
+        if (value <= highestBid) {
+            return false;
+        }
+        if (highestBidder != address(0)) {
+            // Refund the previously highest bidder.
+            pendingReturns[highestBidder] += highestBid;
+        }
+        highestBid = value;
+        highestBidder = bidder;
+        return true;
+    }
+
+    /// Withdraw a bid that was overbid.
+    function withdraw() public {
+        uint amount = pendingReturns[msg.sender];
+        if (amount > 0) {
+            // It is important to set this to zero because the recipient
+            // can call this function again as part of the receiving call
+            // before transfer returns (see the remark above about
+            // conditions -> effects -> interaction).
+            pendingReturns[msg.sender] = 0;
+
+            msg.sender.transfer(amount);
         }
     }
 
-    /**
-     * @dev The Ether received will be logged with PaymentReceived events. Note that these events are not fully
-     * reliable: it's possible for a contract to receive Ether without triggering this function. This only affects the
-     * reliability of the events, and not the actual splitting of Ether.
-     *
-     * To learn more about this see the Solidity documentation for [fallback functions].
-     *
-     * [fallback functions]: https://solidity.readthedocs.io/en/latest/contracts.html#fallback-function
-     */
-    function () external payable {
-        emit PaymentReceived(msg.sender, msg.value);
-    }
-
-    /**
-     * @dev Getter for the total shares held by payees.
-     */
-    function totalShares() public view returns (uint256) {
-        return _totalShares;
-    }
-
-    /**
-     * @dev Getter for the total amount of Ether already released.
-     */
-    function totalReleased() public view returns (uint256) {
-        return _totalReleased;
-    }
-
-    /**
-     * @dev Getter for the amount of shares held by an account.
-     */
-    function shares(address account) public view returns (uint256) {
-        return _shares[account];
-    }
-
-    /**
-     * @dev Getter for the amount of Ether already released to a payee.
-     */
-    function released(address account) public view returns (uint256) {
-        return _released[account];
-    }
-
-    /**
-     * @dev Getter for the address of the payee number index.
-     */
-    function payee(uint256 index) public view returns (address) {
-        return _payees[index];
-    }
-
-    /**
-     * @dev Triggers a transfer to account of the amount of Ether they are owed, according to their percentage of the
-    function release(address payable account) public {
-        require(_shares[account] > 0, "PaymentSplitter: account has no shares");
-
-        uint256 totalReceived = address(this).balance.add(_totalReleased);
-        uint256 payment = totalReceived.mul(_shares[account]).div(_totalShares).sub(_released[account]);
-
-        require(payment != 0, "PaymentSplitter: account is not due payment");
-
-        _released[account] = _released[account].add(payment);
-        _totalReleased = _totalReleased.add(payment);
-
-        account.transfer(payment);
-        emit PaymentReleased(account, payment);
-    }
-
-    /**
-     * @dev Add a new payee to the contract.
-     * @param account The address of the payee to add.
-     * @param shares_ The number of shares owned by the payee.
-     */
-    function _addPayee(address account, uint256 shares_) private {
-        require(account != address(0), "PaymentSplitter: account is the zero address");
-        require(shares_ > 0, "PaymentSplitter: shares are 0");
-        require(_shares[account] == 0, "PaymentSplitter: account already has shares");
-
-        _payees.push(account);
-        _shares[account] = shares_;
-        _totalShares = _totalShares.add(shares_);
-        emit PayeeAdded(account, shares_);
+    /// End the auction and send the highest bid
+    /// to the beneficiary.
+    function auctionEnd()
+        public
+        onlyAfter(revealEnd)
+    {
+        require(!ended);
+        emit AuctionEnded(highestBidder, highestBid);
+        ended = true;
+        beneficiary.transfer(highestBid);
     }
 }
 `
@@ -13392,6 +13405,9 @@ function getArgs( element, selector ) {
   for (var i=0; i<fields.length; i++) {
     var x = fields[i]
     let title = x.children[0].title
+     /* -----------------------------------------
+                       PAYABLE
+    --------------------------------------------*/
     if (title.includes('payable')) {
       var inputs = x.querySelector("[class^='inputArea']").children
       var amount = inputs[0].value
@@ -13399,21 +13415,35 @@ function getArgs( element, selector ) {
       // The amount to send with the transaction (i.e. msg.value)
       overrides.gasLimit = 3000000
       overrides.value = convertToEther(currency, amount)
+      /* -----------------------------------------
+                    NOT PAYABLE
+     --------------------------------------------*/
     } else {
-      if (title.includes('[')) {  // if type is an array
+      // ------------ ARRAY ---------------------
+      if (title.includes('[')) {
         var argumentsInArr = []
-        if (title.includes('bool')) {  // if it's an array of booleans
+        // ARRAY of BOOL
+        if (title.includes('bool')) {
         let inputs = x.querySelectorAll("[class^='booleanField']")
         inputs.forEach(y => {
           argumentsInArr.push(getBool(y))
         })
       }
+      // ARRAY of INT/UINT
       else if (title.includes('int')) {
         let inputs = x.querySelectorAll("[class^='integerValue']")
         inputs.forEach(y => {
           argumentsInArr.push(getArgument(y, y.value))
         })
-      } else { // in any other type of array
+      }
+      // ARRAY of BYTES
+      else if (title.includes('byte')) {
+        let inputs = x.querySelectorAll("[class^='byteField']")
+        inputs.forEach(y => {
+          argumentsInArr.push(getByte(el))
+        })
+      } else {
+        // ARRAY of OTHER TYPES
         var inputs = x.querySelectorAll('input')
         inputs.forEach(z => {
           let el = z
@@ -13423,11 +13453,19 @@ function getArgs( element, selector ) {
       }
       args.push(argumentsInArr)
       }
-      else if (title.includes('bool')) { // if not an array, but boolean
+      // ------------ NOT ARRAY ---------------------
+      // BOOLEAN
+      else if (title.includes('bool')) {
         var boolField = x.querySelector("[class^='booleanField']")
         args.push(getBool(boolField))
       }
-      else { // not an array (inputs.length = 1) and not a boolean
+      // BYTE
+      else if (title.includes('byte')) {
+        var el = x.querySelector('input')
+        args.push(getByte(el))
+      }
+      else {
+      // OTHER TYPES
         let el = title.includes('int') ? x.querySelectorAll('input')[1] : x.querySelector('input')
         let val = el.value
         args.push(getArgument(el, val))
@@ -13436,6 +13474,12 @@ function getArgs( element, selector ) {
 
   }
   return {args, overrides}
+}
+
+function getByte (el) {
+  var val = el.value
+  try { if (typeof ethers.utils.parseBytes32String(val) === 'string') return val }
+  catch (e) { return ethers.utils.formatBytes32String(val) }
 }
 
 function getBool (boolField) {
