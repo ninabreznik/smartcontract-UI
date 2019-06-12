@@ -613,7 +613,7 @@ css = csjs`
     .ctor {}
     .signature {}
     .pure {
-      background-color: ${colors.yellow};
+      color: ${colors.yellow};
     }
     .view {
       color: ${colors.lavender};
