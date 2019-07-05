@@ -175,9 +175,12 @@ function displayContractUI(result) {   // compilation result metadata
           <div class=${css.output}></div>
         </div>`
       return inputContainer
-      function cb (msg) {
-        var output = inputContainer.lastChild
+      function cb (msg, el, value) {
+        var oldOutput = el.parentNode.querySelector("[class^='output']")
+        var output = oldOutput ? oldOutput : output = bel`<div class=${css.output}></div>`
+        output.innerHTML = ""
         output.innerHTML = msg ? `<a class=${css.valError} title="${msg}"><i class="fa fa-exclamation"></i></a>` : `<a class=${css.valSuccess} title="The value is valid."><i class="fa fa-check"></i></a>`
+        el.parentNode.appendChild(output)
       }
     }
 
@@ -621,7 +624,7 @@ css = csjs`
       color: ${colors.turquoise};
     }
     .payable {
-      color: ${colors.violetRed};
+      color: ${colors.orange};
     }
     .icon {
       margin-left: 5px;
@@ -631,15 +634,18 @@ css = csjs`
       font-size: 0.7rem;
       display: flex;
       align-self: center;
+      position: absolute;
+      right: -17px;
     }
     .valError {
       color: ${colors.violetRed};
-      padding-left: 13px;
-      cursor: pointer;
+      display: flex;
+      align-self: center;
     }
     .valSuccess {
       color: ${colors.aquaMarine};
-      padding-left: 10px;
+      display: flex;
+      align-self: center;
     }
     .inputContainer {
       font-family: 'Overpass Mono', sans-serif;
@@ -663,6 +669,7 @@ css = csjs`
     }
     .inputField {
       ${inputStyle()}
+      position: relative;
       font-size: 0.9rem;
       color: ${colors.whiteSmoke};
       border-color: ${colors.slateGrey};
@@ -709,27 +716,32 @@ css = csjs`
       cursor: pointer;
     }
     .integerField {
+      position: relative;
       display: flex;
       width: 300px;
       align-items: center;
     }
     .booleanField {
+      position: relative;
       display: flex;
       width: 300px;
       align-items: baseline;
       font-size: 0.9rem;
     }
     .stringField {
+      position: relative;
       display: flex;
       width: 300px;
       justify-content: center;
     }
     .byteField {
+      position: relative;
       display: flex;
       width: 300px;
       justify-content: center;
     }
     .addressField {
+      position: relative;
       display: flex;
       width: 300px;
       justify-content: center;
@@ -743,17 +755,12 @@ css = csjs`
     .false {
       ${inputStyle()}
       border-right: none;
-      background-color: ${colors.violetRed};
-      color: ${colors.whiteSmoke};
       width: 50%;
       text-align: center;
-      border-color: ${colors.whiteSmoke};
       cursor: pointer;
     }
     .true {
       ${inputStyle()}
-      color: ${colors.whiteSmoke};
-      border-color: ${colors.whiteSmoke};
       width: 50%;
       text-align: center;
       cursor: pointer;
@@ -790,7 +797,8 @@ css = csjs`
 function inputStyle() {
   return `
     border: 1px solid ${colors.slateGrey};
-    background-color: ${colors.dark};
+    background-color: ${colors.darkSmoke};
+    color: ${colors.slateGrey};
     padding: 5px;
   `
 }
