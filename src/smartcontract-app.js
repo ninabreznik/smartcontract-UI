@@ -607,7 +607,7 @@ css = csjs`
       flex-direction: column;
       position: relative;
       border: 2px dashed ${colors.darkSmoke};
-      padding: 2em 2em 3em 2em;
+      padding: 2em 1em 3em 0em;
       width: 540px;
       margin: 0 0 5em 20px;
       font-size: 0.75em;
