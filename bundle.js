@@ -16767,7 +16767,7 @@ function getMessage(type, str) {
   if (type.search(/\bbool/) != -1) return 'The value is not a boolean.'
   if (type.search(/\baddress/) != -1) return 'The value is not a valid address.'
   if (type.search(/\bbytes/) != -1) return 'The value is not a valid bytes.'
-  if (type.search(/\bbyte/) != -1) return 'The value is not a valid bytes.'
+  if (type.search(/\bbyte/) != -1) return 'The value is not a valid byte.'
 }
 
 },{"./isValid":54,"./util/assertString":55}],47:[function(require,module,exports){
@@ -16854,7 +16854,6 @@ function isByteArray(str) {
   return byteSize >= 1 && byteSize <= 32 && hexRegularPattern.test(str)
 }
 },{"./util/assertString":55}],51:[function(require,module,exports){
-// byte is an alias for bytes1
 const assertString = require('./util/assertString')
 
 module.exports = isBytes
@@ -16914,16 +16913,8 @@ function isValid(type, value) {
   if (type.search(/\bint/) != -1) return isInt(value, type.substring(3))
   if (type.search(/\bbool/) != -1) return isBoolean(value)
   if (type.search(/\baddress/) != -1) return isAddress(value)
-  if (type.search(/\bbytes/) != -1) {
-    let len = 5
-    let exponent = type.length == len ? 32 : parseInt(type.substring(len))
-    return isBytes(value, exponent)
-  }
-  if (type.search(/\bbyte/) != -1) {
-    let len = 4
-    let exponent = type.length == len ? 1 : parseInt(type.substring(len))
-    return isBytes(value, exponent)
-  }
+  if (type.search(/\bbytes/) != -1) return isBytes(value, type.substring(5))
+  if (type.search(/\bbyte/) != -1) return isBytes(value, type.substring(4))
   return true
 }
 
@@ -16960,11 +16951,11 @@ const validator = require('solidity-validator')
 
 module.exports = displayByteInput
 
-function displayByteInput ({ theme: { classes: css }, cb }) {
-  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type="byte" onclick="${(e)=>e.target.select()}" oninput=${validate} placeholder='0x...'> </div>`
+function displayByteInput ({ theme: { classes: css }, type,  cb }) {
+  return input = bel`<div class=${css.byteField}> <input class=${css.inputField} data-type=${type} onclick="${(e)=>e.target.select()}" oninput=${validate} placeholder='0x...'> </div>`
   function validate (e) {
     let value = e.target.value
-    cb(validator.getMessage('byte', value), e.target, value)
+    cb(validator.getMessage(type, value), e.target, value)
   }
 }
 
@@ -23771,6 +23762,7 @@ function getArgs( element, selector ) {
       else if (title.includes('byte')) {
         let inputs = x.querySelectorAll("[class^='byteField']")
         inputs.forEach(y => {
+          let el = y.querySelector('input')
           argumentsInArr.push(getByte(el))
         })
       } else {
@@ -23808,6 +23800,8 @@ function getArgs( element, selector ) {
 }
 
 function getByte (el) {
+  ethers
+  debugger
   return el.value
 }
 
