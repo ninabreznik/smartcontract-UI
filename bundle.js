@@ -23732,7 +23732,6 @@ module.exports = getArgs
 function getArgs( element, selector ) {
   var args = []
   var overrides = {}
-  overrides.gasLimit = 3000000
   var fields = element.querySelectorAll(`[class^=${selector}]`)
   for (var i=0; i<fields.length; i++) {
     var x = fields[i]
@@ -23745,6 +23744,7 @@ function getArgs( element, selector ) {
       var amount = inputs[0].value
       var currency = inputs[1].value
       // The amount to send with the transaction (i.e. msg.value)
+      overrides.gasLimit = 3000000
       overrides.value = convertToEther(currency, amount)
       /* -----------------------------------------
                     NOT PAYABLE
