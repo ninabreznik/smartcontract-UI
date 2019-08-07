@@ -24224,9 +24224,47 @@ function theme () {
   return colors
 }
 
+
+/*
+module.exports = select
+
+function select (theme = 'darkTheme') {
+  return themes[theme]
+}
+
+// define colors
+const bluePurple = '#6700ff'
+const lightGreen = '#09FFC3'
+const lightGreenHover = '#A1FFE8'
+const greyEB = '#EBEBEB'
+const grey8D = '#8D8D8D'
+const grey31 = '#313136'
+const grey33 = '#333333'
+const greyBB = '#BBBBBB'
+const white = '#ffffff'
+const dark18 = '#181920'
+const dark1d = '#1d1d26'
+const peach = 'rgba(255, 41,117, 100)'
+const transparent = 'rgba(0,0,0,0)'
+
+// define font
+const fontNunito = `'Nunito', sans-serif`
+const fontInconsolata = `'Inconsolata', monospace`
+
+const newTheme = {
+}
+
+const oldTheme = {
+
+}
+
+const themes = { lightTheme, newTheme }
+select.names = Object.keys(themes)
+
+*/
+
 },{}],272:[function(require,module,exports){
 const bel = require("bel")
-const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
@@ -24243,6 +24281,11 @@ const inputString = require("input-string")
 const inputByte = require("input-byte")
 const inputPayable = require("input-payable")
 const copy = require('copy-text-to-clipboard')
+
+const colors = require('theme')
+//const theme = require('theme')
+//const setTheme = require('setTheme')
+//setTheme(theme())
 
 // Styling variables
 

@@ -1,5 +1,4 @@
 const bel = require("bel")
-const colors = require('theme')
 const csjs = require("csjs-inject")
 const ethers = require('ethers')
 const glossary = require('glossary')
@@ -16,6 +15,11 @@ const inputString = require("input-string")
 const inputByte = require("input-byte")
 const inputPayable = require("input-payable")
 const copy = require('copy-text-to-clipboard')
+
+const colors = require('theme')
+//const theme = require('theme')
+//const setTheme = require('setTheme')
+//setTheme(theme())
 
 // Styling variables
 
