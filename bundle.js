@@ -38,151 +38,236 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/BlindAuction.sol')
+const sourcecode = require('./sampleContracts/ERC20.sol')
 
-},{"../":272,"./sampleContracts/BlindAuction.sol":2,"solc-js":211}],2:[function(require,module,exports){
+},{"../":272,"./sampleContracts/ERC20.sol":2,"solc-js":211}],2:[function(require,module,exports){
 module.exports = `
-pragma solidity >0.4.23 <0.7.0;
+pragma solidity ^0.5.2;
 
-contract BlindAuction {
-    struct Bid {
-        bytes32 blindedBid;
-        uint deposit;
+import "https://gist.githubusercontent.com/ninabreznik/765408b436e6d354da74a1a4c32d4aff/raw/2826f04d23a436d273e4134b351c40507ba8e62c/IERC20";
+import "https://gist.githubusercontent.com/ninabreznik/a66bdae5fa18c7618b445b24fe97cce0/raw/f4df88ce6d58d959b854188a6a2daa49ba641e4f/SafeMath";
+
+/**
+ * @dev Implementation of the IERC20 interface.
+ *
+ * This implementation is agnostic to the way tokens are created. This means
+ * that a supply mechanism has to be added in a derived contract using _mint.
+ * For a generic mechanism see ERC20Mintable.
+ *
+ * *For a detailed writeup see our guide [How to implement supply
+ * mechanisms](https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226).*
+ *
+ * We have followed general OpenZeppelin guidelines: functions revert instead
+ * of returning false on failure. This behavior is nonetheless conventional
+ * and does not conflict with the expectations of ERC20 applications.
+ *
+ * Additionally, an Approval event is emitted on calls to transferFrom.
+ * This allows applications to reconstruct the allowance for all accounts just
+ * by listening to said events. Other implementations of the EIP may not emit
+ * these events, as it isn't required by the specification.
+ *
+ * Finally, the non-standard decreaseAllowance and increaseAllowance
+ * functions have been added to mitigate the well-known issues around setting
+ * allowances. See IERC20.approve.
+ */
+contract ERC20 is IERC20 {
+    using SafeMath for uint256;
+
+    mapping (address => uint256) private _balances;
+
+    mapping (address => mapping (address => uint256)) private _allowances;
+
+    uint256 private _totalSupply;
+
+    /**
+     * @dev See IERC20.totalSupply.
+     */
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
     }
 
-    address payable public beneficiary;
-    uint public biddingEnd;
-    uint public revealEnd;
-    bool public ended;
-
-    mapping(address => Bid[]) public bids;
-
-    address public highestBidder;
-    uint public highestBid;
-
-    // Allowed withdrawals of previous bids
-    mapping(address => uint) pendingReturns;
-
-    event AuctionEnded(address winner, uint highestBid);
-
-    /// Modifiers are a convenient way to validate inputs to
-    /// functions. onlyBefore is applied to bid below:
-    /// The new function body is the modifier's body where
-    /// _ is replaced by the old function body.
-    modifier onlyBefore(uint _time) { require(now < _time); _; }
-    modifier onlyAfter(uint _time) { require(now > _time); _; }
-
-    constructor(
-        uint _biddingTime,
-        uint _revealTime,
-        address payable _beneficiary
-    ) public {
-        beneficiary = _beneficiary;
-        biddingEnd = now + _biddingTime;
-        revealEnd = biddingEnd + _revealTime;
+    /**
+     * @dev See IERC20.balanceOf.
+     */
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account];
     }
 
-    /// Place a blinded bid with _blindedBid =
-    /// keccak256(abi.encodePacked(value, fake, secret)).
-    /// The sent ether is only refunded if the bid is correctly
-    /// revealed in the revealing phase. The bid is valid if the
-    /// ether sent together with the bid is at least "value" and
-    /// "fake" is not true. Setting "fake" to true and sending
-    /// not the exact amount are ways to hide the real bid but
-    /// still make the required deposit. The same address can
-    /// place multiple bids.
-    function bid(bytes32 _blindedBid)
-        public
-        payable
-        onlyBefore(biddingEnd)
-    {
-        bids[msg.sender].push(Bid({
-            blindedBid: _blindedBid,
-            deposit: msg.value
-        }));
-    }
-
-    /// Reveal your blinded bids. You will get a refund for all
-    /// correctly blinded invalid bids and for all bids except for
-    /// the totally highest.
-    function reveal(
-        uint[] memory _values,
-        bool[] memory _fake,
-        bytes32[] memory _secret
-    )
-        public
-        onlyAfter(biddingEnd)
-        onlyBefore(revealEnd)
-    {
-        uint length = bids[msg.sender].length;
-        require(_values.length == length);
-        require(_fake.length == length);
-        require(_secret.length == length);
-
-        uint refund;
-        for (uint i = 0; i < length; i++) {
-            Bid storage bidToCheck = bids[msg.sender][i];
-            (uint value, bool fake, bytes32 secret) =
-                    (_values[i], _fake[i], _secret[i]);
-            if (bidToCheck.blindedBid != keccak256(abi.encodePacked(value, fake, secret))) {
-                // Bid was not actually revealed.
-                // Do not refund deposit.
-                continue;
-            }
-            refund += bidToCheck.deposit;
-            if (!fake && bidToCheck.deposit >= value) {
-                if (placeBid(msg.sender, value))
-                    refund -= value;
-            }
-            // Make it impossible for the sender to re-claim
-            // the same deposit.
-            bidToCheck.blindedBid = bytes32(0);
-        }
-        msg.sender.transfer(refund);
-    }
-
-    // This is an "internal" function which means that it
-    // can only be called from the contract itself (or from
-    // derived contracts).
-    function placeBid(address bidder, uint value) internal
-            returns (bool success)
-    {
-        if (value <= highestBid) {
-            return false;
-        }
-        if (highestBidder != address(0)) {
-            // Refund the previously highest bidder.
-            pendingReturns[highestBidder] += highestBid;
-        }
-        highestBid = value;
-        highestBidder = bidder;
+    /**
+     * @dev See IERC20.transfer.
+     *
+     * Requirements:
+     *
+     * - recipient cannot be the zero address.
+     * - the caller must have a balance of at least amount.
+     */
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        _transfer(msg.sender, recipient, amount);
         return true;
     }
 
-    /// Withdraw a bid that was overbid.
-    function withdraw() public {
-        uint amount = pendingReturns[msg.sender];
-        if (amount > 0) {
-            // It is important to set this to zero because the recipient
-            // can call this function again as part of the receiving call
-            // before transfer returns (see the remark above about
-            // conditions -> effects -> interaction).
-            pendingReturns[msg.sender] = 0;
-
-            msg.sender.transfer(amount);
-        }
+    /**
+     * @dev See IERC20.allowance.
+     */
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
     }
 
-    /// End the auction and send the highest bid
-    /// to the beneficiary.
-    function auctionEnd()
-        public
-        onlyAfter(revealEnd)
-    {
-        require(!ended);
-        emit AuctionEnded(highestBidder, highestBid);
-        ended = true;
-        beneficiary.transfer(highestBid);
+    /**
+     * @dev See IERC20.approve.
+     *
+     * Requirements:
+     *
+     * - spender cannot be the zero address.
+     */
+    function approve(address spender, uint256 value) public returns (bool) {
+        _approve(msg.sender, spender, value);
+        return true;
+    }
+
+    /**
+     * @dev See IERC20.transferFrom.
+     *
+     * Emits an Approval event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of ERC20;
+     *
+     * Requirements:
+     * - sender and recipient cannot be the zero address.
+     * - sender must have a balance of at least value.
+     * - the caller must have allowance for sender's tokens of at least
+     * amount.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
+        return true;
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to spender by the caller.
+     *
+     * This is an alternative to approve that can be used as a mitigation for
+     * problems described in IERC20.approve.
+     *
+     * Emits an Approval event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - spender cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to spender by the caller.
+     *
+     * This is an alternative to approve that can be used as a mitigation for
+     * problems described in IERC20.approve.
+     *
+     * Emits an Approval event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - spender cannot be the zero address.
+     * - spender must have allowance for the caller of at least
+     * subtractedValue.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue));
+        return true;
+    }
+
+    /**
+     * @dev Moves tokens amount from sender to recipient.
+     *
+     * This is internal function is equivalent to transfer, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a Transfer event.
+     *
+     * Requirements:
+     *
+     * - sender cannot be the zero address.
+     * - recipient cannot be the zero address.
+     * - sender must have a balance of at least amount.
+     */
+    function _transfer(address sender, address recipient, uint256 amount) internal {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _balances[sender] = _balances[sender].sub(amount);
+        _balances[recipient] = _balances[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+    }
+
+    /** @dev Creates amount tokens and assigns them to account, increasing
+     * the total supply.
+     *
+     * Emits a Transfer event with from set to the zero address.
+     *
+     * Requirements
+     *
+     * - to cannot be the zero address.
+     */
+    function _mint(address account, uint256 amount) internal {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _totalSupply = _totalSupply.add(amount);
+        _balances[account] = _balances[account].add(amount);
+        emit Transfer(address(0), account, amount);
+    }
+
+     /**
+     * @dev Destoys amount tokens from account, reducing the
+     * total supply.
+     *
+     * Emits a Transfer event with to set to the zero address.
+     *
+     * Requirements
+     *
+     * - account cannot be the zero address.
+     * - account must have at least amount tokens.
+     */
+    function _burn(address account, uint256 value) internal {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _totalSupply = _totalSupply.sub(value);
+        _balances[account] = _balances[account].sub(value);
+        emit Transfer(account, address(0), value);
+    }
+
+    /**
+     * @dev Sets amount as the allowance of spender over the owners tokens.
+     *
+     * This is internal function is equivalent to approve, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an Approval event.
+     *
+     * Requirements:
+     *
+     * - owner cannot be the zero address.
+     * - spender cannot be the zero address.
+     */
+    function _approve(address owner, address spender, uint256 value) internal {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = value;
+        emit Approval(owner, spender, value);
+    }
+
+    /**
+     * @dev Destoys amount tokens from account.amount is then deducted
+     * from the caller's allowance.
+     *
+     * See _burn and _approve.
+     */
+    function _burnFrom(address account, uint256 amount) internal {
+        _burn(account, amount);
+        _approve(account, msg.sender, _allowances[account][msg.sender].sub(amount));
     }
 }
 `
@@ -24187,8 +24272,14 @@ var css = csjs`
 `
 
 function moreInfo (network, txHash) {
-  var linkToEtherscan = "https://" + network  + ".etherscan.io/tx/" + txHash
-  return bel`<div class=${css.infoIcon} title="Take me to the Etherscan"><a href=${linkToEtherscan} target="_blank"><i class="fa fa-info-circle"></i></a></div>`
+  var linkToExplorer =
+  `https://blockscout.com/eth/${network}/tx/${txHash}/internal_transactions`
+  return bel`<div class=${css.infoIcon}
+    title="Take me to the Blockscout">
+      <a href=${linkToExplorer}
+        target="_blank"><i class="fa fa-info-circle"></i>
+      </a>
+    </div>`
 }
 
 },{"bel":9,"csjs-inject":17,"theme":271}],270:[function(require,module,exports){
@@ -24228,7 +24319,7 @@ function theme () {
 /*
 module.exports = select
 
-function select (theme = 'darkTheme') {
+function select (theme = 'oldTheme') {
   return themes[theme]
 }
 
