@@ -155,17 +155,26 @@ function displayContractUI(result) {   // compilation result metadata
       functions: getContractFunctions()
     }
 
-    var sorted = sort(metadata.functions)
     function sort (functions) {
-      return functions.filter(x => x.type === 'function').sort((a, b) => type2num(a) - type2num(b))
-      function type2num ({ stateMutability: sm }) {
-        if (sm === 'view') return 1
-        if (sm === 'nonpayable') return 2
-        if (sm === 'pure') return 3
-        if (sm === 'payable') return 4
-        if (sm === undefined) return 5
-      }
+      return functions.filter(x => x.type === 'function').sort((a, b) => {
+        var d=type2num(a) - type2num(b)
+        if (d==0) {
+          if (a.name > b.name) return 1;
+          if (a.name < b.name) return -1;
+        }
+        return d
+      })
     }
+
+    function type2num ({ stateMutability: sm }) {
+      if (sm === 'view') return 1
+      if (sm === 'nonpayable') return 2
+      if (sm === 'pure') return 3
+      if (sm === 'payable') return 4
+      if (sm === undefined) return 5
+    }
+
+    var sorted = sort(metadata.functions)
 
     function generateInputContainer (field) {
       var theme = { classes: css, colors}
