@@ -37992,7 +37992,7 @@ var provider
 var contract
 
 async function getProvider() {
-  if (window.web3.currentProvider) {
+  if (window.web3 && window.web3.currentProvider) {
     try {
       // Acccounts now exposed
       provider = new ethers.providers.Web3Provider(window.web3.currentProvider)
