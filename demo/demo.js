@@ -37,4 +37,4 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/ERC20.sol')
+const sourcecode = require('./sampleContracts/SimpleStorage.sol')

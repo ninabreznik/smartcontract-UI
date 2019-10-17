@@ -351,12 +351,55 @@ function displayContractUI(result) {   // compilation result metadata
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(provider, contract))
+        topContainer.appendChild(makeDeployReceipt(provider, contract, false))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
         loader.replaceWith(ctor)
       }
+    }
+
+    function activateConnect (e) {
+      if (active != e.target) {
+        setToActive(e.target)
+        topContainer.removeChild(ctor)
+        topContainer.appendChild(connect)
+      }
+    }
+
+    function activatePublish (e) {
+      if (active != e.target) {
+        setToActive(e.target)
+        topContainer.removeChild(connect)
+        topContainer.appendChild(ctor)
+      }
+    }
+
+    async function connectToContract () {
+      let abi = solcMetadata.output.abi
+      let bytecode = opts.metadata.bytecode
+      provider =  await getProvider()
+      var el = document.querySelector("[class^='connectContainer']")
+      var allArgs = getArgs(el, 'inputContainer')
+      const address = allArgs.args[0]
+      el.replaceWith(bel`<div class=${css.connecting}>
+        Connecting to the contract ${address}
+        ${loadingAnimation(colors)}</div>`)
+      try {
+        contract = new ethers.Contract(address, abi, provider)
+        topContainer.innerHTML = ''
+        topContainer.appendChild(makeDeployReceipt(provider, contract, true))
+        activateSendTx(contract)
+      } catch (e) {
+        let loader = document.querySelector("[class^='connecting']")
+        loader.replaceWith(connectContainer)
+      }
+    }
+
+    function setToActive (e) {
+      e.classList.add(css.activetab)
+      active.classList.remove(css.activetab)
+      active = e
     }
 
     function activateSendTx(instance) {
@@ -372,11 +415,27 @@ function displayContractUI(result) {   // compilation result metadata
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+      <div class=${css.deploy} onclick=${()=>deployContract()}
+        title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         <div class=${css.deployTitle}>Publish</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
+    const connect = bel`<div class="${css.connectContainer}">
+      ${generateInputContainer({name: 'contract_address', type:'address'})}
+      <div class=${css.connect} onclick=${()=>connectToContract()}
+        title="Enter address of the deployed contract you want to connect with. Select the correct network and click Connect. After that you will be able to interact with the chosen contract.">
+        <div class=${css.connectTitle}>Connect</div>
+        <i class="${css.icon} fa fa-arrow-circle-right"></i>
+      </div>
+    </div>`
+    var active, tabs = bel`<div class=${css.tabsContainer}>
+      ${active = bel`<div class="${css.tab} ${css.activetab}"
+      onclick=${e=>activatePublish(e)}>Publish</div>`}
+      <div class="${css.tab}"
+      onclick=${e=>activateConnect(e)}>Connect</div>
+    </div>`
+    topContainer.appendChild(tabs)
     topContainer.appendChild(ctor)
 
     return bel`
@@ -450,7 +509,7 @@ css = csjs`
       align-items: center;
       flex-direction: column;
     }
-    .deploying {
+    .deploying, .connecting {
       font-size: 0.9rem;
       margin-left: 3%;
     }
@@ -526,13 +585,13 @@ css = csjs`
     .title:hover {
       ${hover()}
     }
-    .deployTitle {
+    .deployTitle, .connectTitle {
       font-size: 1.3rem;
       background-color: ${colors.dark};
       padding: 0 5px 0 0;
       font-weight: 800;
     }
-    .deploy {
+    .deploy, .connect {
       color: ${colors.whiteSmoke};
       display: flex;
       align-items: center;
@@ -543,7 +602,7 @@ css = csjs`
       background-color: ${colors.dark};
       cursor: pointer;
     }
-    .deploy:hover {
+    .deploy:hover, .connect:hover {
       ${hover()}
     }
     .send {
@@ -622,10 +681,36 @@ css = csjs`
       border: 2px dashed ${colors.darkSmoke};
       padding: 2em 1em 3em 0em;
       width: 540px;
-      margin: 0 0 5em 20px;
+      margin: 3em 0 5em 20px;
       font-size: 0.75em;
     }
+    .tabsContainer {
+      display: flex;
+      position: absolute;
+      top: -30px;
+      left: -1px;
+      width: 33%;
+    }
+    .tab {
+      border: 2px dashed ${colors.darkSmoke};
+      color: ${colors.slateGrey};
+      border-bottom: none;
+      box-sizing: border-box;
+      padding: 3% 13%;
+      height: 29px;
+      width: 100%;
+      margin-right: 5px;
+      font-size: 0.8rem;
+    }
+    .tab:hover {
+      ${hover()}
+    }
+    .activetab {
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+    }
     .ctor {}
+    .connectContainer {}
     .signature {}
     .pure {
       color: ${colors.yellow};

@@ -38,239 +38,25 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/ERC20.sol')
+const sourcecode = require('./sampleContracts/SimpleStorage.sol')
 
-},{"../":152,"./sampleContracts/ERC20.sol":2,"solc-js":83}],2:[function(require,module,exports){
+},{"../":152,"./sampleContracts/SimpleStorage.sol":2,"solc-js":83}],2:[function(require,module,exports){
 module.exports = `
-pragma solidity ^0.5.2;
+pragma solidity >=0.4.0 <0.7.0;
 
-import "https://gist.githubusercontent.com/ninabreznik/765408b436e6d354da74a1a4c32d4aff/raw/2826f04d23a436d273e4134b351c40507ba8e62c/IERC20";
-import "https://gist.githubusercontent.com/ninabreznik/a66bdae5fa18c7618b445b24fe97cce0/raw/f4df88ce6d58d959b854188a6a2daa49ba641e4f/SafeMath";
+contract SimpleStorage {
 
-/**
- * @dev Implementation of the IERC20 interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using _mint.
- * For a generic mechanism see ERC20Mintable.
- *
- * *For a detailed writeup see our guide [How to implement supply
- * mechanisms](https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226).*
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning false on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an Approval event is emitted on calls to transferFrom.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard decreaseAllowance and increaseAllowance
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See IERC20.approve.
- */
-contract ERC20 is IERC20 {
-    using SafeMath for uint256;
+    uint8 storedData;
 
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    /**
-     * @dev See IERC20.totalSupply.
-     */
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
+    function set(uint8 x) public {
+        storedData = x;
     }
 
-    /**
-     * @dev See IERC20.balanceOf.
-     */
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
+    function get() public view returns (uint8) {
+        return storedData;
     }
 
-    /**
-     * @dev See IERC20.transfer.
-     *
-     * Requirements:
-     *
-     * - recipient cannot be the zero address.
-     * - the caller must have a balance of at least amount.
-     */
-    function transfer(address recipient, uint256 amount) public returns (bool) {
-        _transfer(msg.sender, recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See IERC20.allowance.
-     */
-    function allowance(address owner, address spender) public view returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See IERC20.approve.
-     *
-     * Requirements:
-     *
-     * - spender cannot be the zero address.
-     */
-    function approve(address spender, uint256 value) public returns (bool) {
-        _approve(msg.sender, spender, value);
-        return true;
-    }
-
-    /**
-     * @dev See IERC20.transferFrom.
-     *
-     * Emits an Approval event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of ERC20;
-     *
-     * Requirements:
-     * - sender and recipient cannot be the zero address.
-     * - sender must have a balance of at least value.
-     * - the caller must have allowance for sender's tokens of at least
-     * amount.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to spender by the caller.
-     *
-     * This is an alternative to approve that can be used as a mitigation for
-     * problems described in IERC20.approve.
-     *
-     * Emits an Approval event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - spender cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to spender by the caller.
-     *
-     * This is an alternative to approve that can be used as a mitigation for
-     * problems described in IERC20.approve.
-     *
-     * Emits an Approval event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - spender cannot be the zero address.
-     * - spender must have allowance for the caller of at least
-     * subtractedValue.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue));
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens amount from sender to recipient.
-     *
-     * This is internal function is equivalent to transfer, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a Transfer event.
-     *
-     * Requirements:
-     *
-     * - sender cannot be the zero address.
-     * - recipient cannot be the zero address.
-     * - sender must have a balance of at least amount.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount);
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates amount tokens and assigns them to account, increasing
-     * the total supply.
-     *
-     * Emits a Transfer event with from set to the zero address.
-     *
-     * Requirements
-     *
-     * - to cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
-        emit Transfer(address(0), account, amount);
-    }
-
-     /**
-     * @dev Destoys amount tokens from account, reducing the
-     * total supply.
-     *
-     * Emits a Transfer event with to set to the zero address.
-     *
-     * Requirements
-     *
-     * - account cannot be the zero address.
-     * - account must have at least amount tokens.
-     */
-    function _burn(address account, uint256 value) internal {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _totalSupply = _totalSupply.sub(value);
-        _balances[account] = _balances[account].sub(value);
-        emit Transfer(account, address(0), value);
-    }
-
-    /**
-     * @dev Sets amount as the allowance of spender over the owners tokens.
-     *
-     * This is internal function is equivalent to approve, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an Approval event.
-     *
-     * Requirements:
-     *
-     * - owner cannot be the zero address.
-     * - spender cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 value) internal {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = value;
-        emit Approval(owner, spender, value);
-    }
-
-    /**
-     * @dev Destoys amount tokens from account.amount is then deducted
-     * from the caller's allowance.
-     *
-     * See _burn and _approve.
-     */
-    function _burnFrom(address account, uint256 amount) internal {
-        _burn(account, amount);
-        _approve(account, msg.sender, _allowances[account][msg.sender].sub(amount));
-    }
-}
-`
+}`
 
 },{}],3:[function(require,module,exports){
 const kvidb = require('kv-idb');
@@ -37749,25 +37535,38 @@ var css = csjs`
 .date {}
 `
 
-function makeDeployReceipt (provider, contract) {
-  var el = bel`
+function makeDeployReceipt (provider, contract, connected) {
+  var el
+  if (!connected) {
+    return bel`
     <div class=${css.txReceipt}>
       <div class=${css.txReturnField}>
         <div class=${css.txReturnTitle}>published</div>
         <div class=${css.txReturnValue}>${date()}</div>
       </div>
-      <div class=${css.txReturnField} title="${contract.deployTransaction.creates}" onclick=${()=>copy(contract.deployTransaction.creates)}>
+      <div class=${css.txReturnField}
+        title="${contract.deployTransaction.creates}"
+        onclick=${()=>copy(contract.deployTransaction.creates)}>
         <div class=${css.txReturnTitle}>contract address (${provider._network.name}):</div>
         <div class=${css.txReturnValue}>${contract.deployTransaction.creates}</div>
       </div>
-      <div class=${css.txReturnField} title="${contract.deployTransaction.from}" onclick=${()=>copy(contract.deployTransaction.from)}>
+      <div class=${css.txReturnField} title="${contract.deployTransaction.from}"
+        onclick=${()=>copy(contract.deployTransaction.from)}>
         <div class=${css.txReturnTitle}>published by</div>
         <div class=${css.txReturnValue}>${contract.deployTransaction.from}</div>
       </div>
-    </div>
-  `
-  el.appendChild(moreInfo(provider._network.name, contract.deployTransaction.hash))
-  return el
+      ${moreInfo(provider._network.name, contract.deployTransaction.hash)}
+    </div>`
+  } else if (connected) {
+    return bel`
+    <div class=${css.txReceipt}>
+      <div class=${css.txReturnField}
+        onclick=${()=>copy(contract.address)}>
+        <div class=${css.txReturnTitle}>connected to contract:</div>
+        <div class=${css.txReturnValue}>${contract.address}</div>
+      </div>
+    </div>`
+  }
 }
 
 },{"bel":7,"copy-text-to-clipboard":11,"csjs-inject":14,"getDate":142,"moreInfo":149,"theme":151}],148:[function(require,module,exports){
@@ -38304,12 +38103,55 @@ function displayContractUI(result) {   // compilation result metadata
         contract = instance
         let deployed = await contract.deployed()
         topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(provider, contract))
+        topContainer.appendChild(makeDeployReceipt(provider, contract, false))
         activateSendTx(contract)
       } catch (e) {
         let loader = document.querySelector("[class^='deploying']")
         loader.replaceWith(ctor)
       }
+    }
+
+    function activateConnect (e) {
+      if (active != e.target) {
+        setToActive(e.target)
+        topContainer.removeChild(ctor)
+        topContainer.appendChild(connect)
+      }
+    }
+
+    function activatePublish (e) {
+      if (active != e.target) {
+        setToActive(e.target)
+        topContainer.removeChild(connect)
+        topContainer.appendChild(ctor)
+      }
+    }
+
+    async function connectToContract () {
+      let abi = solcMetadata.output.abi
+      let bytecode = opts.metadata.bytecode
+      provider =  await getProvider()
+      var el = document.querySelector("[class^='connectContainer']")
+      var allArgs = getArgs(el, 'inputContainer')
+      const address = allArgs.args[0]
+      el.replaceWith(bel`<div class=${css.connecting}>
+        Connecting to the contract ${address}
+        ${loadingAnimation(colors)}</div>`)
+      try {
+        contract = new ethers.Contract(address, abi, provider)
+        topContainer.innerHTML = ''
+        topContainer.appendChild(makeDeployReceipt(provider, contract, true))
+        activateSendTx(contract)
+      } catch (e) {
+        let loader = document.querySelector("[class^='connecting']")
+        loader.replaceWith(connectContainer)
+      }
+    }
+
+    function setToActive (e) {
+      e.classList.add(css.activetab)
+      active.classList.remove(css.activetab)
+      active = e
     }
 
     function activateSendTx(instance) {
@@ -38325,11 +38167,27 @@ function displayContractUI(result) {   // compilation result metadata
     var topContainer = bel`<div class=${css.topContainer}></div>`
     var ctor = bel`<div class="${css.ctor}">
       ${metadata.constructorInput}
-      <div class=${css.deploy} onclick=${()=>deployContract()} title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
+      <div class=${css.deploy} onclick=${()=>deployContract()}
+        title="Publish the contract first (this executes the Constructor function). After that you will be able to start sending/receiving data using the contract functions below.">
         <div class=${css.deployTitle}>Publish</div>
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
+    const connect = bel`<div class="${css.connectContainer}">
+      ${generateInputContainer({name: 'contract_address', type:'address'})}
+      <div class=${css.connect} onclick=${()=>connectToContract()}
+        title="Enter address of the deployed contract you want to connect with. Select the correct network and click Connect. After that you will be able to interact with the chosen contract.">
+        <div class=${css.connectTitle}>Connect</div>
+        <i class="${css.icon} fa fa-arrow-circle-right"></i>
+      </div>
+    </div>`
+    var active, tabs = bel`<div class=${css.tabsContainer}>
+      ${active = bel`<div class="${css.tab} ${css.activetab}"
+      onclick=${e=>activatePublish(e)}>Publish</div>`}
+      <div class="${css.tab}"
+      onclick=${e=>activateConnect(e)}>Connect</div>
+    </div>`
+    topContainer.appendChild(tabs)
     topContainer.appendChild(ctor)
 
     return bel`
@@ -38403,7 +38261,7 @@ css = csjs`
       align-items: center;
       flex-direction: column;
     }
-    .deploying {
+    .deploying, .connecting {
       font-size: 0.9rem;
       margin-left: 3%;
     }
@@ -38479,13 +38337,13 @@ css = csjs`
     .title:hover {
       ${hover()}
     }
-    .deployTitle {
+    .deployTitle, .connectTitle {
       font-size: 1.3rem;
       background-color: ${colors.dark};
       padding: 0 5px 0 0;
       font-weight: 800;
     }
-    .deploy {
+    .deploy, .connect {
       color: ${colors.whiteSmoke};
       display: flex;
       align-items: center;
@@ -38496,7 +38354,7 @@ css = csjs`
       background-color: ${colors.dark};
       cursor: pointer;
     }
-    .deploy:hover {
+    .deploy:hover, .connect:hover {
       ${hover()}
     }
     .send {
@@ -38575,10 +38433,36 @@ css = csjs`
       border: 2px dashed ${colors.darkSmoke};
       padding: 2em 1em 3em 0em;
       width: 540px;
-      margin: 0 0 5em 20px;
+      margin: 3em 0 5em 20px;
       font-size: 0.75em;
     }
+    .tabsContainer {
+      display: flex;
+      position: absolute;
+      top: -30px;
+      left: -1px;
+      width: 33%;
+    }
+    .tab {
+      border: 2px dashed ${colors.darkSmoke};
+      color: ${colors.slateGrey};
+      border-bottom: none;
+      box-sizing: border-box;
+      padding: 3% 13%;
+      height: 29px;
+      width: 100%;
+      margin-right: 5px;
+      font-size: 0.8rem;
+    }
+    .tab:hover {
+      ${hover()}
+    }
+    .activetab {
+      font-weight: bold;
+      color: ${colors.whiteSmoke};
+    }
     .ctor {}
+    .connectContainer {}
     .signature {}
     .pure {
       color: ${colors.yellow};
