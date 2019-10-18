@@ -396,10 +396,12 @@ function displayContractUI(result) {   // compilation result metadata
           topContainer.innerHTML = ''
           topContainer.appendChild(makeDeployReceipt(provider, contract, true))
           activateSendTx(contract)
+          console.log('Not a valid contract address')
         }
       } catch (e) {
         let loader = document.querySelector("[class^='connecting']")
         loader.replaceWith(connectContainer)
+        console.log(e)
       }
     }
 
