@@ -38224,11 +38224,11 @@ function displayContractUI(result) {   // compilation result metadata
         if (!code || code === '0x') {
           let loader = document.querySelector("[class^='connecting']")
           loader.replaceWith(connectContainer)
+          console.log('Not a valid contract address')
         } else {
           topContainer.innerHTML = ''
           topContainer.appendChild(makeDeployReceipt(provider, contract, true))
           activateSendTx(contract)
-          console.log('Not a valid contract address')
         }
       } catch (e) {
         let loader = document.querySelector("[class^='connecting']")
