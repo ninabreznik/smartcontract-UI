@@ -363,14 +363,14 @@ function displayContractUI(result) {   // compilation result metadata
       if (active != e.target) {
         setToActive(e.target)
         topContainer.removeChild(ctor)
-        topContainer.appendChild(connect)
+        topContainer.appendChild(connectContainer)
       }
     }
 
     function activatePublish (e) {
       if (active != e.target) {
         setToActive(e.target)
-        topContainer.removeChild(connect)
+        topContainer.removeChild(connectContainer)
         topContainer.appendChild(ctor)
       }
     }
@@ -379,6 +379,7 @@ function displayContractUI(result) {   // compilation result metadata
       let abi = solcMetadata.output.abi
       let bytecode = opts.metadata.bytecode
       provider =  await getProvider()
+      let signer = await provider.getSigner()
       var el = document.querySelector("[class^='connectContainer']")
       var allArgs = getArgs(el, 'inputContainer')
       const address = allArgs.args[0]
@@ -387,9 +388,15 @@ function displayContractUI(result) {   // compilation result metadata
         ${loadingAnimation(colors)}</div>`)
       try {
         contract = new ethers.Contract(address, abi, provider)
-        topContainer.innerHTML = ''
-        topContainer.appendChild(makeDeployReceipt(provider, contract, true))
-        activateSendTx(contract)
+        var code = await provider.getCode(address)
+        if (!code || code === '0x') {
+          let loader = document.querySelector("[class^='connecting']")
+          loader.replaceWith(connectContainer)
+        } else {
+          topContainer.innerHTML = ''
+          topContainer.appendChild(makeDeployReceipt(provider, contract, true))
+          activateSendTx(contract)
+        }
       } catch (e) {
         let loader = document.querySelector("[class^='connecting']")
         loader.replaceWith(connectContainer)
@@ -421,7 +428,7 @@ function displayContractUI(result) {   // compilation result metadata
         <i class="${css.icon} fa fa-arrow-circle-right"></i>
       </div>
     </div>`
-    const connect = bel`<div class="${css.connectContainer}">
+    const connectContainer = bel`<div class="${css.connectContainer}">
       ${generateInputContainer({name: 'contract_address', type:'address'})}
       <div class=${css.connect} onclick=${()=>connectToContract()}
         title="Enter address of the deployed contract you want to connect with. Select the correct network and click Connect. After that you will be able to interact with the chosen contract.">
