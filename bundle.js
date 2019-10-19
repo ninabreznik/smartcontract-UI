@@ -38,25 +38,34 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/SimpleStorage.sol')
+const sourcecode = require('./sampleContracts/Events.sol')
 
-},{"../":192,"./sampleContracts/SimpleStorage.sol":2,"solc-js":133}],2:[function(require,module,exports){
+},{"../":192,"./sampleContracts/Events.sol":2,"solc-js":133}],2:[function(require,module,exports){
 module.exports = `
 pragma solidity >=0.4.0 <0.7.0;
-
-contract SimpleStorage {
-
-    uint8 storedData;
-
-    function set(uint8 x) public {
-        storedData = x;
-    }
-
-    function get() public view returns (uint8) {
-        return storedData;
-    }
-
-}`
+contract Coin {
+  address public minter;
+  mapping (address => uint) public balances;
+  constructor() public { minter = msg.sender; }
+  event Sent(address from, address to, uint amount);
+  // Sends an amount of existing coins
+  // from any caller to an address
+  function send (address receiver, uint amount) public {
+    balances[msg.sender] -= amount;
+    // short for: balances[msg.sender] = balances[msg.sender] - amount;
+    balances[receiver] += amount;
+    // short for: balances[receiver] = balances[receiver] + amount;
+    emit Sent(msg.sender, receiver, amount);
+    // arguments (from, to, amount) to track transactions
+  }
+  // Sends an amount of newly created coins to an address
+  // Can only be called by the contract creator
+  function mint (address receiver, uint amount) public {
+    balances[receiver] += amount;
+    // short for: balances[receiver] = balances[receiver] + amount;
+  }
+}
+`
 
 },{}],3:[function(require,module,exports){
 const kvidb = require('kv-idb');
@@ -37867,6 +37876,7 @@ document.head.appendChild(overpassMono)
   ETHERS
 ******************************************************************************/
 
+window.ethers = ethers //@TODO remove after crosslink
 var provider
 var contract
 
@@ -37925,6 +37935,8 @@ function displayContractUI(result) {   // compilation result metadata
 
   if (!Array.isArray(opts.metadata)) {
     var solcMetadata = opts.metadata
+    window.abi = solcMetadata.output.abi //@TODO remove after crosslink
+    window.bytecode = solcMetadata.bytecode //@TODO remove after crosslink
     function getConstructorName() {
       var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
       return solcMetadata.settings.compilationTarget[file]

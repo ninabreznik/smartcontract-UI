@@ -35,6 +35,7 @@ document.head.appendChild(overpassMono)
   ETHERS
 ******************************************************************************/
 
+window.ethers = ethers //@TODO remove after crosslink
 var provider
 var contract
 
@@ -93,6 +94,8 @@ function displayContractUI(result) {   // compilation result metadata
 
   if (!Array.isArray(opts.metadata)) {
     var solcMetadata = opts.metadata
+    window.abi = solcMetadata.output.abi //@TODO remove after crosslink
+    window.bytecode = solcMetadata.bytecode //@TODO remove after crosslink
     function getConstructorName() {
       var file = Object.keys(solcMetadata.settings.compilationTarget)[0]
       return solcMetadata.settings.compilationTarget[file]
