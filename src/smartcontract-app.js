@@ -247,6 +247,10 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         var allArgs = getArgs(container, 'inputContainer')
         var args = allArgs.args
+        const contractType = contract.interface.functions[fnName].type
+        if (contractType === 'transaction') {
+          const fakeTx = await makeContractCallable (contract, fnName, provider, args)
+        }
         try {
           let contractAsCurrentSigner = contract.connect(signer)
           var transaction
@@ -261,6 +265,22 @@ function displayContractUI(result) {   // compilation result metadata
         setTimeout(()=>deploy.classList.remove(css.bounce), 3500)
       }
     }
+
+    async function makeContractCallable (contract, fnName, provider, args) {
+      const fn = contract.interface.functions[fnName]
+      const signature = fn.signature
+      const address = contract.address
+      const inputs = fn.inputs[0].type //CHANGE
+      let contractCallable = new ethers.Contract(
+        address,
+        [ "function " + signature + ` constant returns(${inputs})` ],
+        provider)
+      try {
+        var tx = await contractCallable.functions[fnName](...args)
+        return tx
+      } catch (e) { console.log(e) }
+    }
+
 
     function toggleAll (e) {
       var fnContainer = e.currentTarget.parentElement.parentElement.children[2]

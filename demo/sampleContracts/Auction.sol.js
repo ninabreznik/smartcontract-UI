@@ -1,12 +1,12 @@
 module.exports = `
-pragma solidity >=0.4.22 <0.7.0;
+pragma solidity ^0.5.11;
 
 contract SimpleAuction {
     // Parameters of the auction. Times are either
     // absolute unix timestamps (seconds since 1970-01-01)
     // or time periods in seconds.
     address payable public beneficiary;
-    uint public auctionEndTime;
+    uint public auctionEnd;
 
     // Current state of the auction.
     address public highestBidder;
@@ -15,10 +15,10 @@ contract SimpleAuction {
     // Allowed withdrawals of previous bids
     mapping(address => uint) pendingReturns;
 
-    // Set to true at the end, disallows any change.
+    // Set to true at the end, disallows any change
     bool ended;
 
-    // Events that will be emitted on changes.
+    // Events that will be fired on changes.
     event HighestBidIncreased(address bidder, uint amount);
     event AuctionEnded(address winner, uint amount);
 
@@ -27,15 +27,15 @@ contract SimpleAuction {
     // It will be shown when the user is asked to
     // confirm a transaction.
 
-
+    /// Create a simple auction with _biddingTime
     /// seconds bidding time on behalf of the
-
+    /// beneficiary address _beneficiary.
     constructor(
         uint _biddingTime,
         address payable _beneficiary
     ) public {
         beneficiary = _beneficiary;
-        auctionEndTime = now + _biddingTime;
+        auctionEnd = now + _biddingTime;
     }
 
     /// Bid on the auction with the value sent
@@ -52,7 +52,7 @@ contract SimpleAuction {
         // Revert the call if the bidding
         // period is over.
         require(
-            now <= auctionEndTime,
+            now <= auctionEnd,
             "Auction already ended."
         );
 
@@ -82,7 +82,7 @@ contract SimpleAuction {
         if (amount > 0) {
             // It is important to set this to zero because the recipient
             // can call this function again as part of the receiving call
-
+            // before send returns.
             pendingReturns[msg.sender] = 0;
 
             if (!msg.sender.send(amount)) {
@@ -96,7 +96,7 @@ contract SimpleAuction {
 
     /// End the auction and send the highest bid
     /// to the beneficiary.
-    function auctionEnd() public {
+    function auctionEndNow() public {
         // It is a good guideline to structure functions that interact
         // with other contracts (i.e. they call functions or send Ether)
         // into three phases:
@@ -107,11 +107,11 @@ contract SimpleAuction {
         // back into the current contract and modify the state or cause
         // effects (ether payout) to be performed multiple times.
         // If functions called internally include interaction with external
-        // contracts, they also have to be considered interaction with
+// contracts, they also have to be considered interaction with
         // external contracts.
 
         // 1. Conditions
-        require(now >= auctionEndTime, "Auction not yet ended.");
+        require(now >= auctionEnd, "Auction not yet ended.");
         require(!ended, "auctionEnd has already been called.");
 
         // 2. Effects
@@ -121,4 +121,5 @@ contract SimpleAuction {
         // 3. Interaction
         beneficiary.transfer(highestBid);
     }
-}`
+}
+`
