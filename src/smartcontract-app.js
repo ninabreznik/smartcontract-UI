@@ -248,17 +248,30 @@ function displayContractUI(result) {   // compilation result metadata
         var allArgs = getArgs(container, 'inputContainer')
         var args = allArgs.args
         const contractType = contract.interface.functions[fnName].type
-        if (contractType === 'transaction') {
-          const fakeTx = await makeContractCallable (contract, fnName, provider, args)
+        let opts = {
+          contract,
+          solcMetadata,
+          provider,
+          fnName
         }
-        try {
-          let contractAsCurrentSigner = contract.connect(signer)
-          var transaction
-          if (allArgs.overrides) { transaction = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
-          else { transaction = await contractAsCurrentSigner.functions[fnName](...args) }
-          let abi = solcMetadata.output.abi
-          loader.replaceWith(await makeReturn(contract, solcMetadata, provider, transaction, fnName))
-        } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+        if (contractType === 'transaction') {
+          const callableTx = await makeContractCallable (contract, fnName, provider, args, allArgs)
+          opts.tx = callableTx
+          opts.typeTransaction = true
+          try {
+            let contractAsCurrentSigner = contract.connect(signer)
+            if (allArgs.overrides) { await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+            else { await contractAsCurrentSigner.functions[fnName](...args) }
+          } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+        } else {
+          opts.typeTransaction = false
+          try {
+            let contractAsCurrentSigner = contract.connect(signer)
+            if (allArgs.overrides) { opts.tx = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+            else { opts.tx = await contractAsCurrentSigner.functions[fnName](...args) }
+          } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+        }
+        loader.replaceWith(await makeReturn(opts))
       } else {
         let deploy = document.querySelector("[class^='deploy']")
         deploy.classList.add(css.bounce)
@@ -266,19 +279,33 @@ function displayContractUI(result) {   // compilation result metadata
       }
     }
 
-    async function makeContractCallable (contract, fnName, provider, args) {
-      const fn = contract.interface.functions[fnName]
-      const signature = fn.signature
-      const address = contract.address
-      const inputs = fn.inputs[0].type //CHANGE
-      let contractCallable = new ethers.Contract(
-        address,
-        [ "function " + signature + ` constant returns(${inputs})` ],
-        provider)
+    async function executeTx (contract, fnName, provider, args, allArgs, opts) {
       try {
-        var tx = await contractCallable.functions[fnName](...args)
-        return tx
-      } catch (e) { console.log(e) }
+        let contractAsCurrentSigner = contract.connect(signer)
+        var tx
+        if (allArgs.overrides) { tx = await contractAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+        else { tx = await contractAsCurrentSigner.functions[fnName](...args) }
+        loader.replaceWith(await makeReturn(opts))
+      } catch (e) { txReturn.children.length > 1 ? txReturn.removeChild(loader) : container.removeChild(txReturn) }
+    }
+
+    async function makeContractCallable (contract, fnName, provider, args, allArgs) {
+      if (contract.interface.functions[fnName].outputs.length > 0) {
+        const signature = contract.interface.functions[fnName].signature
+        const address = contract.address
+        const type = contract.interface.functions[fnName].inputs[0].type
+        let contractCallable = new ethers.Contract(address, [
+          `function ${signature} constant returns(${type})`
+        ], provider)
+        let signer = await provider.getSigner()
+        const callableAsCurrentSigner = await contractCallable.connect(signer)
+        try {
+          var tx
+          if (allArgs.overrides) { tx = await callableAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
+          else { tx = await callableAsCurrentSigner.functions[fnName](...args) }
+          return tx
+        } catch (e) { console.log(e) }
+      } else return []
     }
 
 
