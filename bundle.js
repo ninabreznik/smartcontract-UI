@@ -38,25 +38,56 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/SimpleStorage.sol')
+const sourcecode = require('./sampleContracts/HelloBlockchain.sol')
 
-},{"../":191,"./sampleContracts/SimpleStorage.sol":2,"solc-js":133}],2:[function(require,module,exports){
+},{"../":191,"./sampleContracts/HelloBlockchain.sol":2,"solc-js":133}],2:[function(require,module,exports){
 module.exports = `
-pragma solidity >=0.4.0 <0.7.0;
+pragma solidity >=0.4.25 <0.6.0;
 
-contract SimpleStorage {
+contract HelloBlockchain
+{
+     //Set of States
+    enum StateType { Request, Respond}
 
-    uint8 storedData;
+    //List of properties
+    StateType public  State;
+    address public  Requestor;
+    address public  Responder;
 
-    function set(uint8 x) public returns (uint8) {
-        storedData = x;
-        return storedData*2;
+    string public RequestMessage;
+    string public ResponseMessage;
+
+    // constructor function
+    constructor(string memory message) public
+    {
+        Requestor = msg.sender;
+        RequestMessage = message;
+        State = StateType.Request;
     }
 
-    function get() public view returns (uint8) {
-        return storedData;
+    // call this function to send a request
+    function SendRequest(string memory requestMessage) public
+    {
+        if (Requestor != msg.sender)
+        {
+            revert();
+        }
+
+        RequestMessage = requestMessage;
+        State = StateType.Request;
     }
-}`
+
+    // call this function to send a response
+    function SendResponse(string memory responseMessage) public
+    {
+        Responder = msg.sender;
+
+        // call ContractUpdated() to record this action
+        ResponseMessage = responseMessage;
+        State = StateType.Respond;
+    }
+}
+`
 
 },{}],3:[function(require,module,exports){
 const kvidb = require('kv-idb');
@@ -38102,11 +38133,12 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         const callableAsCurrentSigner = await contractCallable.connect(signer)
         try {
-          var tx
+          // var tx
           const callableFn =callableAsCurrentSigner.functions[fnName]
-          if (allArgs.overrides) tx = await callableFn(...args, allArgs.overrides)
-          else { tx = await callableFn(...args) }
-          return tx
+          return await callableFn(...args)
+          // if (allArgs.overrides) tx = await callableFn(...args, allArgs.overrides)
+          // else { tx = await callableFn(...args) }
+          // return tx
         } catch (e) { console.log(e) }
       } else return []
     }
