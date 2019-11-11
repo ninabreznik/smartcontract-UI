@@ -290,10 +290,11 @@ function displayContractUI(result) {   // compilation result metadata
     }
 
     async function makeContractCallable (contract, fnName, provider, args, allArgs) {
-      if (contract.interface.functions[fnName].outputs.length > 0) {
-        const signature = contract.interface.functions[fnName].signature
+      const fn = contract.interface.functions[fnName]
+      if (fn.outputs.length > 0) {
+        const signature = fn.signature
         const address = contract.address
-        const type = contract.interface.functions[fnName].inputs[0].type
+        const type = fn.outputs[0].type
         let contractCallable = new ethers.Contract(address, [
           `function ${signature} constant returns(${type})`
         ], provider)
@@ -301,8 +302,9 @@ function displayContractUI(result) {   // compilation result metadata
         const callableAsCurrentSigner = await contractCallable.connect(signer)
         try {
           var tx
-          if (allArgs.overrides) { tx = await callableAsCurrentSigner.functions[fnName](...args, allArgs.overrides) }
-          else { tx = await callableAsCurrentSigner.functions[fnName](...args) }
+          const callableFn =callableAsCurrentSigner.functions[fnName]
+          if (allArgs.overrides) tx = await callableFn(...args, allArgs.overrides)
+          else { tx = await callableFn(...args) }
           return tx
         } catch (e) { console.log(e) }
       } else return []
