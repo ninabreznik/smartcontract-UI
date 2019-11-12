@@ -37675,8 +37675,6 @@ function getReturnData (opts) {
   var iface = new ethers.utils.Interface(opts.solcMetadata.output.abi)
   var fun = opts.contract.interface.functions[opts.fnName]
   return decodeReturnData(opts.tx, fun.outputs)
-  // if (opts.typeTransaction) return decodeReturnData(opts.tx, fun.inputs)
-  // else if (!opts.typeTransaction) return decodeReturnData(opts.tx, fun.outputs)
 }
 
 function makeTxReturn (css, data) {
@@ -37748,9 +37746,9 @@ var css = csjs`
 
 function moreInfo (network, txHash) {
   var linkToExplorer =
-  `https://blockscout.com/eth/${network}/tx/${txHash}/internal_transactions`
+  "https://" + network  + ".etherscan.io/tx/" + txHash
   return bel`<div class=${css.infoIcon}
-    title="Take me to the Blockscout">
+    title="Take me to the block explorer">
       <a href=${linkToExplorer}
         target="_blank"><i class="fa fa-info-circle"></i>
       </a>
@@ -38133,12 +38131,8 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         const callableAsCurrentSigner = await contractCallable.connect(signer)
         try {
-          // var tx
           const callableFn =callableAsCurrentSigner.functions[fnName]
           return await callableFn(...args)
-          // if (allArgs.overrides) tx = await callableFn(...args, allArgs.overrides)
-          // else { tx = await callableFn(...args) }
-          // return tx
         } catch (e) { console.log(e) }
       } else return []
     }

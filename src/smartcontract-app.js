@@ -301,12 +301,8 @@ function displayContractUI(result) {   // compilation result metadata
         let signer = await provider.getSigner()
         const callableAsCurrentSigner = await contractCallable.connect(signer)
         try {
-          // var tx
           const callableFn =callableAsCurrentSigner.functions[fnName]
           return await callableFn(...args)
-          // if (allArgs.overrides) tx = await callableFn(...args, allArgs.overrides)
-          // else { tx = await callableFn(...args) }
-          // return tx
         } catch (e) { console.log(e) }
       } else return []
     }

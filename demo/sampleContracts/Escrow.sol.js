@@ -1,5 +1,5 @@
 module.exports = `
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.1;
 
 import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/math/SafeMath.sol";
 import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/master/contracts/ownership/Secondary.sol";
