@@ -38,55 +38,23 @@ function printError (e) {
     ${JSON.stringify(e, null, 2)}
   </pre>`
 }
-const sourcecode = require('./sampleContracts/HelloBlockchain.sol')
+const sourcecode = require('./sampleContracts/Foo.sol')
 
-},{"../":191,"./sampleContracts/HelloBlockchain.sol":2,"solc-js":133}],2:[function(require,module,exports){
+},{"../":191,"./sampleContracts/Foo.sol":2,"solc-js":133}],2:[function(require,module,exports){
 module.exports = `
-pragma solidity >=0.4.25 <0.6.0;
+pragma solidity 0.5.9;
+contract SimpleStorage {
 
-contract HelloBlockchain
-{
-     //Set of States
-    enum StateType { Request, Respond}
+    uint8 storedData;
 
-    //List of properties
-    StateType public  State;
-    address public  Requestor;
-    address public  Responder;
-
-    string public RequestMessage;
-    string public ResponseMessage;
-
-    // constructor function
-    constructor(string memory message) public
-    {
-        Requestor = msg.sender;
-        RequestMessage = message;
-        State = StateType.Request;
+    function set(uint8 x) public {
+        storedData = x;
     }
 
-    // call this function to send a request
-    function SendRequest(string memory requestMessage) public
-    {
-        if (Requestor != msg.sender)
-        {
-            revert();
-        }
-
-        RequestMessage = requestMessage;
-        State = StateType.Request;
+    function get() public view returns (uint8) {
+        return storedData;
     }
 
-    // call this function to send a response
-    function SendResponse(string memory responseMessage) public
-    {
-        Responder = msg.sender;
-
-        // call ContractUpdated() to record this action
-        ResponseMessage = responseMessage;
-        State = StateType.Respond;
-    }
-}
 `
 
 },{}],3:[function(require,module,exports){

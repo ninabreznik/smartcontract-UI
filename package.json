@@ -24,6 +24,6 @@
     "input-byte": "0.0.10",
     "input-integer": "3.1.5",
     "input-string": "2.1.2",
-    "solc-js": "git+https://github.com/ethereum-play/solc-js.git"
+    "solc-js": "git+https://github.com/playproject-io-archive/solc-js.git"
   }
 }
